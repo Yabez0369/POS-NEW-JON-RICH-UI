@@ -12,7 +12,12 @@ export const ProductManagement = ({ products, setProducts, addAudit, currentUser
   const [cat, setCat] = useState('All')
   const [showForm, setShowForm] = useState(false)
   const [editP, setEditP] = useState(null)
-  const empty = { name: '', sku: '', category: 'Jerseys', price: '', stock: '', emoji: '⚽', description: '', image: '', discount: 0, priceOverrides: [], promo: { price: '', startDate: '', endDate: '', active: false } }
+  const empty = {
+  name: '', sku: '', category: 'Jerseys', price: '', stock: '',
+  sizes: [], colors: [],
+  emoji: '📦', description: '', image: '', discount: 0, vatRate: 20, priceOverrides: [],
+  promo: { price: '', startDate: '', endDate: '', active: false }
+}
   const [form, setForm] = useState(empty)
   const [showBulkImport, setShowBulkImport] = useState(false)
   const [bulkData, setBulkData] = useState('')
@@ -30,7 +35,7 @@ export const ProductManagement = ({ products, setProducts, addAudit, currentUser
     const promo = form.promo?.active && form.promo?.price != null && form.promo?.price !== ''
       ? { price: +form.promo.price, startDate: form.promo.startDate || null, endDate: form.promo.endDate || null, active: true }
       : { price: null, startDate: null, endDate: null, active: false }
-    const payload = { ...form, price: +form.price, stock: +form.stock, discount: +(form.discount || 0), priceOverrides, promo }
+    const payload = { ...form, price: +form.price, stock: +form.stock, discount: +(form.discount || 0), vatRate: +(form.vatRate || 0), priceOverrides, promo }
     if (editP) {
       setProducts(ps => ps.map(p => p.id === editP.id ? { ...p, ...payload } : p))
       notify('Product updated!', 'success')
@@ -99,6 +104,7 @@ export const ProductManagement = ({ products, setProducts, addAudit, currentUser
         id: Date.now() + idx, name: name.trim(), sku: sku.trim(),
         category: category.trim(), price, stock, emoji: '📦',
         description: descParts.join(',').trim() || '', image: '',
+        sizes: [], colors: [], // Initialize sizes and colors for bulk imported products
       })
     })
 
@@ -148,8 +154,8 @@ export const ProductManagement = ({ products, setProducts, addAudit, currentUser
               <Btn t={t} variant="secondary" size="sm" onClick={() => {
                 setEditP(p)
                 setForm({
-                  name: p.name, sku: p.sku || '', category: p.category, price: p.price, stock: p.stock, emoji: p.emoji,
-                  description: p.description || '', image: p.image || '', discount: p.discount || 0,
+                  name: p.name, sku: p.sku || '', category: p.category, price: p.price, stock: p.stock, sizes: p.sizes || [], colors: p.colors || [], emoji: p.emoji,
+                  description: p.description || '', image: p.image || '', discount: p.discount || 0, vatRate: p.vatRate ?? 20, // Default to 20 if vatRate is null/undefined
                   priceOverrides: p.priceOverrides || [],
                   promo: p.promo ? { ...p.promo, price: p.promo.price ?? '', startDate: p.promo.startDate || '', endDate: p.promo.endDate || '', active: !!p.promo.active } : { price: '', startDate: '', endDate: '', active: false }
                 })
@@ -171,10 +177,15 @@ export const ProductManagement = ({ products, setProducts, addAudit, currentUser
               <Input t={t} label="Price (£)" value={form.price} onChange={v => setForm(f => ({ ...f, price: v }))} type="number" required />
               <Input t={t} label="Stock" value={form.stock} onChange={v => setForm(f => ({ ...f, stock: v }))} type="number" required />
             </div>
-            <Select t={t} label="Category" value={form.category} onChange={v => setForm(f => ({ ...f, category: v }))} options={CATEGORIES.filter(c => c !== 'All').map(c => ({ value: c, label: c }))} />
-            <Input t={t} label="Emoji" value={form.emoji} onChange={v => setForm(f => ({ ...f, emoji: v }))} />
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 13 }}>
+              <Select t={t} label="Category" value={form.category} onChange={v => setForm(f => ({ ...f, category: v }))} options={CATEGORIES.filter(c => c !== 'All').map(c => ({ value: c, label: c }))} />
+              <Input t={t} label="Emoji" value={form.emoji} onChange={v => setForm(f => ({ ...f, emoji: v }))} />
+            </div>
             <Input t={t} label="Description" value={form.description} onChange={v => setForm(f => ({ ...f, description: v }))} />
-            <Input t={t} label="Discount %" value={form.discount || 0} onChange={v => setForm(f => ({ ...f, discount: Math.min(100, Math.max(0, +v)) }))} type="number" note="Set % discount on this product (0 = no discount)." />
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 13 }}>
+              <Input t={t} label="Discount %" value={form.discount || 0} onChange={v => setForm(f => ({ ...f, discount: Math.min(100, Math.max(0, +v)) }))} type="number" note="Set % discount on this product (0 = no discount)." />
+              <Input t={t} label="VAT Rate (%)" value={form.vatRate} onChange={v => setForm(f => ({ ...f, vatRate: v }))} type="number" note="Specific VAT rate for this product." />
+            </div>
 
             <div style={{ borderTop: `1px solid ${t.border}`, paddingTop: 14, marginTop: 4 }}>
               <div style={{ fontSize: 11, color: t.text3, fontWeight: 800, textTransform: 'uppercase', letterSpacing: 0.7, marginBottom: 10 }}>Price Overrides (Outlet-specific)</div>
@@ -205,6 +216,65 @@ export const ProductManagement = ({ products, setProducts, addAudit, currentUser
               )}
             </div>
 
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+              <label style={{ fontSize: 11, color: t.text3, fontWeight: 800, textTransform: 'uppercase', letterSpacing: 0.7 }}>Sizes</label>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                {['XS', 'S', 'M', 'L', 'XL', 'XXL', 'OS'].map(s => {
+                  const isSelected = form.sizes?.includes(s)
+                  return (
+                    <button key={s} type="button" onClick={() => setForm(f => ({ ...f, sizes: isSelected ? f.sizes.filter(x => x !== s) : [...(f.sizes || []), s] }))} style={{ padding: '6px 12px', borderRadius: 6, border: `1px solid ${isSelected ? t.accent : t.border}`, background: isSelected ? t.accent + '20' : t.input, color: isSelected ? t.accent : t.text, cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>{s}</button>
+                  )
+                })}
+                <input placeholder="Add custom size & press Enter..." onKeyDown={e => {
+                  if (e.key === 'Enter' && e.target.value.trim()) {
+                    e.preventDefault();
+                    if (!form.sizes?.includes(e.target.value.trim())) {
+                      setForm(f => ({ ...f, sizes: [...(f.sizes || []), e.target.value.trim()] }))
+                    }
+                    e.target.value = '';
+                  }
+                }} style={{ flex: 1, minWidth: 100, background: t.input, border: `1px solid ${t.border}`, borderRadius: 6, padding: '6px 10px', color: t.text, fontSize: 12, outline: 'none' }} />
+              </div>
+              {form.sizes?.length > 0 && (
+                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 4 }}>
+                  {form.sizes.map(s => (
+                    <div key={s} style={{ fontSize: 11, background: t.bg3, border: `1px solid ${t.border}`, borderRadius: 4, padding: '2px 6px', display: 'flex', alignItems: 'center', gap: 4 }}>
+                      {s} <button type="button" onClick={() => setForm(f => ({ ...f, sizes: f.sizes.filter(x => x !== s) }))} style={{ background: 'none', border: 'none', color: t.text4, cursor: 'pointer', fontSize: 12, padding: 0 }}>✕</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+              <label style={{ fontSize: 11, color: t.text3, fontWeight: 800, textTransform: 'uppercase', letterSpacing: 0.7 }}>Colors</label>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                {['Black', 'White', 'Red', 'Blue', 'Green', 'Grey'].map(c => {
+                  const isSelected = form.colors?.includes(c)
+                  return (
+                    <button key={c} type="button" onClick={() => setForm(f => ({ ...f, colors: isSelected ? f.colors.filter(x => x !== c) : [...(f.colors || []), c] }))} style={{ padding: '6px 12px', borderRadius: 6, border: `1px solid ${isSelected ? t.accent : t.border}`, background: isSelected ? t.accent + '20' : t.input, color: isSelected ? t.accent : t.text, cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>{c}</button>
+                  )
+                })}
+                <input placeholder="Add custom color & press Enter..." onKeyDown={e => {
+                  if (e.key === 'Enter' && e.target.value.trim()) {
+                    e.preventDefault();
+                    if (!form.colors?.includes(e.target.value.trim())) {
+                      setForm(f => ({ ...f, colors: [...(f.colors || []), e.target.value.trim()] }))
+                    }
+                    e.target.value = '';
+                  }
+                }} style={{ flex: 1, minWidth: 100, background: t.input, border: `1px solid ${t.border}`, borderRadius: 6, padding: '6px 10px', color: t.text, fontSize: 12, outline: 'none' }} />
+              </div>
+              {form.colors?.length > 0 && (
+                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 4 }}>
+                  {form.colors.map(c => (
+                    <div key={c} style={{ fontSize: 11, background: t.bg3, border: `1px solid ${t.border}`, borderRadius: 4, padding: '2px 6px', display: 'flex', alignItems: 'center', gap: 4 }}>
+                      {c} <button type="button" onClick={() => setForm(f => ({ ...f, colors: f.colors.filter(x => x !== c) }))} style={{ background: 'none', border: 'none', color: t.text4, cursor: 'pointer', fontSize: 12, padding: 0 }}>✕</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
               <label style={{ fontSize: 11, color: t.text3, fontWeight: 800, textTransform: 'uppercase', letterSpacing: 0.7 }}>Product Image</label>
               <input type="file" accept="image/*" onChange={handleImageUpload} style={{ background: t.input, border: `1px solid ${t.border}`, borderRadius: 9, padding: '10px 14px', color: t.text, fontSize: 13, outline: 'none' }} />

@@ -58,7 +58,7 @@ export function POSProductGrid({
         {CATEGORIES.map(c => <button key={c} onClick={() => setCat(c)} style={{ padding: '5px 13px', borderRadius: 20, border: 'none', background: cat === c ? t.accent : t.bg4, color: cat === c ? '#fff' : t.text3, fontSize: 11, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' }}>{c}</button>)}
       </div>
 
-      <div className="pos-products-grid" style={{ flex: 1, overflowY: 'auto', padding: 8, display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(min(110px,42vw),1fr))', gap: 6, alignContent: 'start' }}>
+      <div className="pos-products-grid" style={{ flex: 1, overflowY: 'auto', padding: 8, display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 6, alignContent: 'start' }}>
         {filteredProds.map(p => {
           const disc = getItemDiscount(p)
           return (

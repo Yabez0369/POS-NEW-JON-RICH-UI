@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Btn, Input, Card, Toggle } from '@/components/ui'
+import { Btn, Input, Card, Toggle, Select } from '@/components/ui'
 import { notify } from '@/components/shared'
 import { isOptimoEnabled, syncUsers, syncVenues, syncSites } from '@/services/optimo'
 
@@ -10,7 +10,7 @@ export const SettingsPage = ({ settings, setSettings, addAudit, currentUser, dar
 
   const sections = [
     { title: 'Store Info', fields: [['Store Name', 'storeName'], ['Address', 'storeAddress'], ['Phone', 'storePhone'], ['Email', 'storeEmail']] },
-    { title: 'Financial', fields: [['Currency Symbol', 'sym'], ['VAT Rate (%)', 'vatRate', 'number'], ['Loyalty Rate (pts/£)', 'loyaltyRate', 'number'], ['Point Value (£/pt)', 'loyaltyValue', 'number']] },
+    { title: 'Financial', fields: [['Currency Symbol', 'sym', 'select', [{ value: '£', label: '£ (GBP)' }, { value: '$', label: '$ (USD)' }, { value: '€', label: '€ (EUR)' }]], ['Loyalty Rate (pts/£)', 'loyaltyRate', 'number'], ['Point Value (£/pt)', 'loyaltyValue', 'number']] },
     { title: 'Receipt', fields: [['Footer Text', 'receiptFooter'], ['Return Days', 'returnDays', 'number']] },
   ]
 
@@ -43,15 +43,26 @@ export const SettingsPage = ({ settings, setSettings, addAudit, currentUser, dar
           <Card t={t} key={title}>
             <div style={{ fontSize: 14, fontWeight: 800, color: t.text, marginBottom: 14 }}>{title}</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              {fields.map(([label, key, type]) => (
-                <Input
-                  key={key}
-                  t={t}
-                  label={label}
-                  value={form[key] || ''}
-                  onChange={v => setForm(f => ({ ...f, [key]: type === 'number' ? +v : v }))}
-                  type={type || 'text'}
-                />
+              {fields.map(([label, key, type, options]) => (
+                type === 'select' ? (
+                  <Select
+                    key={key}
+                    t={t}
+                    label={label}
+                    value={form[key] || ''}
+                    onChange={v => setForm(f => ({ ...f, [key]: v }))}
+                    options={options}
+                  />
+                ) : (
+                  <Input
+                    key={key}
+                    t={t}
+                    label={label}
+                    value={form[key] || ''}
+                    onChange={v => setForm(f => ({ ...f, [key]: type === 'number' ? +v : v }))}
+                    type={type || 'text'}
+                  />
+                )
               ))}
             </div>
           </Card>

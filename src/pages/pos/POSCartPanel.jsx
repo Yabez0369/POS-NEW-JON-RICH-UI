@@ -63,7 +63,7 @@ export function POSCartPanel({
                 <button onClick={() => updateQty(item.id, 1)} style={{ width: 22, height: 22, borderRadius: 6, border: `1px solid ${t.border}`, background: t.bg3, color: t.text, cursor: 'pointer', fontSize: 13, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>+</button>
               </div>
               <div style={{ fontSize: 12, fontWeight: 900, color: t.text, minWidth: 50, textAlign: 'right' }}>{fmt(item.price * (1 - (item.discount || 0) / 100) * item.qty)}</div>
-              <button onClick={() => setVoidItem(item)} style={{ background: 'none', border: 'none', color: t.text4, cursor: 'pointer', fontSize: 14, padding: '0 2px' }}>✕</button>
+              <button onClick={() => setCart(c => c.filter(i => i.id !== item.id))} style={{ background: 'none', border: 'none', color: t.text4, cursor: 'pointer', fontSize: 14, padding: '0 2px' }}>✕</button>
             </div>
           ))}
       </div>

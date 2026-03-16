@@ -87,6 +87,8 @@ CREATE TABLE products (
   sku TEXT UNIQUE NOT NULL,
   name TEXT NOT NULL,
   description TEXT,
+  sizes TEXT[],
+  colors TEXT[],
   category_id UUID REFERENCES categories(id),
   brand TEXT,
   material TEXT,

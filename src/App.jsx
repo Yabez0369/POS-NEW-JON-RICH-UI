@@ -192,11 +192,11 @@ function AppContent() {
       supabase.from('audit_logs').insert({
         user_id: u?.id || null,
         action, module, details,
-      }).then(() => {})
+      }).then(() => { })
     }
   }, [])
 
-  const addGlobalNotif = useCallback(() => {}, [])
+  const addGlobalNotif = useCallback(() => { }, [])
 
   const commonProps = {
     products, setProducts, orders, setOrders, returns, setReturns,
@@ -248,8 +248,8 @@ function AppContent() {
               currentUser?.role === 'admin'
                 ? <AdminDashboard orders={orders} users={users} products={products} t={t} />
                 : currentUser?.role === 'manager'
-                ? <ManagerDashboard orders={orders} products={products} users={users} counters={counters} t={t} />
-                : <Navigate to="/app" replace />
+                  ? <ManagerDashboard orders={orders} products={products} users={users} counters={counters} t={t} />
+                  : <Navigate to="/app" replace />
             } />
 
             {/* POS */}

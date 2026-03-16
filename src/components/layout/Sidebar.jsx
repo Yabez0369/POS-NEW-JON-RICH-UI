@@ -118,7 +118,7 @@ export function Sidebar() {
           >
             S
           </div>
-          <div>
+          <div className="sidebar-label">
             <div style={{ fontSize: 13, fontWeight: 900, color: theme.text, letterSpacing: -0.3 }}>SCSTix</div>
             <div style={{ fontSize: 10, color: theme.text4, fontWeight: 600 }}>EPOS v1.0</div>
           </div>
@@ -144,7 +144,7 @@ export function Sidebar() {
           >
             {currentUser.avatar}
           </div>
-          <div style={{ flex: 1, minWidth: 0 }}>
+          <div className="sidebar-label" style={{ flex: 1, minWidth: 0 }}>
             <div
               style={{
                 fontSize: 12,
@@ -163,7 +163,7 @@ export function Sidebar() {
           </div>
         </div>
         {currentUser.role === 'customer' && (
-          <div style={{ marginTop: 8, display: 'flex', gap: 6 }}>
+          <div className="sidebar-label" style={{ marginTop: 8, display: 'flex', gap: 6 }}>
             <div
               style={{
                 flex: 1,
@@ -198,6 +198,7 @@ export function Sidebar() {
         )}
         {currentUser.counter && (
           <div
+            className="sidebar-label"
             style={{
               marginTop: 6,
               fontSize: 10,
@@ -238,8 +239,8 @@ export function Sidebar() {
                 fontFamily: 'inherit',
               }}
             >
-              <span style={{ fontSize: 14 }}>{item.i}</span>
-              {item.l}
+              <span style={{ fontSize: 14, minWidth: 20, textAlign: 'center' }}>{item.i}</span>
+              <span className="sidebar-label">{item.l}</span>
             </button>
           )
         })}
@@ -264,7 +265,8 @@ export function Sidebar() {
             marginBottom: 4,
           }}
         >
-          👤 My Profile
+          <span style={{ fontSize: 14, minWidth: 20, textAlign: 'center' }}>👤</span>
+          <span className="sidebar-label">My Profile</span>
         </button>
         <button
           onClick={logout}
@@ -284,7 +286,8 @@ export function Sidebar() {
             fontFamily: 'inherit',
           }}
         >
-          🚪 Sign Out
+          <span style={{ fontSize: 14, minWidth: 20, textAlign: 'center' }}>🚪</span>
+          <span className="sidebar-label">Sign Out</span>
         </button>
       </div>
     </div>

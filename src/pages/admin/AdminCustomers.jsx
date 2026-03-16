@@ -4,17 +4,76 @@ import { fmt } from '@/lib/utils'
 
 export const AdminCustomers = ({ users, orders, t }) => {
   const [selected, setSelected] = useState(null)
-  const customers = users.filter(u => u.role === 'customer')
+  const [search, setSearch] = useState('')
+  const [filter, setFilter] = useState('All')
+
+  const baseCustomers = users.filter(u => u.role === 'customer')
+
+  // Calculate stats for all customers (ignore search/filter)
+  const totalCustomers = baseCustomers.length
+  const goldMembers = baseCustomers.filter(u => u.tier === 'Gold').length
+  const silverMembers = baseCustomers.filter(u => u.tier === 'Silver').length
+  const totalPoints = baseCustomers.reduce((s, u) => s + (u.loyaltyPoints || 0), 0)
+
+  // Filter customers based on search and selected filter type
+  const customers = baseCustomers.filter(u => {
+    // Basic search filtering (Name, Email, Phone)
+    const matchesSearch = search === '' || 
+      u.name.toLowerCase().includes(search.toLowerCase()) || 
+      u.email.toLowerCase().includes(search.toLowerCase()) || 
+      (u.phone && u.phone.includes(search))
+
+    if (!matchesSearch) return false
+
+    // Filter by order types using their order history
+    if (filter === 'All') return true
+    
+    // Get all orders for this customer
+    const myOrders = orders.filter(o => o.customerId === u.id)
+    
+    if (filter === 'Walk-in') {
+      // Walk-in typically implies in-store order without delivery (or literal "Walk-in" customer although those lack accounts sometimes)
+      return myOrders.some(o => o.orderType === 'in-store')
+    }
+    if (filter === 'Online') {
+      // Online usually means orders processed digitally or via web
+      return myOrders.some(o => o.payment === 'Online' || o.orderType === 'online')
+    }
+    if (filter === 'Delivery') {
+      return myOrders.some(o => o.orderType === 'delivery')
+    }
+    
+    return true
+  })
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
       <div style={{ fontSize: 22, fontWeight: 900, color: t.text }}>👥 Customer Management</div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(170px,1fr))', gap: 14 }}>
-        <StatCard t={t} title="Total Customers" value={customers.length} color={t.blue} icon="👥" />
-        <StatCard t={t} title="Gold Members" value={customers.filter(u => u.tier === 'Gold').length} color="#f59e0b" icon="🥇" />
-        <StatCard t={t} title="Silver Members" value={customers.filter(u => u.tier === 'Silver').length} color="#9ca3af" icon="🥈" />
-        <StatCard t={t} title="Total Loyalty Pts" value={customers.reduce((s, u) => s + (u.loyaltyPoints || 0), 0)} color={t.yellow} icon="⭐" />
+        <StatCard t={t} title="Total Customers" value={totalCustomers} color={t.blue} icon="👥" />
+        <StatCard t={t} title="Gold Members" value={goldMembers} color="#f59e0b" icon="🥇" />
+        <StatCard t={t} title="Silver Members" value={silverMembers} color="#9ca3af" icon="🥈" />
+        <StatCard t={t} title="Total Loyalty Pts" value={totalPoints} color={t.yellow} icon="⭐" />
+      </div>
+
+      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+        <input 
+          value={search} 
+          onChange={e => setSearch(e.target.value)} 
+          placeholder="Search by name, email, phone..." 
+          style={{ flex: 1, minWidth: 200, background: t.input, border: `1px solid ${t.border}`, borderRadius: 9, padding: '10px 14px', color: t.text, fontSize: 13, outline: 'none' }} 
+        />
+        <select 
+          value={filter} 
+          onChange={e => setFilter(e.target.value)} 
+          style={{ padding: '10px 14px', background: t.input, border: `1px solid ${t.border}`, borderRadius: 9, color: t.text, fontSize: 13, outline: 'none', cursor: 'pointer' }}
+        >
+          <option value="All">All Types</option>
+          <option value="Walk-in">Walk-in Customers</option>
+          <option value="Online">Online Customers</option>
+          <option value="Delivery">Delivery Customers</option>
+        </select>
       </div>
 
       <Card t={t} style={{ padding: 0, overflow: 'hidden' }}>

@@ -10,13 +10,18 @@ export function GuestShopPage({ products = [], banners = [] }) {
   const { t } = useTheme()
   const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState('All')
+  const [searchQuery, setSearchQuery] = useState('')
 
   const allActiveOffers = banners.filter(b => b.active && b.offerType === 'category')
   const getGuestDisc = (p) => {
     const o = allActiveOffers.find(b => b.offerTarget === p.category)
     return Math.max(o ? o.offerDiscount : 0, p.discount || 0)
   }
-  const filtered = products.filter(p => activeTab === 'All' || p.category === activeTab)
+  const filtered = products.filter(p => {
+    const matchesCategory = activeTab === 'All' || p.category === activeTab;
+    const matchesSearch = searchQuery === '' || p.name.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesCategory && matchesSearch;
+  })
 
   const goToProductDetail = (p) => {
     navigate(`/product/${p.id}`, { state: { product: p } })
@@ -38,8 +43,23 @@ export function GuestShopPage({ products = [], banners = [] }) {
         {/* Header */}
         <div style={{ marginBottom: 28 }}>
           <button onClick={() => navigate('/')} style={{ background: 'none', border: 'none', color: t.text3, cursor: 'pointer', fontSize: 13, marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>← Back to Home</button>
-          <div style={{ fontSize: 30, fontWeight: 900, color: t.text, letterSpacing: -0.5 }}>Shop Our Collection</div>
-          <div style={{ fontSize: 14, color: t.text3, marginTop: 5 }}>Official merchandise for every fan</div>
+          
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <div>
+              <div style={{ fontSize: 30, fontWeight: 900, color: t.text, letterSpacing: -0.5 }}>Shop Our Collection</div>
+              <div style={{ fontSize: 14, color: t.text3, marginTop: 5 }}>Official merchandise for every fan</div>
+            </div>
+            
+            <div style={{ position: 'relative', maxWidth: 400 }}>
+              <input 
+                value={searchQuery} 
+                onChange={(e) => setSearchQuery(e.target.value)} 
+                placeholder="Search products..." 
+                style={{ width: '100%', padding: '12px 16px 12px 40px', borderRadius: 12, border: `1px solid ${t.border}`, background: t.input, color: t.text, fontSize: 14, outline: 'none' }} 
+              />
+              <span style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', opacity: 0.6 }}>🔍</span>
+            </div>
+          </div>
         </div>
         {/* Category tabs */}
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 28 }}>

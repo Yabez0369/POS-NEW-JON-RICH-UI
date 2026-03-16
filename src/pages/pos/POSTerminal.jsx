@@ -38,12 +38,13 @@ export const POSTerminal = ({ products, setProducts, orders, setOrders, users, s
   const [parked, setParked] = useState([])
   const [favourites] = useState([1, 6, 9, 4])
   const [showCustDisplay, setShowCustDisplay] = useState(false)
-  const [voidItem, setVoidItem] = useState(null)
-  const [voidReason, setVoidReason] = useState('')
   const [scanMsg, setScanMsg] = useState('')
   const [manualBarcode, setManualBarcode] = useState('')
   const [showBarcodeInput, setShowBarcodeInput] = useState(false)
   const [showParkedDropdown, setShowParkedDropdown] = useState(false)
+
+  const [variantProduct, setVariantProduct] = useState(null)
+  const [selectedVariant, setSelectedVariant] = useState({ size: '', color: '' })
 
   const barcodeBuffer = useRef('')
   const lastKeyTime = useRef(0)
@@ -101,31 +102,55 @@ export const POSTerminal = ({ products, setProducts, orders, setOrders, users, s
     return Math.max(bannerDisc, prodDisc)
   }, [activeOffers])
 
-  const addToCart = (p) => {
-    const inCart = cart.find(i => i.id === p.id)
-    if (inCart && inCart.qty >= p.stock) { notify(`Only ${p.stock} in stock!`, 'error'); return }
+  const handleProductClick = (p) => {
+    if ((p.sizes && p.sizes.length > 0) || (p.colors && p.colors.length > 0)) {
+      setVariantProduct(p)
+      setSelectedVariant({
+        size: p.sizes?.length ? p.sizes[0] : '',
+        color: p.colors?.length ? p.colors[0] : ''
+      })
+    } else {
+      addToCart(p)
+    }
+  }
+
+  const addToCart = (p, variantStr = '') => {
+    const cartId = variantStr ? `${p.id}-${variantStr}` : p.id
+    const displayName = variantStr ? `${p.name} (${variantStr})` : p.name
+
+    const currentQtyForProduct = cart.filter(i => (i.originalId || i.id) === p.id).reduce((s, i) => s + i.qty, 0)
+
+    if (currentQtyForProduct >= p.stock) { notify(`Only ${p.stock} total in stock for ${p.name}!`, 'error'); return }
     const disc = getItemDiscount(p)
     setCart(c => {
-      const ex = c.find(i => i.id === p.id)
-      if (ex) return c.map(i => i.id === p.id ? { ...i, qty: i.qty + 1 } : i)
-      return [...c, { ...p, qty: 1, discount: disc }]
+      const ex = c.find(i => i.id === cartId)
+      if (ex) return c.map(i => i.id === cartId ? { ...i, qty: i.qty + 1 } : i)
+      return [...c, { ...p, id: cartId, originalId: p.id, name: displayName, qty: 1, discount: disc }]
     })
     if (disc > 0) notify(`🎉 ${disc}% offer applied on ${p.name}!`, 'success')
   }
 
-  const updateQty = (id, d) => {
-    const p = products.find(x => x.id === id)
-    const ci = cart.find(i => i.id === id)
-    if (d > 0 && ci && ci.qty >= p.stock) { notify(`Max stock reached (${p.stock})`, 'error'); return }
-    setCart(c => c.map(i => i.id === id ? { ...i, qty: Math.max(0, i.qty + d) } : i).filter(i => i.qty > 0))
+  const confirmVariant = () => {
+    if (!variantProduct) return
+    const parts = []
+    if (selectedVariant.size) parts.push(selectedVariant.size)
+    if (selectedVariant.color) parts.push(selectedVariant.color)
+    addToCart(variantProduct, parts.join(', '))
+    setVariantProduct(null)
   }
 
-  const doVoid = () => {
-    if (!voidItem || !voidReason) return
-    addAudit(user, 'Item Voided', 'POS', `${voidItem.name} voided: ${voidReason}`)
-    setCart(c => c.filter(i => i.id !== voidItem.id))
-    notify(`${voidItem.name} voided: ${voidReason}`, 'warning')
-    setVoidItem(null); setVoidReason('')
+  const updateQty = (id, d) => {
+    const ci = cart.find(i => i.id === id)
+    if (!ci) return
+    const baseId = ci.originalId || id
+    const p = products.find(x => x.id === baseId)
+    if (!p) return
+
+    if (d > 0) {
+      const currentQtyForProduct = cart.filter(i => (i.originalId || i.id) === baseId).reduce((s, i) => s + i.qty, 0)
+      if (currentQtyForProduct >= p.stock) { notify(`Max total stock reached for ${p.name} (${p.stock})`, 'error'); return }
+    }
+    setCart(c => c.map(i => i.id === id ? { ...i, qty: Math.max(0, i.qty + d) } : i).filter(i => i.qty > 0))
   }
 
   const cartSubtotal = cart.reduce((s, i) => s + (i.price * (1 - (i.discount || 0) / 100)) * i.qty, 0)
@@ -252,9 +277,40 @@ export const POSTerminal = ({ products, setProducts, orders, setOrders, users, s
 
   return (
     <div style={{ display: 'flex', height: 'calc(100vh - 48px)', overflow: 'hidden', fontFamily: 'inherit' }} className="pos-layout">
-      <POSProductGrid search={search} setSearch={setSearch} cat={cat} setCat={setCat} filteredProds={filteredProds} favProds={favProds} getItemDiscount={getItemDiscount} addToCart={addToCart} scanMsg={scanMsg} parkBill={parkBill} parked={parked} recallBill={recallBill} showParkedDropdown={showParkedDropdown} setShowParkedDropdown={setShowParkedDropdown} setShowBarcodeInput={setShowBarcodeInput} t={t} />
+      <POSProductGrid search={search} setSearch={setSearch} cat={cat} setCat={setCat} filteredProds={filteredProds} favProds={favProds} getItemDiscount={getItemDiscount} addToCart={handleProductClick} scanMsg={scanMsg} parkBill={parkBill} parked={parked} recallBill={recallBill} showParkedDropdown={showParkedDropdown} setShowParkedDropdown={setShowParkedDropdown} setShowBarcodeInput={setShowBarcodeInput} t={t} />
 
-      <POSCartPanel cart={cart} updateQty={updateQty} setVoidItem={setVoidItem} setCart={setCart} selCust={selCust} setSelCust={setSelCust} custSearch={custSearch} setCustSearch={setCustSearch} lookupCustomer={lookupCustomer} setShowNewCust={setShowNewCust} loyaltyRedeem={loyaltyRedeem} setLoyaltyRedeem={setLoyaltyRedeem} appliedCoupon={appliedCoupon} setAppliedCoupon={setAppliedCoupon} couponCode={couponCode} setCouponCode={setCouponCode} applyCoupon={applyCoupon} cartSubtotal={cartSubtotal} cartTax={cartTax} couponDiscount={couponDiscount} loyaltyDiscount={loyaltyDiscount} cartTotal={cartTotal} pointsEarned={pointsEarned} payMethod={payMethod} setPayMethod={setPayMethod} cashGiven={cashGiven} setCashGiven={setCashGiven} cashGivenNum={cashGivenNum} cashChange={cashChange} cardNum={cardNum} setCardNum={setCardNum} setCardExp={setCardExp} setCardCvv={setCardCvv} splitCash={splitCash} setSplitCash={setSplitCash} splitCard={splitCard} setSplitCard={setSplitCard} checkout={checkout} setShowCustDisplay={setShowCustDisplay} settings={settings} t={t} />
+      <POSCartPanel cart={cart} updateQty={updateQty} setCart={setCart} selCust={selCust} setSelCust={setSelCust} custSearch={custSearch} setCustSearch={setCustSearch} lookupCustomer={lookupCustomer} setShowNewCust={setShowNewCust} loyaltyRedeem={loyaltyRedeem} setLoyaltyRedeem={setLoyaltyRedeem} appliedCoupon={appliedCoupon} setAppliedCoupon={setAppliedCoupon} couponCode={couponCode} setCouponCode={setCouponCode} applyCoupon={applyCoupon} cartSubtotal={cartSubtotal} cartTax={cartTax} couponDiscount={couponDiscount} loyaltyDiscount={loyaltyDiscount} cartTotal={cartTotal} pointsEarned={pointsEarned} payMethod={payMethod} setPayMethod={setPayMethod} cashGiven={cashGiven} setCashGiven={setCashGiven} cashGivenNum={cashGivenNum} cashChange={cashChange} cardNum={cardNum} setCardNum={setCardNum} setCardExp={setCardExp} setCardCvv={setCardCvv} splitCash={splitCash} setSplitCash={setSplitCash} splitCard={splitCard} setSplitCard={setSplitCard} checkout={checkout} setShowCustDisplay={setShowCustDisplay} settings={settings} t={t} />
+
+      {variantProduct && (
+        <Modal t={t} title="Select Variant" subtitle={variantProduct.name} onClose={() => setVariantProduct(null)}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            {variantProduct.sizes && variantProduct.sizes.length > 0 && (
+              <div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: t.text3, marginBottom: 8 }}>Size</div>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  {variantProduct.sizes.map(s => (
+                    <button key={s} onClick={() => setSelectedVariant(v => ({ ...v, size: s }))} style={{ padding: '8px 16px', borderRadius: 8, border: `2px solid ${selectedVariant.size === s ? t.accent : t.border}`, background: selectedVariant.size === s ? t.accent + '15' : t.bg3, color: selectedVariant.size === s ? t.accent : t.text, fontWeight: 700, cursor: 'pointer' }}>{s}</button>
+                  ))}
+                </div>
+              </div>
+            )}
+            {variantProduct.colors && variantProduct.colors.length > 0 && (
+              <div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: t.text3, marginBottom: 8 }}>Color</div>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  {variantProduct.colors.map(c => (
+                    <button key={c} onClick={() => setSelectedVariant(v => ({ ...v, color: c }))} style={{ padding: '8px 16px', borderRadius: 8, border: `2px solid ${selectedVariant.color === c ? t.accent : t.border}`, background: selectedVariant.color === c ? t.accent + '15' : t.bg3, color: selectedVariant.color === c ? t.accent : t.text, fontWeight: 700, cursor: 'pointer' }}>{c}</button>
+                  ))}
+                </div>
+              </div>
+            )}
+            <div style={{ display: 'flex', gap: 10, marginTop: 10 }}>
+              <Btn t={t} variant="ghost" onClick={() => setVariantProduct(null)} style={{ flex: 1 }}>Cancel</Btn>
+              <Btn t={t} variant="primary" onClick={confirmVariant} style={{ flex: 1 }}>Add to Cart</Btn>
+            </div>
+          </div>
+        </Modal>
+      )}
 
       {showNewCust && (
         <Modal t={t} title="Register New Customer" subtitle="Verify phone number via OTP" onClose={() => { setShowNewCust(false); setOtpStep(1) }}>
@@ -277,18 +333,6 @@ export const POSTerminal = ({ products, setProducts, orders, setOrders, users, s
               </div>
             </div>
           )}
-        </Modal>
-      )}
-
-      {voidItem && (
-        <Modal t={t} title="Void Item" subtitle={`Remove ${voidItem.name} from cart`} onClose={() => setVoidItem(null)}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-            <Select t={t} label="Void Reason" value={voidReason} onChange={setVoidReason} options={[{ value: '', label: 'Select reason...' }, 'Customer changed mind', 'Wrong item scanned', 'Price discrepancy', 'Out of stock after scan', 'Manager override'].map(v => typeof v === 'string' ? { value: v, label: v } : v)} />
-            <div style={{ display: 'flex', gap: 10 }}>
-              <Btn t={t} variant="ghost" onClick={() => setVoidItem(null)} style={{ flex: 1 }}>Cancel</Btn>
-              <Btn t={t} variant="danger" onClick={doVoid} disabled={!voidReason} style={{ flex: 1 }}>Void Item</Btn>
-            </div>
-          </div>
         </Modal>
       )}
 
