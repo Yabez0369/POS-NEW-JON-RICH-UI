@@ -1,41 +1,9 @@
-import React, { StrictMode } from 'react'
+import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import App from './App.jsx'
 
-class RootErrorBoundary extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = { error: null };
-  }
-
-  static getDerivedStateFromError(error) {
-    return { error };
-  }
-
-  componentDidCatch(error, info) {
-    console.error('Root error boundary caught:', error, info);
-  }
-
-  render() {
-    if (this.state.error) {
-      return (
-        <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24, background: '#111', color: '#f8d7da' }}>
-          <div style={{ maxWidth: 520, textAlign: 'center' }}>
-            <div style={{ fontSize: 28, fontWeight: 900, marginBottom: 12 }}>Something went wrong</div>
-            <div style={{ marginBottom: 16, color: '#f8d7da' }}>{this.state.error?.message || String(this.state.error)}</div>
-            <button onClick={() => window.location.reload()} style={{ padding: '10px 16px', borderRadius: 10, border: 'none', background: '#dc2626', color: '#fff', cursor: 'pointer' }}>Reload</button>
-          </div>
-        </div>
-      );
-    }
-    return this.props.children;
-  }
-}
-
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <RootErrorBoundary>
-      <App />
-    </RootErrorBoundary>
+    <App />
   </StrictMode>,
 )

@@ -1,84 +1,28 @@
 // ═══════════════════════════════════════════════════════════════
-// FANSTORE EPOS — CORE DATA, UTILITIES & SHARED COMPONENTS
+// SCSTix EPOS — CORE DATA, UTILITIES & SHARED COMPONENTS
 // ═══════════════════════════════════════════════════════════════
 
-export const THEMES = {
-  light: {
-    bg:"#f1f5f9", bg2:"#ffffff", bg3:"#f8fafc", bg4:"#e2e8f0",
-    sidebar:"#ffffff", topbar:"#ffffff",
-    border:"#e2e8f0", border2:"#cbd5e1",
-    text:"#0f172a", text2:"#334155", text3:"#64748b", text4:"#94a3b8",
-    card:"#ffffff", cardHover:"#f8fafc",
-    accent:"#dc2626", accent2:"#b91c1c", accentLight:"#fef2f2", accentBorder:"#fecaca",
-    green:"#16a34a", greenBg:"#f0fdf4", greenBorder:"#bbf7d0",
-    red:"#dc2626", redBg:"#fef2f2", redBorder:"#fecaca",
-    yellow:"#d97706", yellowBg:"#fffbeb", yellowBorder:"#fde68a",
-    blue:"#2563eb", blueBg:"#eff6ff", blueBorder:"#bfdbfe",
-    purple:"#7c3aed", purpleBg:"#f5f3ff", purpleBorder:"#ddd6fe",
-    orange:"#ea580c", orangeBg:"#fff7ed", orangeBorder:"#fed7aa",
-    teal:"#0d9488", tealBg:"#f0fdfa", tealBorder:"#99f6e4",
-    input:"#f8fafc", shadow:"0 1px 3px rgba(0,0,0,0.06),0 1px 2px rgba(0,0,0,0.04)",
-    shadowMd:"0 4px 16px rgba(0,0,0,0.08)", shadowLg:"0 10px 40px rgba(0,0,0,0.12)",
-    posLeft:"#f8fafc", posRight:"#ffffff",
-    tableHead:"#f8fafc", tableRow:"#ffffff", tableRowAlt:"#fafbfd",
-    gradHero:"linear-gradient(135deg,#dc2626 0%,#b91c1c 50%,#7f1d1d 100%)",
-  },
-  dark: {
-    bg:"#080b14", bg2:"#0e1420", bg3:"#141b2d", bg4:"#1a2235",
-    sidebar:"#0a0f1e", topbar:"#0a0f1e",
-    border:"#1e2d40", border2:"#2a3a50",
-    text:"#f0f4ff", text2:"#b0bcd0", text3:"#607090", text4:"#405060",
-    card:"#0e1420", cardHover:"#141b2d",
-    accent:"#ef4444", accent2:"#dc2626", accentLight:"#450a0a", accentBorder:"#7f1d1d",
-    green:"#22c55e", greenBg:"#052e16", greenBorder:"#166534",
-    red:"#ef4444", redBg:"#450a0a", redBorder:"#7f1d1d",
-    yellow:"#f59e0b", yellowBg:"#1c1400", yellowBorder:"#92400e",
-    blue:"#3b82f6", blueBg:"#0c1a3b", blueBorder:"#1e3a5f",
-    purple:"#a855f7", purpleBg:"#1a0533", purpleBorder:"#4c1d95",
-    orange:"#f97316", orangeBg:"#1c0a00", orangeBorder:"#7c2d12",
-    teal:"#14b8a6", tealBg:"#002a26", tealBorder:"#0f5a52",
-    input:"#141b2d", shadow:"0 1px 3px rgba(0,0,0,0.3)",
-    shadowMd:"0 4px 16px rgba(0,0,0,0.4)", shadowLg:"0 10px 40px rgba(0,0,0,0.5)",
-    posLeft:"#0a0f1e", posRight:"#080b14",
-    tableHead:"#0e1420", tableRow:"#0e1420", tableRowAlt:"#0a0f1e",
-    gradHero:"linear-gradient(135deg,#1a0000 0%,#3b0000 50%,#7f1d1d 100%)",
-  }
-};
-
-export const PRODUCT_IMAGES = {
-  "Home Jersey 2024":"https://images.pexels.com/photos/1661338/pexels-photo-1661338.jpeg?auto=compress&cs=tinysrgb&w=300",
-  "Away Jersey 2024":"https://images.pexels.com/photos/3621104/pexels-photo-3621104.jpeg?auto=compress&cs=tinysrgb&w=300",
-  "Third Kit Jersey":"https://images.pexels.com/photos/1124466/pexels-photo-1124466.jpeg?auto=compress&cs=tinysrgb&w=300",
-  "Training Jacket":"https://images.pexels.com/photos/1311523/pexels-photo-1311523.jpeg?auto=compress&cs=tinysrgb&w=300",
-  "Training Shorts":"https://images.pexels.com/photos/4753987/pexels-photo-4753987.jpeg?auto=compress&cs=tinysrgb&w=300",
-  "Football Scarf":"https://images.pexels.com/photos/1884574/pexels-photo-1884574.jpeg?auto=compress&cs=tinysrgb&w=300",
-  "Team Cap":"https://images.pexels.com/photos/1124465/pexels-photo-1124465.jpeg?auto=compress&cs=tinysrgb&w=300",
-  "Fan Hoodie":"https://images.pexels.com/photos/428340/pexels-photo-428340.jpeg?auto=compress&cs=tinysrgb&w=300",
-  "Match Ball Official":"https://images.pexels.com/photos/47730/the-ball-stadion-football-the-pitch-47730.jpeg?auto=compress&cs=tinysrgb&w=300",
-  "Goalkeeper Gloves":"https://images.pexels.com/photos/2277980/pexels-photo-2277980.jpeg?auto=compress&cs=tinysrgb&w=300",
-  "Shin Guards Pro":"https://images.pexels.com/photos/3621183/pexels-photo-3621183.jpeg?auto=compress&cs=tinysrgb&w=300",
-  "Signed Jersey":"https://images.pexels.com/photos/918778/pexels-photo-918778.jpeg?auto=compress&cs=tinysrgb&w=300",
-  "Stadium Print A3":"https://images.pexels.com/photos/46798/the-ball-stadion-football-the-pitch-46798.jpeg?auto=compress&cs=tinysrgb&w=300",
-  "Mini Trophy Replica":"https://images.pexels.com/photos/1884577/pexels-photo-1884577.jpeg?auto=compress&cs=tinysrgb&w=300",
-};
+export { THEMES } from '@/lib/theme'
+export { PRODUCT_IMAGES } from '@/lib/seed-data'
 
 export const INITIAL_PRODUCTS = [
-  {id:1,name:"Home Jersey 2024",sku:"JRS-HOME-24",category:"Jerseys",price:89.99,stock:45,emoji:"🔴",featured:true,description:"Official 2024 home kit jersey. Premium quality breathable fabric, moisture-wicking technology. Club crest embroidered on chest.",discount:0,sizes:["XS","S","M","L","XL","XXL"],colors:["Red/White"],material:"100% Polyester",fit:"Regular Fit",care:"Machine wash 30°C",brand:"FanStore Official"},
-  {id:2,name:"Away Jersey 2024",sku:"JRS-AWAY-24",category:"Jerseys",price:89.99,stock:32,emoji:"⚪",featured:true,description:"Official 2024 away kit jersey. Lightweight performance fabric with ventilation zones.",discount:0,sizes:["XS","S","M","L","XL","XXL"],colors:["White/Blue"],material:"100% Polyester",fit:"Slim Fit",care:"Machine wash 30°C",brand:"FanStore Official"},
-  {id:3,name:"Third Kit Jersey",sku:"JRS-THIRD-24",category:"Jerseys",price:84.99,stock:18,emoji:"🔵",featured:false,description:"Limited edition third kit. Bold design with contrast trim, limited run of 500 units.",discount:0,sizes:["S","M","L","XL","XXL"],colors:["Navy Blue"],material:"100% Polyester",fit:"Regular Fit",care:"Machine wash 30°C",brand:"FanStore Official"},
-  {id:4,name:"Training Jacket",sku:"TRN-JKT-24",category:"Training Wear",price:64.99,stock:27,emoji:"🧥",featured:true,description:"Lightweight training jacket with zip pockets. Wind-resistant shell, perfect for matchday warm-up.",discount:0,sizes:["XS","S","M","L","XL","XXL"],colors:["Red","Black"],material:"95% Polyester, 5% Elastane",fit:"Athletic Fit",care:"Machine wash 40°C",brand:"FanStore Official"},
-  {id:5,name:"Training Shorts",sku:"TRN-SHT-24",category:"Training Wear",price:34.99,stock:41,emoji:"🩳",featured:false,description:"Pro training shorts with elastic waistband and side pockets.",discount:0,sizes:["XS","S","M","L","XL","XXL"],colors:["Red","Black","White"],material:"100% Polyester",fit:"Regular Fit",care:"Machine wash 40°C",waist:"28-38 inches adjustable",brand:"FanStore Official"},
-  {id:6,name:"Football Scarf",sku:"ACC-SCARF-01",category:"Fan Accessories",price:19.99,stock:120,emoji:"🧣",featured:true,description:"Knitted team scarf, double-sided club colours. Official merchandise.",discount:0,sizes:["One Size"],colors:["Red/White"],material:"100% Acrylic",length:"150cm",width:"20cm",care:"Hand wash cold",brand:"FanStore Official"},
-  {id:7,name:"Team Cap",sku:"ACC-CAP-01",category:"Fan Accessories",price:24.99,stock:85,emoji:"🧢",featured:false,description:"Embroidered team cap with adjustable strap.",discount:0,sizes:["One Size (Adjustable)"],colors:["Red","Black","White"],material:"Cotton Twill",fit:"Structured 6-panel",care:"Spot clean only",brand:"FanStore Official"},
-  {id:8,name:"Fan Hoodie",sku:"ACC-HOOD-01",category:"Fan Accessories",price:54.99,stock:33,emoji:"👕",featured:true,description:"Premium fan hoodie with kangaroo pocket. Soft fleece lining, printed club crest.",discount:0,sizes:["XS","S","M","L","XL","XXL"],colors:["Red","Navy","Grey"],material:"80% Cotton, 20% Polyester",fit:"Relaxed Fit",care:"Machine wash 30°C",brand:"FanStore Official"},
-  {id:9,name:"Match Ball Official",sku:"EQP-BALL-01",category:"Football Equipment",price:129.99,stock:12,emoji:"⚽",featured:true,description:"FIFA approved match ball. Used in official league matches. Thermally bonded panels.",discount:10,sizes:["Size 5 (Official)"],colors:["White/Black/Red"],material:"Synthetic leather, Latex bladder",circumference:"68-70cm",weight:"410-450g",care:"Wipe clean only",brand:"FanStore Pro"},
-  {id:10,name:"Goalkeeper Gloves",sku:"EQP-GLV-01",category:"Football Equipment",price:44.99,stock:8,emoji:"🥅",featured:false,description:"Pro goalkeeper gloves with 4mm latex palm. Negative cut for superior grip.",discount:0,sizes:["6","7","8","9","10","11"],colors:["Red/Black","Black/Yellow"],material:"German Latex Palm, Neoprene back",cut:"Negative Cut",care:"Hand wash cold, air dry",brand:"FanStore Pro"},
-  {id:11,name:"Shin Guards Pro",sku:"EQP-SHIN-01",category:"Football Equipment",price:29.99,stock:55,emoji:"🛡️",featured:false,description:"Lightweight shin guards with ankle protection. Hard shell with foam backing.",discount:0,sizes:["XS (6-9yrs)","S (9-12yrs)","M (12-15yrs)","L (15+yrs)"],colors:["Black","Red/Black"],material:"Polypropylene shell, EVA foam",height:"Multiple (see sizes)",care:"Wipe clean",brand:"FanStore Pro"},
-  {id:12,name:"Signed Jersey",sku:"COL-SIG-CAP",category:"Collectibles",price:249.99,stock:3,emoji:"✍️",featured:true,description:"Signed by the club captain. Comes with certificate of authenticity and display frame. Limited edition.",discount:0,sizes:["L (Display Size)"],colors:["Red/White (Home)"],material:"Official match jersey with authentic signature",edition:"Limited — only 3 remaining",includes:"Certificate of Authenticity, Display Frame",care:"Keep away from direct sunlight",brand:"FanStore Collectibles"},
-  {id:13,name:"Stadium Print A3",sku:"COL-PRT-01",category:"Collectibles",price:39.99,stock:22,emoji:"🖼️",featured:false,description:"A3 art print of the stadium, hand-numbered. Ideal for framing.",discount:0,sizes:["A3 (297 x 420mm)"],colors:["Full Colour"],material:"Premium 250gsm matte art paper",edition:"Hand-numbered limited edition",includes:"Cardboard backing, protective sleeve",care:"Store flat, frame to preserve",brand:"FanStore Collectibles"},
-  {id:14,name:"Mini Trophy Replica",sku:"COL-TRP-01",category:"Collectibles",price:79.99,stock:9,emoji:"🏆",featured:true,description:"Die-cast trophy replica, 1:5 scale. Gold plated finish.",discount:0,sizes:["1:5 Scale (28cm tall)"],colors:["Gold"],material:"Zinc alloy, gold plated",weight:"850g",includes:"Display stand, dust cloth, gift box",care:"Dust regularly, avoid moisture",brand:"FanStore Collectibles"},
+  {id:1,name:"Home Jersey 2024",sku:"JRS-HOME-24",category:"Jerseys",price:89.99,stock:45,emoji:"🔴",featured:true,description:"Official 2024 home kit jersey. Premium quality breathable fabric, moisture-wicking technology. Club crest embroidered on chest.",discount:0,sizes:["XS","S","M","L","XL","XXL"],colors:["Red/White"],material:"100% Polyester",fit:"Regular Fit",care:"Machine wash 30°C",brand:"SCSTix Official"},
+  {id:2,name:"Away Jersey 2024",sku:"JRS-AWAY-24",category:"Jerseys",price:89.99,stock:32,emoji:"⚪",featured:true,description:"Official 2024 away kit jersey. Lightweight performance fabric with ventilation zones.",discount:0,sizes:["XS","S","M","L","XL","XXL"],colors:["White/Blue"],material:"100% Polyester",fit:"Slim Fit",care:"Machine wash 30°C",brand:"SCSTix Official"},
+  {id:3,name:"Third Kit Jersey",sku:"JRS-THIRD-24",category:"Jerseys",price:84.99,stock:18,emoji:"🔵",featured:false,description:"Limited edition third kit. Bold design with contrast trim, limited run of 500 units.",discount:0,sizes:["S","M","L","XL","XXL"],colors:["Navy Blue"],material:"100% Polyester",fit:"Regular Fit",care:"Machine wash 30°C",brand:"SCSTix Official"},
+  {id:4,name:"Training Jacket",sku:"TRN-JKT-24",category:"Training Wear",price:64.99,stock:27,emoji:"🧥",featured:true,description:"Lightweight training jacket with zip pockets. Wind-resistant shell, perfect for matchday warm-up.",discount:0,sizes:["XS","S","M","L","XL","XXL"],colors:["Red","Black"],material:"95% Polyester, 5% Elastane",fit:"Athletic Fit",care:"Machine wash 40°C",brand:"SCSTix Official"},
+  {id:5,name:"Training Shorts",sku:"TRN-SHT-24",category:"Training Wear",price:34.99,stock:41,emoji:"🩳",featured:false,description:"Pro training shorts with elastic waistband and side pockets.",discount:0,sizes:["XS","S","M","L","XL","XXL"],colors:["Red","Black","White"],material:"100% Polyester",fit:"Regular Fit",care:"Machine wash 40°C",waist:"28-38 inches adjustable",brand:"SCSTix Official"},
+  {id:6,name:"Football Scarf",sku:"ACC-SCARF-01",category:"Fan Accessories",price:19.99,stock:120,emoji:"🧣",featured:true,description:"Knitted team scarf, double-sided club colours. Official merchandise.",discount:0,sizes:["One Size"],colors:["Red/White"],material:"100% Acrylic",length:"150cm",width:"20cm",care:"Hand wash cold",brand:"SCSTix Official"},
+  {id:7,name:"Team Cap",sku:"ACC-CAP-01",category:"Fan Accessories",price:24.99,stock:85,emoji:"🧢",featured:false,description:"Embroidered team cap with adjustable strap.",discount:0,sizes:["One Size (Adjustable)"],colors:["Red","Black","White"],material:"Cotton Twill",fit:"Structured 6-panel",care:"Spot clean only",brand:"SCSTix Official"},
+  {id:8,name:"Fan Hoodie",sku:"ACC-HOOD-01",category:"Fan Accessories",price:54.99,stock:33,emoji:"👕",featured:true,description:"Premium fan hoodie with kangaroo pocket. Soft fleece lining, printed club crest.",discount:0,sizes:["XS","S","M","L","XL","XXL"],colors:["Red","Navy","Grey"],material:"80% Cotton, 20% Polyester",fit:"Relaxed Fit",care:"Machine wash 30°C",brand:"SCSTix Official"},
+  {id:9,name:"Match Ball Official",sku:"EQP-BALL-01",category:"Football Equipment",price:129.99,stock:12,emoji:"⚽",featured:true,description:"FIFA approved match ball. Used in official league matches. Thermally bonded panels.",discount:10,sizes:["Size 5 (Official)"],colors:["White/Black/Red"],material:"Synthetic leather, Latex bladder",circumference:"68-70cm",weight:"410-450g",care:"Wipe clean only",brand:"SCSTix Pro"},
+  {id:10,name:"Goalkeeper Gloves",sku:"EQP-GLV-01",category:"Football Equipment",price:44.99,stock:8,emoji:"🥅",featured:false,description:"Pro goalkeeper gloves with 4mm latex palm. Negative cut for superior grip.",discount:0,sizes:["6","7","8","9","10","11"],colors:["Red/Black","Black/Yellow"],material:"German Latex Palm, Neoprene back",cut:"Negative Cut",care:"Hand wash cold, air dry",brand:"SCSTix Pro"},
+  {id:11,name:"Shin Guards Pro",sku:"EQP-SHIN-01",category:"Football Equipment",price:29.99,stock:55,emoji:"🛡️",featured:false,description:"Lightweight shin guards with ankle protection. Hard shell with foam backing.",discount:0,sizes:["XS (6-9yrs)","S (9-12yrs)","M (12-15yrs)","L (15+yrs)"],colors:["Black","Red/Black"],material:"Polypropylene shell, EVA foam",height:"Multiple (see sizes)",care:"Wipe clean",brand:"SCSTix Pro"},
+  {id:12,name:"Signed Jersey",sku:"COL-SIG-CAP",category:"Collectibles",price:249.99,stock:3,emoji:"✍️",featured:true,description:"Signed by the club captain. Comes with certificate of authenticity and display frame. Limited edition.",discount:0,sizes:["L (Display Size)"],colors:["Red/White (Home)"],material:"Official match jersey with authentic signature",edition:"Limited — only 3 remaining",includes:"Certificate of Authenticity, Display Frame",care:"Keep away from direct sunlight",brand:"SCSTix Collectibles"},
+  {id:13,name:"Stadium Print A3",sku:"COL-PRT-01",category:"Collectibles",price:39.99,stock:22,emoji:"🖼️",featured:false,description:"A3 art print of the stadium, hand-numbered. Ideal for framing.",discount:0,sizes:["A3 (297 x 420mm)"],colors:["Full Colour"],material:"Premium 250gsm matte art paper",edition:"Hand-numbered limited edition",includes:"Cardboard backing, protective sleeve",care:"Store flat, frame to preserve",brand:"SCSTix Collectibles"},
+  {id:14,name:"Mini Trophy Replica",sku:"COL-TRP-01",category:"Collectibles",price:79.99,stock:9,emoji:"🏆",featured:true,description:"Die-cast trophy replica, 1:5 scale. Gold plated finish.",discount:0,sizes:["1:5 Scale (28cm tall)"],colors:["Gold"],material:"Zinc alloy, gold plated",weight:"850g",includes:"Display stand, dust cloth, gift box",care:"Dust regularly, avoid moisture",brand:"SCSTix Collectibles"},
 ];
 
+// TODO: Remove when Supabase Auth is wired
 export const INITIAL_USERS = [
   {id:1,name:"Alex Rivera",email:"admin@fanstore.com",password:"admin123",role:"admin",avatar:"AR",phone:"07700900001",active:true,joinDate:"2023-01-01",loyaltyPoints:0,tier:"N/A"},
   {id:2,name:"Sam Chen",email:"manager@fanstore.com",password:"mgr123",role:"manager",avatar:"SC",phone:"07700900002",active:true,joinDate:"2023-01-15",loyaltyPoints:0,tier:"N/A"},
@@ -127,14 +71,14 @@ export const INITIAL_COUNTERS = [
 ];
 
 export const INITIAL_SETTINGS = {
-  storeName:"Football Fan Merchandise Store",
-  storeAddress:"Sports Venue, Stadium Road, London, EC1A 1BB",
+  storeName:"SCSTix EPOS",
+  storeAddress:"Venue Address, London, EC1A 1BB",
   storePhone:"020 7946 0800",
-  storeEmail:"hello@fanstore.com",
+  storeEmail:"hello@scstix.com",
   currency:"GBP",sym:"£",
   vatRate:20,
   loyaltyRate:1,loyaltyValue:0.01,
-  receiptFooter:"Thank you for your purchase! ⚽ Come back soon.",
+  receiptFooter:"Thank you for your purchase! Come back soon.",
   allowReturns:true,returnDays:30,
   deliveryZones:[
     {zone:"London Zone 1",charge:3.99,days:1},
@@ -198,182 +142,7 @@ export const NotificationCenter=({t})=>{
   );
 };
 
-// ─── SHARED UI PRIMITIVES ─────────────────────────────────────────────────────
-export const Btn=({onClick,children,variant="primary",size="md",disabled=false,style={},t,fullWidth=false})=>{
-  const theme=t||THEMES.light;
-  const V={
-    primary:{background:`linear-gradient(135deg,${theme.accent},${theme.accent2})`,color:"#fff",border:"none",boxShadow:`0 2px 8px ${theme.accent}40`},
-    secondary:{background:theme.bg3,color:theme.text2,border:`1px solid ${theme.border}`},
-    success:{background:`linear-gradient(135deg,${theme.green},#15803d)`,color:"#fff",border:"none"},
-    danger:{background:`linear-gradient(135deg,${theme.red},#b91c1c)`,color:"#fff",border:"none"},
-    ghost:{background:"transparent",color:theme.text3,border:`1px solid ${theme.border}`},
-    outline:{background:"transparent",color:theme.accent,border:`2px solid ${theme.accent}`},
-    teal:{background:`linear-gradient(135deg,${theme.teal},#0f766e)`,color:"#fff",border:"none"},
-  };
-  const S={sm:{padding:"5px 12px",fontSize:11,borderRadius:7},md:{padding:"9px 18px",fontSize:13,borderRadius:9},lg:{padding:"13px 26px",fontSize:14,borderRadius:10}};
-  return(
-    <button onClick={onClick} disabled={disabled} style={{...V[variant],...S[size],fontWeight:700,cursor:disabled?"not-allowed":"pointer",opacity:disabled?0.5:1,transition:"all 0.15s",width:fullWidth?"100%":undefined,fontFamily:"inherit",...style}}>
-      {children}
-    </button>
-  );
-};
-
-export const Input=({label,value,onChange,type="text",placeholder,t,required,note,readOnly,prefix})=>{
-  const theme=t||THEMES.light;
-  return(
-    <div style={{display:"flex",flexDirection:"column",gap:5}}>
-      {label&&<label style={{fontSize:11,color:theme.text3,fontWeight:800,textTransform:"uppercase",letterSpacing:0.7}}>{label}{required&&<span style={{color:theme.red}}> *</span>}</label>}
-      <div style={{position:"relative",display:"flex",alignItems:"center"}}>
-        {prefix&&<span style={{position:"absolute",left:12,fontSize:13,color:theme.text3,pointerEvents:"none"}}>{prefix}</span>}
-        <input value={value} onChange={e=>onChange(e.target.value)} type={type} placeholder={placeholder} readOnly={readOnly}
-          style={{background:readOnly?theme.bg4:theme.input,border:`1px solid ${theme.border}`,borderRadius:9,padding:`10px ${prefix?"10px 10px 36px":"14px"}`,color:theme.text,fontSize:13,outline:"none",width:"100%",boxSizing:"border-box",fontFamily:"inherit",paddingLeft:prefix?"36px":"14px"}}/>
-      </div>
-      {note&&<span style={{fontSize:11,color:theme.text4}}>{note}</span>}
-    </div>
-  );
-};
-
-export const Select=({label,value,onChange,options,t})=>{
-  const theme=t||THEMES.light;
-  return(
-    <div style={{display:"flex",flexDirection:"column",gap:5}}>
-      {label&&<label style={{fontSize:11,color:theme.text3,fontWeight:800,textTransform:"uppercase",letterSpacing:0.7}}>{label}</label>}
-      <select value={value} onChange={e=>onChange(e.target.value)}
-        style={{background:theme.input,border:`1px solid ${theme.border}`,borderRadius:9,padding:"10px 14px",color:theme.text,fontSize:13,outline:"none",fontFamily:"inherit"}}>
-        {options.map(o=><option key={o.value||o} value={o.value||o}>{o.label||o}</option>)}
-      </select>
-    </div>
-  );
-};
-
-export const Toggle=({value,onChange,label,t})=>{
-  const theme=t||THEMES.light;
-  return(
-    <div style={{display:"flex",alignItems:"center",gap:10,cursor:"pointer"}} onClick={()=>onChange(!value)}>
-      <div style={{width:42,height:23,borderRadius:12,background:value?theme.accent:theme.border2,position:"relative",transition:"background 0.2s",flexShrink:0}}>
-        <div style={{width:17,height:17,borderRadius:"50%",background:"#fff",position:"absolute",top:3,left:value?22:3,transition:"left 0.2s",boxShadow:"0 1px 4px rgba(0,0,0,0.25)"}}/>
-      </div>
-      {label&&<span style={{fontSize:13,color:theme.text2,userSelect:"none"}}>{label}</span>}
-    </div>
-  );
-};
-
-export const Badge=({text,color="blue",t,size="sm"})=>{
-  const theme=t||THEMES.light;
-  const M={
-    green:[theme.greenBg,theme.green,theme.greenBorder],
-    red:[theme.redBg,theme.red,theme.redBorder],
-    yellow:[theme.yellowBg,theme.yellow,theme.yellowBorder],
-    blue:[theme.blueBg,theme.blue,theme.blueBorder],
-    purple:[theme.purpleBg,theme.purple,theme.purpleBorder],
-    orange:[theme.orangeBg,theme.orange,theme.orangeBorder],
-    teal:[theme.tealBg,theme.teal,theme.tealBorder],
-  };
-  const[bg,fg,bdr]=M[color]||M.blue;
-  return<span style={{background:bg,color:fg,border:`1px solid ${bdr}`,padding:size==="lg"?"4px 14px":"2px 10px",borderRadius:20,fontSize:size==="lg"?12:10,fontWeight:800,textTransform:"uppercase",letterSpacing:0.4,whiteSpace:"nowrap"}}>{text}</span>;
-};
-
-export const Card=({children,t,style={},onClick,hover=false})=>{
-  const[hov,setHov]=useState(false);
-  const theme=t||THEMES.light;
-  return(
-    <div onClick={onClick} onMouseEnter={()=>hover&&setHov(true)} onMouseLeave={()=>setHov(false)}
-      style={{background:hov?theme.cardHover:theme.card,border:`1px solid ${theme.border}`,borderRadius:14,padding:20,boxShadow:theme.shadow,transition:"all 0.15s",cursor:onClick?"pointer":"default",...style}}>
-      {children}
-    </div>
-  );
-};
-
-export const StatCard=({title,value,sub,color,icon,t,trend})=>{
-  const theme=t||THEMES.light;
-  return(
-    <Card t={t}>
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:10}}>
-        <div style={{fontSize:11,color:theme.text3,fontWeight:800,textTransform:"uppercase",letterSpacing:0.7}}>{title}</div>
-        <div style={{width:36,height:36,borderRadius:10,background:color+"18",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18}}>{icon}</div>
-      </div>
-      <div style={{fontSize:24,fontWeight:900,color:color||theme.accent,letterSpacing:-0.5,marginBottom:4}}>{value}</div>
-      {sub&&<div style={{fontSize:12,color:theme.text4}}>{sub}</div>}
-      {trend&&<div style={{fontSize:12,color:trend>0?theme.green:theme.red,marginTop:4,fontWeight:700}}>{trend>0?"↑":"↓"} {Math.abs(trend)}% vs last week</div>}
-    </Card>
-  );
-};
-
-export const Modal=({title,onClose,children,t,width=580,subtitle})=>{
-  const theme=t||THEMES.light;
-  useEffect(()=>{
-    const h=e=>{if(e.key==="Escape")onClose();};
-    document.addEventListener("keydown",h);
-    return()=>document.removeEventListener("keydown",h);
-  },[onClose]);
-  return(
-    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.45)",backdropFilter:"blur(6px)",zIndex:1000,display:"flex",alignItems:"flex-end",justifyContent:"center",padding:"clamp(0px,2vw,20px)"}} onClick={e=>{if(e.target===e.currentTarget)onClose();}} data-modal-overlay="true">
-    <style>{"@media(min-width:600px){[data-modal-overlay=true]{align-items:center!important;}}"}</style>
-      <div style={{background:theme.bg2,border:`1px solid ${theme.border}`,borderRadius:"clamp(10px,2vw,18px)",width:"100%",maxWidth:width,maxHeight:"92vh",overflow:"auto",boxShadow:"0 25px 80px rgba(0,0,0,0.25)"}}>
-        <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",padding:"20px 24px 16px",borderBottom:`1px solid ${theme.border}`,position:"sticky",top:0,background:theme.bg2,zIndex:1}}>
-          <div>
-            <div style={{fontSize:17,fontWeight:900,color:theme.text}}>{title}</div>
-            {subtitle&&<div style={{fontSize:13,color:theme.text3,marginTop:3}}>{subtitle}</div>}
-          </div>
-          <button onClick={onClose} style={{background:theme.bg3,border:`1px solid ${theme.border}`,color:theme.text3,cursor:"pointer",padding:"6px 10px",borderRadius:8,fontSize:14,fontWeight:700,marginLeft:16}}>✕</button>
-        </div>
-        <div style={{padding:24}}>{children}</div>
-      </div>
-    </div>
-  );
-};
-
-export const Table=({cols,rows,empty="No records found",t})=>{
-  const theme=t||THEMES.light;
-  return(
-    <div style={{overflowX:"auto"}}>
-      <table style={{width:"100%",borderCollapse:"collapse",fontSize:13}}>
-        <thead>
-          <tr style={{background:theme.tableHead}}>
-            {cols.map((c,i)=><th key={i} style={{textAlign:"left",padding:"10px 14px",fontSize:10,color:theme.text3,fontWeight:900,textTransform:"uppercase",letterSpacing:0.8,borderBottom:`2px solid ${theme.border}`,whiteSpace:"nowrap"}}>{c}</th>)}
-          </tr>
-        </thead>
-        <tbody>
-          {rows.length===0
-            ?<tr><td colSpan={cols.length} style={{textAlign:"center",padding:"48px 20px",color:theme.text4,fontSize:14}}>
-              <div style={{fontSize:32,marginBottom:8}}>📭</div>{empty}
-            </td></tr>
-            :rows.map((row,i)=>(
-              <tr key={i} style={{background:i%2===0?theme.tableRow:theme.tableRowAlt,transition:"background 0.1s"}}>
-                {row.map((cell,j)=><td key={j} style={{padding:"11px 14px",color:theme.text2,borderBottom:`1px solid ${theme.border}`,verticalAlign:"middle"}}>{cell}</td>)}
-              </tr>
-            ))}
-        </tbody>
-      </table>
-    </div>
-  );
-};
-
-export const ProductCard=({p,onAdd,showAdd=true,t,compact=false})=>{
-  const theme=t||THEMES.light;
-  const img=PRODUCT_IMAGES[p.name]||`https://via.placeholder.com/300x200/e2e8f0/64748b?text=${encodeURIComponent(p.emoji)}`;
-  const[imgErr,setImgErr]=useState(false);
-  return(
-    <div style={{background:theme.card,border:`1px solid ${theme.border}`,borderRadius:12,overflow:"hidden",boxShadow:theme.shadow,transition:"all 0.15s",cursor:"pointer",opacity:p.stock===0?0.5:1}}
-      onClick={()=>showAdd&&p.stock>0&&onAdd&&onAdd(p)}>
-      <div style={{position:"relative",background:theme.bg3,height:compact?80:120,display:"flex",alignItems:"center",justifyContent:"center",overflow:"hidden"}}>
-        {imgErr
-          ?<span style={{fontSize:compact?32:44}}>{p.emoji}</span>
-          :<img src={img} alt={p.name} onError={()=>setImgErr(true)} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
-        }
-        {p.stock===0&&<div style={{position:"absolute",inset:0,background:"rgba(0,0,0,0.5)",display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontWeight:800,fontSize:12}}>OUT OF STOCK</div>}
-        {p.stock>0&&p.stock<=5&&<div style={{position:"absolute",top:6,right:6,background:theme.red,color:"#fff",borderRadius:6,padding:"2px 7px",fontSize:10,fontWeight:800}}>Only {p.stock} left!</div>}
-      </div>
-      <div style={{padding:compact?"8px 10px":"10px 12px"}}>
-        <div style={{fontSize:compact?11:12,fontWeight:700,color:theme.text,lineHeight:1.3,marginBottom:4}}>{p.name}</div>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-          <span style={{fontSize:compact?12:14,fontWeight:900,color:theme.green}}>{fmt(p.price)}</span>
-          {showAdd&&p.stock>0&&<span style={{width:22,height:22,borderRadius:"50%",background:theme.accent,color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,fontWeight:900}}>+</span>}
-        </div>
-      </div>
-    </div>
-  );
-};
+export { Btn, Input, Select, Toggle, Badge, Card, StatCard, Modal, Table, ProductCard } from '@/components/ui'
 
 export const Sidebar=({user,activeSection,setActiveSection,onLogout,t})=>{
   if (!user) return null;
@@ -394,8 +163,8 @@ export const Sidebar=({user,activeSection,setActiveSection,onLogout,t})=>{
     <div style={{width:"100%",height:"100%",background:theme.sidebar,borderRight:`1px solid ${theme.border}`,display:"flex",flexDirection:"column",boxShadow:theme.shadowMd}}>
       <div style={{padding:"18px 16px 14px",borderBottom:`1px solid ${theme.border}`}}>
         <div style={{display:"flex",alignItems:"center",gap:10}}>
-          <div style={{width:38,height:38,background:`linear-gradient(135deg,${theme.accent},${theme.accent2})`,borderRadius:12,display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0}}>⚽</div>
-          <div><div style={{fontSize:13,fontWeight:900,color:theme.text,letterSpacing:-0.3}}>FanStore</div><div style={{fontSize:10,color:theme.text4,fontWeight:600}}>EPOS v2.0</div></div>
+          <div style={{width:38,height:38,background:`linear-gradient(135deg,${theme.accent},${theme.accent2})`,borderRadius:12,display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,fontWeight:900,color:"#fff",flexShrink:0}}>S</div>
+          <div><div style={{fontSize:13,fontWeight:900,color:theme.text,letterSpacing:-0.3}}>SCSTix</div><div style={{fontSize:10,color:theme.text4,fontWeight:600}}>EPOS v1.0</div></div>
         </div>
       </div>
       <div style={{padding:"12px 14px",borderBottom:`1px solid ${theme.border}`}}>

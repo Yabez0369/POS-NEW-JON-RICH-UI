@@ -1,0 +1,221 @@
+import { useState } from 'react'
+import { useTheme } from '@/context/ThemeContext'
+import { useAuth } from '@/context/AuthContext'
+import { Btn, Input, Badge, Card, StatCard, Modal, Table } from '@/components/ui'
+import { notify } from '@/components/shared'
+import { fmt, ts, genId } from '@/lib/utils'
+
+export const CashManagement = ({ addAudit, t: tProp }) => {
+  const { t: tCtx } = useTheme()
+  const { currentUser } = useAuth()
+  const t = tProp || tCtx
+
+  const [session, setSession] = useState(null)
+  const [openFloat, setOpenFloat] = useState('100')
+  const [movements, setMovements] = useState([])
+  const [showDrop, setShowDrop] = useState(false)
+  const [showLift, setShowLift] = useState(false)
+  const [showClose, setShowClose] = useState(false)
+  const [dropAmt, setDropAmt] = useState('')
+  const [dropNote, setDropNote] = useState('')
+  const [liftAmt, setLiftAmt] = useState('')
+  const [liftNote, setLiftNote] = useState('')
+  const [closeActual, setCloseActual] = useState('')
+  const [history, setHistory] = useState([])
+
+  const cashIn = movements.filter(m => m.type === 'cash-in' || m.type === 'lift').reduce((s, m) => s + m.amount, 0)
+  const cashOut = movements.filter(m => m.type === 'cash-out' || m.type === 'drop').reduce((s, m) => s + m.amount, 0)
+  const expected = session ? session.openFloat + cashIn - cashOut : 0
+
+  const openTill = () => {
+    const amt = parseFloat(openFloat)
+    if (isNaN(amt) || amt < 0) { notify('Enter a valid float amount', 'error'); return }
+    const s = { id: genId('SESS'), openFloat: amt, openedAt: ts(), openedBy: currentUser?.name || 'Cashier', status: 'open' }
+    setSession(s)
+    setMovements([{ id: genId('MOV'), type: 'open', amount: amt, note: 'Opening float', time: ts(), by: currentUser?.name || 'Cashier' }])
+    if (addAudit) addAudit({ action: 'Till Opened', detail: `Float: ${fmt(amt)}`, user: currentUser?.name || 'Cashier' })
+    notify(`Till opened with ${fmt(amt)} float`, 'success')
+  }
+
+  const doCashDrop = () => {
+    const amt = parseFloat(dropAmt)
+    if (isNaN(amt) || amt <= 0) { notify('Enter a valid amount', 'error'); return }
+    if (amt > expected) { notify('Cannot drop more than expected balance', 'error'); return }
+    setMovements(prev => [...prev, { id: genId('MOV'), type: 'drop', amount: amt, note: dropNote.trim() || 'Cash drop', time: ts(), by: currentUser?.name || 'Cashier' }])
+    if (addAudit) addAudit({ action: 'Cash Drop', detail: `${fmt(amt)} — ${dropNote || 'No note'}`, user: currentUser?.name || 'Cashier' })
+    notify(`Cash drop: ${fmt(amt)}`, 'success')
+    setShowDrop(false); setDropAmt(''); setDropNote('')
+  }
+
+  const doCashLift = () => {
+    const amt = parseFloat(liftAmt)
+    if (isNaN(amt) || amt <= 0) { notify('Enter a valid amount', 'error'); return }
+    setMovements(prev => [...prev, { id: genId('MOV'), type: 'lift', amount: amt, note: liftNote.trim() || 'Cash lift', time: ts(), by: currentUser?.name || 'Cashier' }])
+    if (addAudit) addAudit({ action: 'Cash Lift', detail: `${fmt(amt)} — ${liftNote || 'No note'}`, user: currentUser?.name || 'Cashier' })
+    notify(`Cash lift: ${fmt(amt)}`, 'success')
+    setShowLift(false); setLiftAmt(''); setLiftNote('')
+  }
+
+  const closeTill = () => {
+    const actual = parseFloat(closeActual)
+    if (isNaN(actual) || actual < 0) { notify('Enter actual cash amount', 'error'); return }
+    const variance = Math.round((actual - expected) * 100) / 100
+    const closed = {
+      ...session, closedAt: ts(), closedBy: currentUser?.name || 'Cashier', status: 'closed',
+      actualCash: actual, expectedCash: expected, variance, movements: [...movements],
+      cashIn, cashOut
+    }
+    setHistory(prev => [closed, ...prev])
+    if (addAudit) addAudit({ action: 'Till Closed', detail: `Expected: ${fmt(expected)}, Actual: ${fmt(actual)}, Variance: ${fmt(variance)}`, user: currentUser?.name || 'Cashier' })
+    notify(`Till closed. Variance: ${fmt(variance)}`, variance === 0 ? 'success' : 'warning')
+    setSession(null); setMovements([]); setShowClose(false); setCloseActual('')
+  }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+      <div style={{ fontSize: 22, fontWeight: 900, color: t.text }}>Cash Management</div>
+
+      {!session ? (
+        <Card t={t}>
+          <div style={{ textAlign: 'center', padding: '30px 20px' }}>
+            <div style={{ fontSize: 48, marginBottom: 16 }}>💰</div>
+            <div style={{ fontSize: 18, fontWeight: 800, color: t.text, marginBottom: 6 }}>Till is Closed</div>
+            <div style={{ fontSize: 13, color: t.text3, marginBottom: 20 }}>Open the till to start a new cash session</div>
+            <div style={{ maxWidth: 260, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <Input t={t} label="Opening Float" value={openFloat} onChange={setOpenFloat} placeholder="100.00" type="number" />
+              <Btn t={t} variant="success" fullWidth onClick={openTill}>🔓 Open Till</Btn>
+            </div>
+          </div>
+        </Card>
+      ) : (
+        <>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(min(160px,45vw),1fr))', gap: 14 }}>
+            <StatCard t={t} title="Opening Float" value={fmt(session.openFloat)} color={t.blue} icon="💵" />
+            <StatCard t={t} title="Cash In" value={fmt(cashIn)} color={t.green} icon="📥" />
+            <StatCard t={t} title="Cash Out" value={fmt(cashOut)} color={t.red} icon="📤" />
+            <StatCard t={t} title="Expected Balance" value={fmt(expected)} color={t.accent} icon="🧮" />
+          </div>
+
+          <Card t={t}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14, flexWrap: 'wrap', gap: 8 }}>
+              <div>
+                <div style={{ fontSize: 15, fontWeight: 800, color: t.text }}>Active Session</div>
+                <div style={{ fontSize: 12, color: t.text3 }}>Opened at {session.openedAt} by {session.openedBy}</div>
+              </div>
+              <Badge t={t} text="Open" color="green" />
+            </div>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              <Btn t={t} variant="secondary" onClick={() => setShowDrop(true)}>📤 Cash Drop</Btn>
+              <Btn t={t} variant="secondary" onClick={() => setShowLift(true)}>📥 Cash Lift</Btn>
+              <Btn t={t} variant="danger" onClick={() => setShowClose(true)}>🔒 Close Till</Btn>
+            </div>
+          </Card>
+
+          <Card t={t} style={{ padding: 0, overflow: 'hidden' }}>
+            <div style={{ padding: '14px 18px', borderBottom: `1px solid ${t.border}` }}>
+              <div style={{ fontSize: 14, fontWeight: 800, color: t.text }}>Session Movements</div>
+            </div>
+            <Table t={t} cols={['Time', 'Type', 'Amount', 'Note', 'By']}
+              rows={movements.map(m => [
+                m.time,
+                <Badge t={t} text={m.type} color={m.type === 'lift' || m.type === 'open' ? 'green' : m.type === 'drop' ? 'red' : 'blue'} />,
+                <span style={{ fontWeight: 800, color: m.type === 'drop' ? t.red : t.green }}>{m.type === 'drop' ? '-' : '+'}{fmt(m.amount)}</span>,
+                m.note,
+                m.by
+              ])} empty="No movements yet" />
+          </Card>
+        </>
+      )}
+
+      {history.length > 0 && (
+        <Card t={t} style={{ padding: 0, overflow: 'hidden' }}>
+          <div style={{ padding: '14px 18px', borderBottom: `1px solid ${t.border}` }}>
+            <div style={{ fontSize: 14, fontWeight: 800, color: t.text }}>Session History</div>
+          </div>
+          <Table t={t} cols={['Session', 'Opened', 'Closed', 'Float', 'Expected', 'Actual', 'Variance']}
+            rows={history.map(h => [
+              h.id,
+              h.openedAt,
+              h.closedAt,
+              fmt(h.openFloat),
+              fmt(h.expectedCash),
+              fmt(h.actualCash),
+              <span style={{ fontWeight: 800, color: h.variance === 0 ? t.green : h.variance > 0 ? t.blue : t.red }}>
+                {h.variance >= 0 ? '+' : ''}{fmt(h.variance)}
+              </span>
+            ])} empty="No session history" />
+        </Card>
+      )}
+
+      {showDrop && (
+        <Modal t={t} title="📤 Cash Drop" subtitle="Remove cash from the till" onClose={() => { setShowDrop(false); setDropAmt(''); setDropNote('') }} width={400}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <div style={{ background: t.bg3, borderRadius: 10, padding: '10px 14px', fontSize: 13, color: t.text2 }}>
+              Current expected balance: <strong style={{ color: t.accent }}>{fmt(expected)}</strong>
+            </div>
+            <Input t={t} label="Amount" value={dropAmt} onChange={setDropAmt} placeholder="0.00" type="number" />
+            <Input t={t} label="Note (optional)" value={dropNote} onChange={setDropNote} placeholder="Reason for drop" />
+            <div style={{ display: 'flex', gap: 10 }}>
+              <Btn t={t} variant="secondary" fullWidth onClick={() => { setShowDrop(false); setDropAmt(''); setDropNote('') }}>Cancel</Btn>
+              <Btn t={t} variant="danger" fullWidth onClick={doCashDrop}>Confirm Drop</Btn>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {showLift && (
+        <Modal t={t} title="📥 Cash Lift" subtitle="Add cash to the till" onClose={() => { setShowLift(false); setLiftAmt(''); setLiftNote('') }} width={400}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <Input t={t} label="Amount" value={liftAmt} onChange={setLiftAmt} placeholder="0.00" type="number" />
+            <Input t={t} label="Note (optional)" value={liftNote} onChange={setLiftNote} placeholder="Reason for lift" />
+            <div style={{ display: 'flex', gap: 10 }}>
+              <Btn t={t} variant="secondary" fullWidth onClick={() => { setShowLift(false); setLiftAmt(''); setLiftNote('') }}>Cancel</Btn>
+              <Btn t={t} variant="success" fullWidth onClick={doCashLift}>Confirm Lift</Btn>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {showClose && (
+        <Modal t={t} title="🔒 Close Till" subtitle="End current session" onClose={() => { setShowClose(false); setCloseActual('') }} width={420}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <div style={{ background: t.bg3, borderRadius: 10, padding: '14px 16px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: t.text2, marginBottom: 4 }}>
+                <span>Opening Float</span><span style={{ fontWeight: 700 }}>{fmt(session.openFloat)}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: t.green, marginBottom: 4 }}>
+                <span>Cash In</span><span style={{ fontWeight: 700 }}>+{fmt(cashIn)}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: t.red, marginBottom: 8 }}>
+                <span>Cash Out</span><span style={{ fontWeight: 700 }}>-{fmt(cashOut)}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 16, fontWeight: 900, color: t.text, paddingTop: 8, borderTop: `2px solid ${t.border}` }}>
+                <span>Expected</span><span style={{ color: t.accent }}>{fmt(expected)}</span>
+              </div>
+            </div>
+
+            <Input t={t} label="Actual Cash in Till" value={closeActual} onChange={setCloseActual} placeholder="0.00" type="number" />
+
+            {closeActual && !isNaN(parseFloat(closeActual)) && (
+              <div style={{
+                background: parseFloat(closeActual) === expected ? t.greenBg : t.yellowBg,
+                border: `1px solid ${parseFloat(closeActual) === expected ? t.greenBorder : t.yellowBorder}`,
+                borderRadius: 10, padding: '10px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center'
+              }}>
+                <span style={{ fontSize: 13, fontWeight: 700, color: parseFloat(closeActual) === expected ? t.green : t.yellow }}>Variance</span>
+                <span style={{ fontSize: 16, fontWeight: 900, color: parseFloat(closeActual) === expected ? t.green : t.yellow }}>
+                  {(parseFloat(closeActual) - expected) >= 0 ? '+' : ''}{fmt(Math.round((parseFloat(closeActual) - expected) * 100) / 100)}
+                </span>
+              </div>
+            )}
+
+            <div style={{ display: 'flex', gap: 10 }}>
+              <Btn t={t} variant="secondary" fullWidth onClick={() => { setShowClose(false); setCloseActual('') }}>Cancel</Btn>
+              <Btn t={t} variant="danger" fullWidth onClick={closeTill}>🔒 Close Till</Btn>
+            </div>
+          </div>
+        </Modal>
+      )}
+    </div>
+  )
+}

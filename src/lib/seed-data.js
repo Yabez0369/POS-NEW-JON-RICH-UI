@@ -1,0 +1,16 @@
+export const PRODUCT_IMAGES = {
+  "Home Jersey 2024":"https://images.pexels.com/photos/1661338/pexels-photo-1661338.jpeg?auto=compress&cs=tinysrgb&w=300",
+  "Away Jersey 2024":"https://images.pexels.com/photos/3621104/pexels-photo-3621104.jpeg?auto=compress&cs=tinysrgb&w=300",
+  "Third Kit Jersey":"https://images.pexels.com/photos/1124466/pexels-photo-1124466.jpeg?auto=compress&cs=tinysrgb&w=300",
+  "Training Jacket":"https://images.pexels.com/photos/1311523/pexels-photo-1311523.jpeg?auto=compress&cs=tinysrgb&w=300",
+  "Training Shorts":"https://images.pexels.com/photos/4753987/pexels-photo-4753987.jpeg?auto=compress&cs=tinysrgb&w=300",
+  "Football Scarf":"https://images.pexels.com/photos/1884574/pexels-photo-1884574.jpeg?auto=compress&cs=tinysrgb&w=300",
+  "Team Cap":"https://images.pexels.com/photos/1124465/pexels-photo-1124465.jpeg?auto=compress&cs=tinysrgb&w=300",
+  "Fan Hoodie":"https://images.pexels.com/photos/428340/pexels-photo-428340.jpeg?auto=compress&cs=tinysrgb&w=300",
+  "Match Ball Official":"https://images.pexels.com/photos/47730/the-ball-stadion-football-the-pitch-47730.jpeg?auto=compress&cs=tinysrgb&w=300",
+  "Goalkeeper Gloves":"https://images.pexels.com/photos/2277980/pexels-photo-2277980.jpeg?auto=compress&cs=tinysrgb&w=300",
+  "Shin Guards Pro":"https://images.pexels.com/photos/3621183/pexels-photo-3621183.jpeg?auto=compress&cs=tinysrgb&w=300",
+  "Signed Jersey":"https://images.pexels.com/photos/918778/pexels-photo-918778.jpeg?auto=compress&cs=tinysrgb&w=300",
+  "Stadium Print A3":"https://images.pexels.com/photos/46798/the-ball-stadion-football-the-pitch-46798.jpeg?auto=compress&cs=tinysrgb&w=300",
+  "Mini Trophy Replica":"https://images.pexels.com/photos/1884577/pexels-photo-1884577.jpeg?auto=compress&cs=tinysrgb&w=300",
+};
