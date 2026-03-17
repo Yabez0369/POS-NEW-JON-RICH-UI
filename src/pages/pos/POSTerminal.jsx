@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useTheme } from '@/context/ThemeContext'
 import { useAuth } from '@/context/AuthContext'
+import { useCashStore } from '@/stores/cashStore'
 import { Btn, Input, Modal, Select } from '@/components/ui'
 import { notify, ReceiptModal } from '@/components/shared'
 import { fmt, ts, genId, isBannerActive, getTier } from '@/lib/utils'
@@ -283,6 +284,17 @@ export const POSTerminal = ({ products, setProducts, orders, setOrders, users, s
       setUsers(us => us.map(u => u.id === selCust.id ? { ...u, loyaltyPoints: newPts, totalSpent: newSpent, tier: getTier(newSpent) } : u))
     }
     addAudit(user, 'Payment Completed', 'POS', `${orderId} — ${fmt(cartTotal, settings?.sym)} via ${payMethod}`)
+    
+    // Record Cash Movement if applicable
+    if (payMethod === 'Cash') {
+      useCashStore.getState().addMovement('sale', cartTotal, `Sale: ${orderId}`, user)
+    } else if (payMethod === 'Split') {
+      const splitCashVal = parseFloat(splitCash) || 0
+      if (splitCashVal > 0) {
+        useCashStore.getState().addMovement('sale', splitCashVal, `Split Sale (Cash portion): ${orderId}`, user)
+      }
+    }
+
     notify(`Order ${orderId} complete! 🎉`, 'success')
     setShowReceipt(newOrder)
     setCart([]); setCashGiven(''); setCardNum(''); setCardExp(''); setCardCvv(''); setQrPaid(false); setAppliedCoupon(null); setCouponCode(''); setLoyaltyRedeem(false); setShowQrModal(false); setSplitCash(''); setSplitCard('')

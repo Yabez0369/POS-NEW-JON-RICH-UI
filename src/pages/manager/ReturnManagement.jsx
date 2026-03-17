@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useTheme } from '@/context/ThemeContext'
 import { useAuth } from '@/context/AuthContext'
+import { useCashStore } from '@/stores/cashStore'
 import { Btn, Input, Badge, Card, StatCard, Modal, Table, Select } from '@/components/ui'
 import { notify } from '@/components/shared'
 import { fmt, ts, genId } from '@/lib/utils'
@@ -76,6 +77,15 @@ export const ReturnManagement = ({
     }
 
     setReturns(rs => rs.map(x => x.id === r.id ? { ...x, status: 'approved', restocked: restock, approvedAt: ts(), approvedBy: currentUser?.name } : x))
+
+    // Record refund as cash movement if original order was paid with Cash
+    const order = getOrderForReturn(r)
+    if (order && (order.payment === 'Cash' || order.payment === 'Split')) {
+      const refundAmt = r.refundAmount || 0
+      if (refundAmt > 0) {
+        useCashStore.getState().addMovement('refund', refundAmt, `Refund: ${r.id} (${r.customerName})`, currentUser)
+      }
+    }
 
     if (addAudit) addAudit(currentUser, 'Refund Approved', 'Returns', `${r.id} — ${fmt(r.refundAmount, settings?.sym)}${restock ? ' (restocked)' : ''}${isExchange ? ' + exchange order created' : ''}`)
     notify(`Refund approved for ${r.customerName}`, 'success')
