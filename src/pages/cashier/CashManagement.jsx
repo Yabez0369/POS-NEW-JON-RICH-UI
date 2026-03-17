@@ -1,6 +1,8 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useTheme } from '@/context/ThemeContext'
 import { useAuth } from '@/context/AuthContext'
+import { useCashStore } from '@/stores/cashStore'
+import { isSupabaseConfigured } from '@/lib/supabase'
 import { Btn, Input, Badge, Card, StatCard, Modal, Table } from '@/components/ui'
 import { notify } from '@/components/shared'
 import { fmt, ts, genId } from '@/lib/utils'
@@ -10,9 +12,9 @@ export const CashManagement = ({ addAudit, settings, t: tProp }) => {
   const { currentUser } = useAuth()
   const t = tProp || tCtx
 
-  const [session, setSession] = useState(null)
+  const { session, movements, history, openTill: storeOpenTill, addMovement, closeTill: storeCloseTill, loadSession } = useCashStore()
+  
   const [openFloat, setOpenFloat] = useState('100')
-  const [movements, setMovements] = useState([])
   const [showDrop, setShowDrop] = useState(false)
   const [showLift, setShowLift] = useState(false)
   const [showClose, setShowClose] = useState(false)
@@ -21,54 +23,57 @@ export const CashManagement = ({ addAudit, settings, t: tProp }) => {
   const [liftAmt, setLiftAmt] = useState('')
   const [liftNote, setLiftNote] = useState('')
   const [closeActual, setCloseActual] = useState('')
-  const [history, setHistory] = useState([])
 
-  const cashIn = movements.filter(m => m.type === 'cash-in' || m.type === 'lift').reduce((s, m) => s + m.amount, 0)
-  const cashOut = movements.filter(m => m.type === 'cash-out' || m.type === 'drop').reduce((s, m) => s + m.amount, 0)
-  const expected = session ? session.openFloat + cashIn - cashOut : 0
+  // Load active session from Supabase on mount
+  useEffect(() => {
+    if (isSupabaseConfigured()) {
+      const counterId = currentUser?.counter_id || 'c0000000-0000-0000-0000-000000000001'
+      loadSession(counterId)
+    }
+  }, [currentUser])
 
-  const openTill = () => {
+  const cashIn = movements.filter(m => m.type === 'cash-in' || m.type === 'lift' || m.type === 'sale').reduce((s, m) => s + Number(m.amount), 0)
+  const cashOut = movements.filter(m => m.type === 'cash-out' || m.type === 'drop' || m.type === 'refund').reduce((s, m) => s + Number(m.amount), 0)
+  const expected = session ? Number(session.openFloat) + cashIn - cashOut : 0
+
+  const openTill = async () => {
     const amt = parseFloat(openFloat)
     if (isNaN(amt) || amt < 0) { notify('Enter a valid float amount', 'error'); return }
-    const s = { id: genId('SESS'), openFloat: amt, openedAt: ts(), openedBy: currentUser?.name || 'Cashier', status: 'open' }
-    setSession(s)
-    setMovements([{ id: genId('MOV'), type: 'open', amount: amt, note: 'Opening float', time: ts(), by: currentUser?.name || 'Cashier' }])
+    await storeOpenTill(currentUser, amt)
     if (addAudit) addAudit({ action: 'Till Opened', detail: `Float: ${fmt(amt, settings?.sym)}`, user: currentUser?.name || 'Cashier' })
     notify(`Till opened with ${fmt(amt, settings?.sym)} float`, 'success')
   }
 
-  const doCashDrop = () => {
+  const doCashDrop = async () => {
     const amt = parseFloat(dropAmt)
     if (isNaN(amt) || amt <= 0) { notify('Enter a valid amount', 'error'); return }
     if (amt > expected) { notify('Cannot drop more than expected balance', 'error'); return }
-    setMovements(prev => [...prev, { id: genId('MOV'), type: 'drop', amount: amt, note: dropNote.trim() || 'Cash drop', time: ts(), by: currentUser?.name || 'Cashier' }])
+    await addMovement('drop', amt, dropNote.trim() || 'Cash drop', currentUser)
     if (addAudit) addAudit({ action: 'Cash Drop', detail: `${fmt(amt, settings?.sym)} — ${dropNote || 'No note'}`, user: currentUser?.name || 'Cashier' })
     notify(`Cash drop: ${fmt(amt, settings?.sym)}`, 'success')
     setShowDrop(false); setDropAmt(''); setDropNote('')
   }
 
-  const doCashLift = () => {
+  const doCashLift = async () => {
     const amt = parseFloat(liftAmt)
     if (isNaN(amt) || amt <= 0) { notify('Enter a valid amount', 'error'); return }
-    setMovements(prev => [...prev, { id: genId('MOV'), type: 'lift', amount: amt, note: liftNote.trim() || 'Cash lift', time: ts(), by: currentUser?.name || 'Cashier' }])
+    await addMovement('lift', amt, liftNote.trim() || 'Cash lift', currentUser)
     if (addAudit) addAudit({ action: 'Cash Lift', detail: `${fmt(amt, settings?.sym)} — ${liftNote || 'No note'}`, user: currentUser?.name || 'Cashier' })
     notify(`Cash lift: ${fmt(amt, settings?.sym)}`, 'success')
     setShowLift(false); setLiftAmt(''); setLiftNote('')
   }
 
-  const closeTill = () => {
+  const closeTill = async () => {
     const actual = parseFloat(closeActual)
     if (isNaN(actual) || actual < 0) { notify('Enter actual cash amount', 'error'); return }
-    const variance = Math.round((actual - expected) * 100) / 100
-    const closed = {
-      ...session, closedAt: ts(), closedBy: currentUser?.name || 'Cashier', status: 'closed',
-      actualCash: actual, expectedCash: expected, variance, movements: [...movements],
-      cashIn, cashOut
+    // Close modal first to avoid null session crash during re-render
+    setShowClose(false); setCloseActual('')
+    const savedExpected = expected
+    const closed = await storeCloseTill(actual, savedExpected, currentUser)
+    if (closed) {
+      if (addAudit) addAudit({ action: 'Till Closed', detail: `Expected: ${fmt(savedExpected, settings?.sym)}, Actual: ${fmt(actual, settings?.sym)}, Variance: ${fmt(closed.variance, settings?.sym)}`, user: currentUser?.name || 'Cashier' })
+      notify(`Till closed. Variance: ${fmt(closed.variance, settings?.sym)}`, closed.variance === 0 ? 'success' : 'warning')
     }
-    setHistory(prev => [closed, ...prev])
-    if (addAudit) addAudit({ action: 'Till Closed', detail: `Expected: ${fmt(expected, settings?.sym)}, Actual: ${fmt(actual, settings?.sym)}, Variance: ${fmt(variance, settings?.sym)}`, user: currentUser?.name || 'Cashier' })
-    notify(`Till closed. Variance: ${fmt(variance, settings?.sym)}`, variance === 0 ? 'success' : 'warning')
-    setSession(null); setMovements([]); setShowClose(false); setCloseActual('')
   }
 
   return (
@@ -176,7 +181,7 @@ export const CashManagement = ({ addAudit, settings, t: tProp }) => {
         </Modal>
       )}
 
-      {showClose && (
+      {showClose && session && (
         <Modal t={t} title="🔒 Close Till" subtitle="End current session" onClose={() => { setShowClose(false); setCloseActual('') }} width={420}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             <div style={{ background: t.bg3, borderRadius: 10, padding: '14px 16px' }}>

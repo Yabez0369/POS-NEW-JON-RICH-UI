@@ -370,6 +370,21 @@ function AppContent() {
                 <ReportsPage orders={orders} users={users} products={products} settings={settings} t={t} />
               </ProtectedRoute>
             } />
+            <Route path="damage-lost" element={
+              <ProtectedRoute allowedRoles={['manager', 'admin']}>
+                <DamageManagement t={t} currentUser={currentUser} />
+              </ProtectedRoute>
+            } />
+            <Route path="stock-transfer" element={
+              <ProtectedRoute allowedRoles={['manager', 'admin']}>
+                <StockTransferManagement t={t} currentUser={currentUser} />
+              </ProtectedRoute>
+            } />
+            <Route path="stocktake" element={
+              <ProtectedRoute allowedRoles={['manager', 'admin']}>
+                <StocktakeManagement t={t} currentUser={currentUser} />
+              </ProtectedRoute>
+            } />
 
             {/* Cashier Routes */}
             <Route path="orders" element={<CashierOrders orders={orders} setOrders={setOrders} settings={settings} t={t} />} />

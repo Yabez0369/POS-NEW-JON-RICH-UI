@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useTheme } from '@/context/ThemeContext'
 import { useAuth } from '@/context/AuthContext'
+import { useCashStore } from '@/stores/cashStore'
 import { Btn, Input, Modal, Select } from '@/components/ui'
 import { notify, ReceiptModal } from '@/components/shared'
 import { fmt, ts, genId, isBannerActive, getTier } from '@/lib/utils'
@@ -10,7 +12,16 @@ import { POSCartPanel } from './POSCartPanel'
 export const POSTerminal = ({ products, setProducts, orders, setOrders, users, setUsers, coupons, settings, counters, addAudit }) => {
   const { t } = useTheme()
   const { currentUser } = useAuth()
+  const navigate = useNavigate()
   const user = currentUser
+
+  const { session, isLoading, loadSession } = useCashStore()
+
+  useEffect(() => {
+    if (!session) {
+      loadSession(user?.counter_id || 'c0000000-0000-0000-0000-000000000001')
+    }
+  }, [user])
 
   const [cart, setCart] = useState([])
   const [cat, setCat] = useState('All')
@@ -285,6 +296,17 @@ export const POSTerminal = ({ products, setProducts, orders, setOrders, users, s
       setUsers(us => us.map(u => u.id === selCust.id ? { ...u, loyaltyPoints: newPts, totalSpent: newSpent, tier: getTier(newSpent) } : u))
     }
     addAudit(user, 'Payment Completed', 'POS', `${orderId} — ${fmt(cartTotal, settings?.sym)} via ${payMethod}`)
+    
+    // Record Cash Movement if applicable
+    if (payMethod === 'Cash') {
+      useCashStore.getState().addMovement('sale', cartTotal, `Sale: ${orderId}`, user)
+    } else if (payMethod === 'Split') {
+      const splitCashVal = parseFloat(splitCash) || 0
+      if (splitCashVal > 0) {
+        useCashStore.getState().addMovement('sale', splitCashVal, `Split Sale (Cash portion): ${orderId}`, user)
+      }
+    }
+
     notify(`Order ${orderId} complete! 🎉`, 'success')
     setShowReceipt(newOrder)
     setCart([]); setCashGiven(''); setCardNum(''); setCardExp(''); setCardCvv(''); setQrPaid(false); setAppliedCoupon(null); setCouponCode(''); setLoyaltyRedeem(false); setShowQrModal(false); setSplitCash(''); setSplitCard('')
@@ -304,8 +326,35 @@ export const POSTerminal = ({ products, setProducts, orders, setOrders, users, s
     processOrder()
   }
 
+  if (isLoading) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: 16 }}>
+        <div style={{ fontSize: 40, animation: 'spin 2s linear infinite' }}>⌛</div>
+        <div style={{ fontSize: 18, fontWeight: 700, color: t.text }}>Checking Cash Session...</div>
+      </div>
+    )
+  }
+
+  if (!session) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: 'calc(100vh - 120px)', gap: 20 }}>
+        <div style={{ fontSize: 100 }}>🔒</div>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: 32, fontWeight: 900, color: t.text, marginBottom: 8 }}>Till is Currently Closed</div>
+          <div style={{ fontSize: 16, color: t.text3, maxWidth: 400, margin: '0 auto' }}>
+            You cannot process any sales until a cash session is opened. 
+            Please open the till in Cash Management first.
+          </div>
+        </div>
+        <Btn t={t} variant="primary" size="lg" onClick={() => navigate('/app/cash')}>
+          Go to Cash Management →
+        </Btn>
+      </div>
+    )
+  }
+
   return (
-    <div style={{ display: 'flex', height: 'calc(100vh - 48px)', overflow: 'hidden', fontFamily: 'inherit' }} className="pos-layout">
+    <div style={{ display: 'flex', gap: 20, height: 'calc(100vh - 120px)' }} className="pos-layout">
       <POSProductGrid search={search} setSearch={setSearch} cat={cat} setCat={setCat} filteredProds={filteredProds} favProds={favProds} getItemDiscount={getItemDiscount} addToCart={handleProductClick} scanMsg={scanMsg} parkBill={parkBill} parked={parked} recallBill={recallBill} showParkedDropdown={showParkedDropdown} setShowParkedDropdown={setShowParkedDropdown} setShowBarcodeInput={setShowBarcodeInput} settings={settings} t={t} />
 
       <POSCartPanel cart={cart} updateQty={updateQty} setCart={setCart} removeFromCart={removeFromCart} removeMode={removeMode} setRemoveMode={setRemoveMode} cartSearch={cartSearch} setCartSearch={setCartSearch} selCust={selCust} setSelCust={setSelCust} custSearch={custSearch} setCustSearch={setCustSearch} lookupCustomer={lookupCustomer} setShowNewCust={setShowNewCust} loyaltyRedeem={loyaltyRedeem} setLoyaltyRedeem={setLoyaltyRedeem} appliedCoupon={appliedCoupon} setAppliedCoupon={setAppliedCoupon} couponCode={couponCode} setCouponCode={setCouponCode} applyCoupon={applyCoupon} cartSubtotal={cartSubtotal} cartTax={cartTax} couponDiscount={couponDiscount} loyaltyDiscount={loyaltyDiscount} cartTotal={cartTotal} pointsEarned={pointsEarned} payMethod={payMethod} setPayMethod={setPayMethod} cashGiven={cashGiven} setCashGiven={setCashGiven} cashGivenNum={cashGivenNum} cashChange={cashChange} cardNum={cardNum} setCardNum={setCardNum} setCardExp={setCardExp} setCardCvv={setCardCvv} splitCash={splitCash} setSplitCash={setSplitCash} splitCard={splitCard} setSplitCard={setSplitCard} checkout={checkout} setShowCustDisplay={setShowCustDisplay} settings={settings} t={t} />
