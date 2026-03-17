@@ -5,7 +5,8 @@ import { fmt } from '@/lib/utils'
 import { CardTerminal } from './CardTerminal'
 
 export function POSCartPanel({
-  cart, updateQty, setVoidItem, setCart,
+  cart, updateQty, setCart,
+  removeFromCart, removeMode, setRemoveMode, cartSearch, setCartSearch,
   selCust, setSelCust, custSearch, setCustSearch, lookupCustomer, setShowNewCust,
   loyaltyRedeem, setLoyaltyRedeem,
   appliedCoupon, setAppliedCoupon, couponCode, setCouponCode, applyCoupon,
@@ -17,6 +18,9 @@ export function POSCartPanel({
   checkout, setShowCustDisplay,
   settings, t,
 }) {
+  const filteredCart = cartSearch.trim()
+    ? cart.filter(i => i.name.toLowerCase().includes(cartSearch.toLowerCase()))
+    : cart
   return (
     <div style={{ width: 'clamp(260px,28vw,340px)', display: 'flex', flexDirection: 'column', background: t.posRight, flexShrink: 0, borderLeft: `1px solid ${t.border}` }} className="pos-right">
       <div style={{ padding: '10px 14px', borderBottom: `1px solid ${t.border}`, background: t.bg3 }}>
@@ -38,16 +42,64 @@ export function POSCartPanel({
         )}
       </div>
 
-      <div style={{ padding: '6px 14px', borderBottom: `1px solid ${t.border}`, display: 'flex', alignItems: 'center', gap: 8 }}>
-        <span style={{ fontSize: 13 }}>🏪</span>
-        <span style={{ fontSize: 11, fontWeight: 800, color: t.green }}>In-Store Transaction</span>
+      {/* In-Store Transaction bar + cart search + remove toggle */}
+      <div style={{ padding: '6px 10px 6px 14px', borderBottom: `1px solid ${t.border}`, display: 'flex', alignItems: 'center', gap: 6 }}>
+        <span style={{ fontSize: 13, flexShrink: 0 }}>🏪</span>
+        <span style={{ fontSize: 11, fontWeight: 800, color: t.green, flexShrink: 0, marginRight: 4 }}>In-Store</span>
+        {/* Cart search bar */}
+        <input
+          value={cartSearch}
+          onChange={e => setCartSearch(e.target.value)}
+          placeholder="Search cart…"
+          style={{
+            flex: 1, minWidth: 0, background: t.input, border: `1px solid ${t.border}`,
+            borderRadius: 7, padding: '4px 8px', color: t.text, fontSize: 11, outline: 'none',
+          }}
+        />
+        {/* Remove mode toggle */}
+        <button
+          onClick={() => setRemoveMode(r => !r)}
+          title={removeMode ? 'Remove mode ON — click to disable' : 'Enable remove mode'}
+          style={{
+            flexShrink: 0,
+            display: 'flex', alignItems: 'center', gap: 4,
+            padding: '4px 8px', borderRadius: 7, cursor: 'pointer', fontSize: 11, fontWeight: 800,
+            border: `1.5px solid ${removeMode ? '#ef4444' : t.border}`,
+            background: removeMode ? '#ef444418' : t.bg3,
+            color: removeMode ? '#ef4444' : t.text3,
+            transition: 'all 0.18s ease',
+            boxShadow: removeMode ? '0 0 8px #ef444440' : 'none',
+          }}
+        >
+          {/* Radio dot */}
+          <span style={{
+            width: 9, height: 9, borderRadius: '50%', display: 'inline-block', flexShrink: 0,
+            border: `2px solid ${removeMode ? '#ef4444' : t.text4}`,
+            background: removeMode ? '#ef4444' : 'transparent',
+            transition: 'all 0.18s ease',
+          }} />
+          Remove
+        </button>
       </div>
 
       <div style={{ flex: 1, overflowY: 'auto', padding: '6px 10px', WebkitOverflowScrolling: 'touch' }}>
         {cart.length === 0
           ? <div style={{ textAlign: 'center', padding: '32px 16px', color: t.text3 }}><div style={{ fontSize: 36, marginBottom: 8 }}>🛒</div><div style={{ fontSize: 13, fontWeight: 700 }}>Cart is empty</div><div style={{ fontSize: 12, marginTop: 4, color: t.text4 }}>Tap a product or scan barcode</div></div>
-          : cart.map(item => (
-            <div key={item.id} style={{ display: 'flex', gap: 6, alignItems: 'center', padding: '6px 0', borderBottom: `1px solid ${t.border}` }}>
+          : filteredCart.length === 0
+            ? <div style={{ textAlign: 'center', padding: '24px 16px', color: t.text3 }}><div style={{ fontSize: 28, marginBottom: 6 }}>🔍</div><div style={{ fontSize: 12, fontWeight: 700 }}>No match in cart</div></div>
+            : filteredCart.map(item => (
+            <div
+              key={item.id}
+              onClick={() => removeMode && removeFromCart(item.originalId || item.id)}
+              style={{
+                display: 'flex', gap: 6, alignItems: 'center', padding: '6px 0',
+                borderBottom: `1px solid ${t.border}`,
+                cursor: removeMode ? 'pointer' : 'default',
+                borderRadius: removeMode ? 6 : 0,
+                background: removeMode ? '#ef444408' : 'transparent',
+                transition: 'background 0.15s',
+              }}
+            >
               <div style={{ width: 36, height: 36, borderRadius: 8, overflow: 'hidden', flexShrink: 0, background: t.bg3 }}>
                 <ImgWithFallback src={PRODUCT_IMAGES[item.name]} alt={item.name} emoji={item.emoji} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               </div>
@@ -58,12 +110,21 @@ export function POSCartPanel({
                 </div>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                <button onClick={() => updateQty(item.id, -1)} style={{ width: 22, height: 22, borderRadius: 6, border: `1px solid ${t.border}`, background: t.bg3, color: t.text, cursor: 'pointer', fontSize: 13, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>−</button>
+                <button onClick={e => { e.stopPropagation(); updateQty(item.id, -1) }} style={{ width: 22, height: 22, borderRadius: 6, border: `1px solid ${t.border}`, background: t.bg3, color: t.text, cursor: 'pointer', fontSize: 13, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>−</button>
                 <span style={{ fontSize: 13, fontWeight: 900, color: t.text, minWidth: 18, textAlign: 'center' }}>{item.qty}</span>
-                <button onClick={() => updateQty(item.id, 1)} style={{ width: 22, height: 22, borderRadius: 6, border: `1px solid ${t.border}`, background: t.bg3, color: t.text, cursor: 'pointer', fontSize: 13, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>+</button>
+                <button onClick={e => { e.stopPropagation(); updateQty(item.id, 1) }} style={{ width: 22, height: 22, borderRadius: 6, border: `1px solid ${t.border}`, background: t.bg3, color: t.text, cursor: 'pointer', fontSize: 13, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>+</button>
               </div>
-              <div style={{ fontSize: 12, fontWeight: 900, color: t.text, minWidth: 50, textAlign: 'right' }}>{fmt(item.price * (1 - (item.discount || 0) / 100) * item.qty, settings?.sym)}</div>
-              <button onClick={() => setCart(c => c.filter(i => i.id !== item.id))} style={{ background: 'none', border: 'none', color: t.text4, cursor: 'pointer', fontSize: 14, padding: '0 2px' }}>✕</button>
+              <div style={{ fontSize: 12, fontWeight: 900, color: t.text, minWidth: 50, textAlign: 'right' }}>{fmt(item.price * (1 - (item.discount || 0) / 100) * item.qty)}</div>
+              {/* Remove button — always visible; red in remove mode */}
+              <button
+                onClick={e => { e.stopPropagation(); setCart(c => c.filter(i => i.id !== item.id)) }}
+                style={{
+                  background: 'none', border: 'none', padding: '0 2px', cursor: 'pointer',
+                  fontSize: 14, flexShrink: 0,
+                  color: removeMode ? '#ef4444' : t.text4,
+                  transition: 'color 0.18s',
+                }}
+              >✕</button>
             </div>
           ))}
       </div>

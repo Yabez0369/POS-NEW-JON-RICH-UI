@@ -42,6 +42,8 @@ export const POSTerminal = ({ products, setProducts, orders, setOrders, users, s
   const [manualBarcode, setManualBarcode] = useState('')
   const [showBarcodeInput, setShowBarcodeInput] = useState(false)
   const [showParkedDropdown, setShowParkedDropdown] = useState(false)
+  const [removeMode, setRemoveMode] = useState(false)
+  const [cartSearch, setCartSearch] = useState('')
 
   const [variantProduct, setVariantProduct] = useState(null)
   const [selectedVariant, setSelectedVariant] = useState({ size: '', color: '' })
@@ -61,8 +63,13 @@ export const POSTerminal = ({ products, setProducts, orders, setOrders, users, s
         barcodeBuffer.current = ''
         const product = products.find(p => p.sku === code || p.id.toString() === code)
         if (product) {
-          addToCart(product)
-          setScanMsg(`✓ Scanned: ${product.name}`)
+          if (removeMode) {
+            removeFromCart(product.id)
+            setScanMsg(`🗑️ Removed: ${product.name}`)
+          } else {
+            addToCart(product)
+            setScanMsg(`✓ Scanned: ${product.name}`)
+          }
         } else {
           setScanMsg('❌ Product not found: ' + code)
         }
@@ -73,7 +80,7 @@ export const POSTerminal = ({ products, setProducts, orders, setOrders, users, s
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [products])
+  }, [products, removeMode])
 
   const banners = []
   const activeOffers = (settings.banners || banners || []).filter(b => isBannerActive?.(b)).filter(b => b.offerType !== 'none') || []
@@ -153,6 +160,21 @@ export const POSTerminal = ({ products, setProducts, orders, setOrders, users, s
     setCart(c => c.map(i => i.id === id ? { ...i, qty: Math.max(0, i.qty + d) } : i).filter(i => i.qty > 0))
   }
 
+  const removeFromCart = (productId) => {
+    setCart(c => {
+      const cartId = c.find(i => (i.originalId || i.id) === productId || i.id === productId)?.id
+      if (!cartId) return c
+      const item = c.find(i => i.id === cartId)
+      if (!item) return c
+      if (item.qty <= 1) {
+        // qty = 1 → remove entirely
+        return c.filter(i => i.id !== cartId)
+      }
+      // qty ≥ 2 → move to top of cart (qty unchanged)
+      return [item, ...c.filter(i => i.id !== cartId)]
+    })
+  }
+
   const cartSubtotal = cart.reduce((s, i) => s + (i.price * (1 - (i.discount || 0) / 100)) * i.qty, 0)
   const cartTax = cartSubtotal * vatRate
   const cartBeforeExtras = cartSubtotal + cartTax
@@ -193,8 +215,13 @@ export const POSTerminal = ({ products, setProducts, orders, setOrders, users, s
   const handleBarcodeScan = (barcode) => {
     const product = products.find(p => p.sku === barcode || p.id.toString() === barcode)
     if (product) {
-      addToCart(product)
-      setScanMsg(`✓ Scanned: ${product.name}`)
+      if (removeMode) {
+        removeFromCart(product.id)
+        setScanMsg(`🗑️ Removed: ${product.name}`)
+      } else {
+        addToCart(product)
+        setScanMsg(`✓ Scanned: ${product.name}`)
+      }
     } else {
       setScanMsg('❌ Product not found')
     }
@@ -279,7 +306,7 @@ export const POSTerminal = ({ products, setProducts, orders, setOrders, users, s
     <div style={{ display: 'flex', height: 'calc(100vh - 48px)', overflow: 'hidden', fontFamily: 'inherit' }} className="pos-layout">
       <POSProductGrid search={search} setSearch={setSearch} cat={cat} setCat={setCat} filteredProds={filteredProds} favProds={favProds} getItemDiscount={getItemDiscount} addToCart={handleProductClick} scanMsg={scanMsg} parkBill={parkBill} parked={parked} recallBill={recallBill} showParkedDropdown={showParkedDropdown} setShowParkedDropdown={setShowParkedDropdown} setShowBarcodeInput={setShowBarcodeInput} settings={settings} t={t} />
 
-      <POSCartPanel cart={cart} updateQty={updateQty} setCart={setCart} selCust={selCust} setSelCust={setSelCust} custSearch={custSearch} setCustSearch={setCustSearch} lookupCustomer={lookupCustomer} setShowNewCust={setShowNewCust} loyaltyRedeem={loyaltyRedeem} setLoyaltyRedeem={setLoyaltyRedeem} appliedCoupon={appliedCoupon} setAppliedCoupon={setAppliedCoupon} couponCode={couponCode} setCouponCode={setCouponCode} applyCoupon={applyCoupon} cartSubtotal={cartSubtotal} cartTax={cartTax} couponDiscount={couponDiscount} loyaltyDiscount={loyaltyDiscount} cartTotal={cartTotal} pointsEarned={pointsEarned} payMethod={payMethod} setPayMethod={setPayMethod} cashGiven={cashGiven} setCashGiven={setCashGiven} cashGivenNum={cashGivenNum} cashChange={cashChange} cardNum={cardNum} setCardNum={setCardNum} setCardExp={setCardExp} setCardCvv={setCardCvv} splitCash={splitCash} setSplitCash={setSplitCash} splitCard={splitCard} setSplitCard={setSplitCard} checkout={checkout} setShowCustDisplay={setShowCustDisplay} settings={settings} t={t} />
+      <POSCartPanel cart={cart} updateQty={updateQty} setCart={setCart} removeFromCart={removeFromCart} removeMode={removeMode} setRemoveMode={setRemoveMode} cartSearch={cartSearch} setCartSearch={setCartSearch} selCust={selCust} setSelCust={setSelCust} custSearch={custSearch} setCustSearch={setCustSearch} lookupCustomer={lookupCustomer} setShowNewCust={setShowNewCust} loyaltyRedeem={loyaltyRedeem} setLoyaltyRedeem={setLoyaltyRedeem} appliedCoupon={appliedCoupon} setAppliedCoupon={setAppliedCoupon} couponCode={couponCode} setCouponCode={setCouponCode} applyCoupon={applyCoupon} cartSubtotal={cartSubtotal} cartTax={cartTax} couponDiscount={couponDiscount} loyaltyDiscount={loyaltyDiscount} cartTotal={cartTotal} pointsEarned={pointsEarned} payMethod={payMethod} setPayMethod={setPayMethod} cashGiven={cashGiven} setCashGiven={setCashGiven} cashGivenNum={cashGivenNum} cashChange={cashChange} cardNum={cardNum} setCardNum={setCardNum} setCardExp={setCardExp} setCardCvv={setCardCvv} splitCash={splitCash} setSplitCash={setSplitCash} splitCard={splitCard} setSplitCard={setSplitCard} checkout={checkout} setShowCustDisplay={setShowCustDisplay} settings={settings} t={t} />
 
       {variantProduct && (
         <Modal t={t} title="Select Variant" subtitle={variantProduct.name} onClose={() => setVariantProduct(null)}>
