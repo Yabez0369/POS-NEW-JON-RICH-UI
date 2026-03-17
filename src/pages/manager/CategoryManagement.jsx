@@ -383,12 +383,9 @@ export const CategoryManagement = ({ t, addAudit, currentUser }) => {
                   }
 
                   const formatAttrs = (r) => {
-                    const parts = []
-                    if (r.sizes?.length) parts.push(`Size: ${r.sizes.join(', ')}`)
-                    if (r.colors?.length) parts.push(`Color: ${r.colors.join(', ')}`)
-                    if (r.materials?.length) parts.push(`Material: ${r.materials.join(', ')}`)
-                    if (r.lengths?.length) parts.push(`Length: ${r.lengths.join(', ')}`)
-                    return parts.join(' | ') || 'No attributes defined'
+                    const cfg = r.attribute_config || []
+                    if (cfg.length === 0) return 'No attributes defined'
+                    return cfg.join(' | ')
                   }
 
                   return rows.map(row => (
@@ -475,3 +472,5 @@ export const CategoryManagement = ({ t, addAudit, currentUser }) => {
     </div>
   )
 }
+
+export default CategoryManagement

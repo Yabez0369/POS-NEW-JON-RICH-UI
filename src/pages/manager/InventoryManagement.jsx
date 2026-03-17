@@ -33,7 +33,7 @@ export function InventoryManagement({ products, setProducts, addAudit, currentUs
   const lowStockProducts = products.filter(isLowStock)
   const outOfStockCount = products.filter(isOutOfStock).length
   const lowStockCount = lowStockProducts.length
-  const totalUnits = products.reduce((s, p) => s + p.stock, 0)
+  const totalUnits = products.reduce((s, p) => s + (p.stock || 0), 0)
 
   const addMovement = (type, productName, productId, quantity, details = '') => {
     setMovements(m => [{ id: `mov-${Date.now()}`, type, productName, productId, quantity, user: userName, timestamp: ts(), details }, ...m].slice(0, 100))

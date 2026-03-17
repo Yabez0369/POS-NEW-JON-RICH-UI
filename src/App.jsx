@@ -13,6 +13,7 @@ import { MainLayout } from '@/components/layout/MainLayout'
 import { GuestLayout } from '@/components/layout/GuestLayout'
 import { isSupabaseConfigured } from '@/lib/supabase'
 import { fetchSettings } from '@/services/settings'
+import { productsService } from '@/services'
 import { useRealtimeOrders, useRealtimeInventory, useRealtimeReturns, useRealtimeCashSessions } from '@/hooks/useRealtime'
 
 import { LoginPage } from '@/pages/auth/LoginPage'
@@ -36,12 +37,14 @@ const VenueSiteManagement = lazyRetry(() => import('@/pages/admin/VenueSiteManag
 const ManagerDashboard = lazyRetry(() => import('@/pages/manager/ManagerDashboard'), 'ManagerDashboard')
 const ProductManagement = lazyRetry(() => import('@/pages/manager/ProductManagement'), 'ProductManagement')
 const InventoryManagement = lazyRetry(() => import('@/pages/manager/InventoryManagement'), 'InventoryManagement')
-const StaffManagement = lazyRetry(() => import('@/pages/manager/StaffManagement'), 'StaffManagement')
-const CashierManagement = lazyRetry(() => import('@/pages/manager/CashierManagement'), 'CashierManagement')
+const TeamManagement = lazyRetry(() => import('@/pages/manager/TeamManagement'))
 const CounterManagement = lazyRetry(() => import('@/pages/manager/CounterManagement'), 'CounterManagement')
 const ReturnManagement = lazyRetry(() => import('@/pages/manager/ReturnManagement'), 'ReturnManagement')
 const ReportsPage = lazyRetry(() => import('@/pages/manager/ReportsPage'), 'ReportsPage')
-const CategoryManagement = lazyRetry(() => import('@/pages/manager/CategoryManagement'), 'CategoryManagement')
+const CategoryManagement = lazyRetry(() => import('@/pages/manager/CategoryManagement'))
+const DamageManagement = lazyRetry(() => import('@/pages/manager/DamageManagement'))
+const StockTransferManagement = lazyRetry(() => import('@/pages/manager/StockTransferManagement'))
+const StocktakeManagement = lazyRetry(() => import('@/pages/manager/StocktakeManagement'))
 
 const POSTerminal = lazyRetry(() => import('@/pages/pos/POSTerminal'), 'POSTerminal')
 const CashierOrders = lazyRetry(() => import('@/pages/cashier/CashierOrders'), 'CashierOrders')
@@ -162,11 +165,16 @@ function RoleRedirect() {
   return <Navigate to={map[currentUser.role] || '/app/dashboard'} replace />
 }
 
-function useSupabaseSync(setter, table, seedData) {
+function useSupabaseSync(setter, table, seedData, fetchFn) {
   useEffect(() => {
     if (!isSupabaseConfigured()) return
     let cancelled = false
-    supabase.from(table).select('*').then(({ data, error }) => {
+    
+    const promise = fetchFn ? fetchFn() : supabase.from(table).select('*')
+    
+    Promise.resolve(promise).then((res) => {
+      const data = res?.data || res
+      const error = res?.error
       if (!cancelled && !error && data?.length > 0) {
         setter(data)
       }
@@ -197,7 +205,7 @@ function AppContent() {
   const [coupons, setCoupons] = useState(INITIAL_COUPONS)
   const [auditLogs, setAuditLogs] = useState([])
 
-  useSupabaseSync(setProducts, 'products', INITIAL_PRODUCTS)
+  useSupabaseSync(setProducts, 'products', INITIAL_PRODUCTS, productsService.fetchProducts)
   useSupabaseSync(setOrders, 'orders', INITIAL_ORDERS)
   useSupabaseSync(setReturns, 'returns', INITIAL_RETURNS)
   useSupabaseSync(setCounters, 'counters', INITIAL_COUNTERS)
@@ -345,14 +353,9 @@ function AppContent() {
                 <InventoryManagement products={products} setProducts={setProducts} addAudit={addAudit} currentUser={currentUser} t={t} />
               </ProtectedRoute>
             } />
-            <Route path="staff" element={
+            <Route path="team" element={
               <ProtectedRoute allowedRoles={['manager', 'admin']}>
-                <StaffManagement users={users} setUsers={setUsers} counters={counters} addAudit={addAudit} currentUser={currentUser} t={t} />
-              </ProtectedRoute>
-            } />
-            <Route path="cashiers" element={
-              <ProtectedRoute allowedRoles={['manager', 'admin']}>
-                <CashierManagement users={users} setUsers={setUsers} counters={counters} orders={orders} addAudit={addAudit} currentUser={currentUser} settings={settings} t={t} />
+                <TeamManagement users={users} setUsers={setUsers} counters={counters} orders={orders} addAudit={addAudit} currentUser={currentUser} settings={settings} t={t} />
               </ProtectedRoute>
             } />
             <Route path="counters" element={

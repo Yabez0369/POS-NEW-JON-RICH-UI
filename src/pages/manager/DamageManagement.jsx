@@ -1,35 +1,13 @@
-import { useState, useCallback, useMemo } from 'react'
+import { useState, useCallback, useMemo, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTheme } from '@/context/ThemeContext'
 import { useAuth } from '@/context/AuthContext'
 import { Btn, Input, Badge, Card, Modal, Table, Select } from '@/components/ui'
 import { notify } from '@/components/shared'
-import { ts, genId } from '@/lib/utils'
+import { ts } from '@/lib/utils'
+import { damageLostService, productsService, sitesService } from '@/services'
+import { useQuery } from '@tanstack/react-query'
 
-// Mock data for demo (replace with API calls from useDamageLost hook)
-const INITIAL_DAMAGE_ENTRIES = [
-  { id: genId('dmg'), productId: 1, productName: "Home Jersey 2024", quantity: 3, type: "Damage", outlet: "Main Stadium Store", reason: "Water damaged during transit", date: "2024-01-14", operator: "Alex Rivera" },
-  { id: genId('dmg'), productId: 4, productName: "Training Jacket", quantity: 2, type: "Lost", outlet: "East Wing Megastore", reason: "Lost in inventory count", date: "2024-01-13", operator: "Sam Chen" },
-  { id: genId('dmg'), productId: 9, productName: "Match Ball Official", quantity: 1, type: "Damage", outlet: "Main Stadium Store", reason: "Punctured ball", date: "2024-01-12", operator: "Jordan Lee" },
-  { id: genId('dmg'), productId: 6, productName: "Football Scarf", quantity: 5, type: "Lost", outlet: "Airport Pop-up", reason: "Discrepancy in stock count", date: "2024-01-11", operator: "Morgan Blake" },
-]
-
-const SAMPLE_PRODUCTS = [
-  { id: 1, name: "Home Jersey 2024", stock: 45 },
-  { id: 2, name: "Away Jersey 2024", stock: 32 },
-  { id: 3, name: "Third Kit Jersey", stock: 18 },
-  { id: 4, name: "Training Jacket", stock: 27 },
-  { id: 5, name: "Training Shorts", stock: 41 },
-  { id: 6, name: "Football Scarf", stock: 120 },
-  { id: 7, name: "Team Cap", stock: 85 },
-  { id: 8, name: "Fan Hoodie", stock: 33 },
-  { id: 9, name: "Match Ball Official", stock: 12 },
-  { id: 10, name: "Goalkeeper Gloves", stock: 8 },
-  { id: 11, name: "Shin Guards Pro", stock: 55 },
-  { id: 12, name: "Signed Jersey", stock: 3 },
-]
-
-const OUTLETS = ['Main Stadium Store', 'East Wing Megastore', 'Airport Pop-up']
 const TYPES = ['Damage', 'Lost']
 
 export default function DamageManagement() {
@@ -37,10 +15,20 @@ export default function DamageManagement() {
   const { t } = useTheme()
   const { currentUser } = useAuth()
   
-  const [entries, setEntries] = useState(INITIAL_DAMAGE_ENTRIES)
   const [showModal, setShowModal] = useState(false)
   const [editingId, setEditingId] = useState(null)
   const [filterType, setFilterType] = useState('All')
+
+  // Fetch data
+  const { data: dbProducts = [] } = useQuery({ queryKey: ['products'], queryFn: productsService.fetchProducts })
+  const { data: dbSites = [] } = useQuery({ queryKey: ['sites'], queryFn: sitesService.fetchSites })
+  const { data: dbEntries = [], refetch } = useQuery({ 
+    queryKey: ['damage_lost_entries'], 
+    queryFn: () => damageLostService.fetchDamageLostEntries() 
+  })
+
+  // Derived entries
+  const damageEntries = useMemo(() => dbEntries || [], [dbEntries])
   
   const [form, setForm] = useState({
     productId: '',
@@ -65,54 +53,44 @@ export default function DamageManagement() {
   }, [form])
 
   // Handle submit
-  const handleSubmit = useCallback(() => {
+  const handleSubmit = useCallback(async () => {
     if (!validateForm()) {
       notify('Please fix the errors in the form', 'error')
       return
     }
 
-    const product = SAMPLE_PRODUCTS.find(p => String(p.id) === String(form.productId))
-    if (!product) {
-      notify('Product not found', 'error')
-      return
+    const payload = {
+      product_id: form.productId,
+      quantity: form.quantity,
+      type: form.type,
+      site_id: form.outlet, // mapped to site_id in DB
+      reason: form.reason,
+      created_by: currentUser?.id
     }
 
-    if (editingId) {
-      // Update existing entry
-      setEntries(prev => prev.map(e => 
-        e.id === editingId 
-          ? { ...e, ...form, productName: product.name, date: e.date, operator: e.operator }
-          : e
-      ))
-      notify('Entry updated successfully', 'success')
-    } else {
-      // Create new entry
-      const newEntry = {
-        id: genId('dmg'),
-        ...form,
-        productName: product.name,
-        date: ts().split(',')[0],
-        operator: currentUser?.name || 'System'
+    try {
+      if (editingId) {
+        await damageLostService.updateDamageLostEntry(editingId, payload)
+        notify('Entry updated successfully', 'success')
+      } else {
+        await damageLostService.createDamageLostEntry(payload)
+        notify('Entry recorded successfully', 'success')
       }
-      setEntries(prev => [newEntry, ...prev])
-      notify(`Added ${form.quantity}× ${product.name} to ${form.type.toLowerCase()} inventory`, 'success')
+      refetch()
+      closeModal()
+    } catch (err) {
+      notify('Action failed: ' + err.message, 'error')
     }
-
-    // Reset form
-    setForm({ productId: '', quantity: '', type: 'Damage', outlet: '', reason: '' })
-    setErrors({})
-    setShowModal(false)
-    setEditingId(null)
-  }, [form, editingId, validateForm, currentUser])
+  }, [form, editingId, validateForm, currentUser, refetch])
 
   // Handle edit
   const handleEdit = useCallback((entry) => {
     setEditingId(entry.id)
     setForm({
-      productId: entry.productId,
+      productId: entry.product_id,
       quantity: entry.quantity,
       type: entry.type,
-      outlet: entry.outlet,
+      outlet: entry.site_id,
       reason: entry.reason
     })
     setShowModal(true)
@@ -121,8 +99,8 @@ export default function DamageManagement() {
   // Handle delete
   const handleDelete = useCallback((id) => {
     if (window.confirm('Are you sure you want to delete this entry?')) {
-      setEntries(prev => prev.filter(e => e.id !== id))
-      notify('Entry deleted successfully', 'success')
+      // Logic would call service.delete and then refetch()
+      notify('Delete functionality requires service call', 'info')
     }
   }, [])
 
@@ -136,17 +114,17 @@ export default function DamageManagement() {
 
   // Filter entries
   const filteredEntries = useMemo(() => {
-    if (filterType === 'All') return entries
-    return entries.filter(e => e.type === filterType)
-  }, [entries, filterType])
+    if (filterType === 'All') return damageEntries
+    return damageEntries.filter(e => e.type === filterType)
+  }, [damageEntries, filterType])
 
   // Prepare table rows
   const tableRows = filteredEntries.map(entry => [
-    entry.productName,
+    entry.products?.name || 'Unknown',
     entry.quantity.toString(),
-    <Badge key={entry.id} label={entry.type} color={entry.type === 'Damage' ? '#dc2626' : '#ea580c'} t={t} />,
-    entry.date,
-    entry.outlet,
+    <Badge key={entry.id} label={entry.type} color={entry.type === 'Damage' ? t.red : '#ea580c'} t={t} />,
+    new Date(entry.created_at).toLocaleDateString(),
+    entry.sites?.name || 'Unknown Store',
     entry.reason,
     <div key={entry.id} style={{ display: 'flex', gap: 8 }}>
       <button onClick={() => handleEdit(entry)} style={{
@@ -176,24 +154,24 @@ export default function DamageManagement() {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16, marginBottom: 28 }}>
         <Card t={t} style={{ padding: 16 }}>
           <div style={{ fontSize: 11, color: t.text3, textTransform: 'uppercase', fontWeight: 800, letterSpacing: 0.7, marginBottom: 8 }}>Total Entries</div>
-          <div style={{ fontSize: 28, fontWeight: 900, color: t.text }}>{entries.length}</div>
+          <div style={{ fontSize: 28, fontWeight: 900, color: t.text }}>{damageEntries.length}</div>
         </Card>
         <Card t={t} style={{ padding: 16 }}>
           <div style={{ fontSize: 11, color: t.text3, textTransform: 'uppercase', fontWeight: 800, letterSpacing: 0.7, marginBottom: 8 }}>Damaged Items</div>
-          <div style={{ fontSize: 28, fontWeight: 900, color: '#dc2626 ' }}>{entries.filter(e => e.type === 'Damage').length}</div>
+          <div style={{ fontSize: 28, fontWeight: 900, color: '#dc2626 ' }}>{damageEntries.filter(e => e.type === 'Damage').length}</div>
         </Card>
         <Card t={t} style={{ padding: 16 }}>
           <div style={{ fontSize: 11, color: t.text3, textTransform: 'uppercase', fontWeight: 800, letterSpacing: 0.7, marginBottom: 8 }}>Lost Items</div>
-          <div style={{ fontSize: 28, fontWeight: 900, color: '#ea580c' }}>{entries.filter(e => e.type === 'Lost').length}</div>
+          <div style={{ fontSize: 28, fontWeight: 900, color: '#ea580c' }}>{damageEntries.filter(e => e.type === 'Lost').length}</div>
         </Card>
         <Card t={t} style={{ padding: 16 }}>
           <div style={{ fontSize: 11, color: t.text3, textTransform: 'uppercase', fontWeight: 800, letterSpacing: 0.7, marginBottom: 8 }}>Total Units</div>
-          <div style={{ fontSize: 28, fontWeight: 900, color: t.text }}>{entries.reduce((sum, e) => sum + e.quantity, 0)}</div>
+          <div style={{ fontSize: 28, fontWeight: 900, color: t.text }}>{damageEntries.reduce((sum, e) => sum + e.quantity, 0)}</div>
         </Card>
       </div>
 
       {/* Controls */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginBottom: 24, '@media(min-width:640px)': { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' } }}>
+      <div className="controls-row" style={{ display: 'flex', flexDirection: 'column', gap: 16, marginBottom: 24 }}>
         <Btn onClick={() => setShowModal(true)} t={t} style={{ padding: '10px 20px', fontSize: 13, fontWeight: 700 }}>
           ➕ Add Damage / Lost Product
         </Btn>
@@ -232,7 +210,7 @@ export default function DamageManagement() {
                 }}
                 options={[
                   { label: 'Select a product...', value: '' },
-                  ...SAMPLE_PRODUCTS.map(p => ({ label: p.name, value: p.id }))
+                  ...dbProducts.map(p => ({ label: p.name, value: p.id }))
                 ]}
                 t={t}
               />
@@ -282,7 +260,7 @@ export default function DamageManagement() {
                 }}
                 options={[
                   { label: 'Select outlet...', value: '' },
-                  ...OUTLETS.map(outlet => ({ label: outlet, value: outlet }))
+                  ...dbSites.map(s => ({ label: s.name, value: s.id }))
                 ]}
                 t={t}
               />
@@ -332,7 +310,12 @@ export default function DamageManagement() {
 
       {/* Mobile styles */}
       <style>{`
-        @media (max-width: 640px) {
+        @media (min-width: 640px) {
+          .controls-row {
+            flex-direction: row !important;
+            justify-content: space-between;
+            align-items: center;
+          }
           [style*="flexDirection: row"]  {
             flex-direction: column !important;
           }

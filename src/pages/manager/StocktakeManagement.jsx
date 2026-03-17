@@ -1,47 +1,58 @@
-import { useState, useCallback, useMemo } from 'react'
+import { useState, useCallback, useMemo, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTheme } from '@/context/ThemeContext'
 import { useAuth } from '@/context/AuthContext'
 import { Btn, Input, Badge, Card, Modal, Table, Select } from '@/components/ui'
 import { notify } from '@/components/shared'
-import { ts, genId } from '@/lib/utils'
+import { ts } from '@/lib/utils'
+import { stocktakeService, productsService, sitesService, inventoryService } from '@/services'
+import { useQuery } from '@tanstack/react-query'
 
-// Sample products
-const SAMPLE_PRODUCTS = [
-  { id: 1, name: "Home Jersey 2024", stock: 45, emoji: "🔴" },
-  { id: 2, name: "Away Jersey 2024", stock: 32, emoji: "⚪" },
-  { id: 3, name: "Third Kit Jersey", stock: 18, emoji: "🔵" },
-  { id: 4, name: "Training Jacket", stock: 27, emoji: "🧥" },
-  { id: 5, name: "Training Shorts", stock: 41, emoji: "🩳" },
-  { id: 6, name: "Football Scarf", stock: 120, emoji: "🧣" },
-  { id: 7, name: "Team Cap", stock: 85, emoji: "🧢" },
-  { id: 8, name: "Fan Hoodie", stock: 33, emoji: "👕" },
-  { id: 9, name: "Match Ball Official", stock: 12, emoji: "⚽" },
-  { id: 10, name: "Goalkeeper Gloves", stock: 8, emoji: "🥅" },
-  { id: 11, name: "Shin Guards Pro", stock: 55, emoji: "🛡️" },
-  { id: 12, name: "Signed Jersey", stock: 3, emoji: "✍️" },
-]
+// Stocktake logic
 
 export default function StocktakeManagement() {
   const navigate = useNavigate()
   const { t } = useTheme()
   const { currentUser } = useAuth()
   
-  const [stocktakeItems, setStocktakeItems] = useState(
-    SAMPLE_PRODUCTS.map(p => ({
-      id: genId('stk'),
-      productId: p.id,
-      productName: p.name,
-      emoji: p.emoji,
-      systemStock: p.stock,
-      physicalCount: p.stock,
-      variance: 0,
-      notes: ''
-    }))
-  )
+  const [selectedSiteId, setSelectedSiteId] = useState('')
+  const [stocktakeItems, setStocktakeItems] = useState([])
   const [showModal, setShowModal] = useState(false)
   const [editingId, setEditingId] = useState(null)
   const [filterVariance, setFilterVariance] = useState('All')
+
+  // Fetch data
+  const { data: dbProducts = [] } = useQuery({ queryKey: ['products'], queryFn: productsService.fetchProducts })
+  const { data: dbSites = [] } = useQuery({ queryKey: ['sites'], queryFn: sitesService.fetchSites })
+  const { data: siteInventory = [], refetch: refetchInventory } = useQuery({
+    queryKey: ['inventory', selectedSiteId],
+    queryFn: () => inventoryService.fetchInventory(selectedSiteId),
+    enabled: !!selectedSiteId
+  })
+
+  // Initialize stocktake items when inventory loads - only if they haven't been loaded for this site yet
+  useEffect(() => {
+    if (siteInventory && siteInventory.length > 0) {
+      // Basic check to see if we already have items for this site to avoid reset on every background refetch
+      const currentProductIds = stocktakeItems.map(i => i.productId).sort().join(',')
+      const newProductIds = siteInventory.map(i => i.product_id).sort().join(',')
+      
+      if (currentProductIds !== newProductIds) {
+        setStocktakeItems(siteInventory.map(inv => ({
+          id: inv.id,
+          productId: inv.product_id,
+          productName: inv.products?.name || 'Unknown',
+          emoji: inv.products?.emoji || '📦',
+          systemStock: inv.stock_on_hand || 0,
+          physicalCount: inv.stock_on_hand || 0,
+          variance: 0,
+          notes: ''
+        })))
+      }
+    } else if (selectedSiteId && siteInventory.length === 0) {
+      setStocktakeItems([])
+    }
+  }, [siteInventory, selectedSiteId]) // Removed stocktakeItems from deps to avoid loop
   
   const [form, setForm] = useState({
     productId: '',
@@ -67,7 +78,7 @@ export default function StocktakeManagement() {
       return
     }
 
-    const product = SAMPLE_PRODUCTS.find(p => String(p.id) === String(form.productId))
+    const product = dbProducts.find(p => String(p.id) === String(form.productId))
     if (!product) {
       notify('Product not found', 'error')
       return
@@ -103,13 +114,13 @@ export default function StocktakeManagement() {
         notify(`Updated ${product.name} physical count`, 'success')
       } else {
         const newItem = {
-          id: genId('stk'),
+          id: `new-${Date.now()}`,
           productId: product.id,
           productName: product.name,
-          emoji: product.emoji,
-          systemStock: product.stock,
+          emoji: product.emoji || '📦',
+          systemStock: 0, // Default for non-stocked items
           physicalCount: parseInt(form.physicalCount),
-          variance: parseInt(form.physicalCount) - product.stock,
+          variance: parseInt(form.physicalCount),
           notes: form.notes
         }
         setStocktakeItems(prev => [newItem, ...prev])
@@ -144,27 +155,22 @@ export default function StocktakeManagement() {
   }, [])
 
   // Apply adjustments
-  const applyAdjustments = useCallback(() => {
+  const applyAdjustments = useCallback(async () => {
     const adjustments = stocktakeItems.filter(item => item.variance !== 0)
     if (adjustments.length === 0) {
       notify('No adjustments needed', 'info')
       return
     }
-    if (window.confirm(`Apply ${adjustments.length} stock adjustment(s)?`)) {
-      notify(`Applied ${adjustments.length} stocktake adjustment(s)`, 'success')
-      // Reset stocktake
-      setStocktakeItems(SAMPLE_PRODUCTS.map(p => ({
-        id: genId('stk'),
-        productId: p.id,
-        productName: p.name,
-        emoji: p.emoji,
-        systemStock: p.stock,
-        physicalCount: p.stock,
-        variance: 0,
-        notes: ''
-      })))
+    if (window.confirm(`Apply ${adjustments.length} stock adjustment(s) to ${dbSites.find(s => s.id === selectedSiteId)?.name}?`)) {
+      try {
+        await stocktakeService.submitStocktake(adjustments, selectedSiteId, currentUser?.id)
+        notify(`Applied ${adjustments.length} stocktake adjustment(s)`, 'success')
+        refetchInventory()
+      } catch (err) {
+        notify('Failed to apply adjustments: ' + err.message, 'error')
+      }
     }
-  }, [stocktakeItems])
+  }, [stocktakeItems, selectedSiteId, currentUser, dbSites, refetchInventory])
 
   // Close modal
   const closeModal = useCallback(() => {
@@ -249,6 +255,16 @@ export default function StocktakeManagement() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10 }}>
         <div style={{ fontSize: 22, fontWeight: 900, color: t.text }}>📋 Stocktake Inventory</div>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <Select
+            value={selectedSiteId}
+            onChange={setSelectedSiteId}
+            options={[
+              { label: 'Select Outlet/Site...', value: '' },
+              ...dbSites.map(s => ({ label: s.name, value: s.id }))
+            ]}
+            t={t}
+            style={{ minWidth: 200 }}
+          />
           <Btn t={t} variant="secondary" onClick={() => navigate('/app/inventory')}>📥 Goods Receiving</Btn>
           <Btn t={t} onClick={() => {}} disabled>📋 Stocktake</Btn>
           <Btn t={t} variant="secondary" onClick={() => navigate('/app/stock-transfer')}>🔄 Transfer Stock</Btn>
@@ -279,7 +295,7 @@ export default function StocktakeManagement() {
       </div>
 
       {/* Controls */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginBottom: 24, '@media(min-width:640px)': { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' } }}>
+      <div className="controls-row" style={{ display: 'flex', flexDirection: 'column', gap: 16, marginBottom: 24 }}>
         <Btn onClick={() => setShowModal(true)} t={t} style={{ padding: '10px 20px', fontSize: 13, fontWeight: 700 }}>
           ➕ Add/Update Item
         </Btn>
@@ -345,7 +361,7 @@ export default function StocktakeManagement() {
                 }}
                 options={[
                   { label: 'Select a product...', value: '' },
-                  ...SAMPLE_PRODUCTS.map(p => ({ label: `${p.emoji} ${p.name}`, value: p.id }))
+                  ...dbProducts.map(p => ({ label: `${p.emoji || '📦'} ${p.name}`, value: p.id }))
                 ]}
                 t={t}
               />
@@ -407,7 +423,12 @@ export default function StocktakeManagement() {
       )}
 
       <style>{`
-        @media (max-width: 640px) {
+        @media (min-width: 640px) {
+          .controls-row {
+            flex-direction: row !important;
+            justify-content: space-between;
+            align-items: center;
+          }
           [style*="flexDirection: row"] {
             flex-direction: column !important;
           }

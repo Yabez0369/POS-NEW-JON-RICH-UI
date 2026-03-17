@@ -2,9 +2,21 @@ import { supabase, isSupabaseConfigured } from '@/lib/supabase'
 
 export async function fetchProducts() {
   if (isSupabaseConfigured()) {
-    const { data, error } = await supabase.from('products').select('*, categories(name)').order('name')
+    const { data, error } = await supabase
+      .from('products')
+      .select('*, categories(name), inventory(stock_on_hand)')
+      .order('name')
+    
     if (error) throw error
-    return data
+    
+    // Calculate total stock for each product
+    const productsWithStock = data.map(p => ({
+      ...p,
+      stock: (p.inventory || []).reduce((sum, inv) => sum + (inv.stock_on_hand || 0), 0),
+      category: p.categories?.name || 'Uncategorized'
+    }))
+    
+    return productsWithStock
   }
   return null
 }

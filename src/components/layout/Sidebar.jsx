@@ -5,52 +5,59 @@ import { useAppStore } from '@/stores/appStore'
 
 const navByRole = {
   admin: [
+    { type: 'group', l: 'Overview' },
     { key: 'dashboard', l: 'Dashboard', i: '📊' },
-    { key: 'pos', l: 'POS Terminal', i: '🛒' },
     { key: 'analytics', l: 'Analytics', i: '📈' },
+    { type: 'group', l: 'Commerce' },
     { key: 'customers', l: 'Customers', i: '👥' },
-    { key: 'users', l: 'All Users', i: '🔑' },
-    { key: 'staff', l: 'Staff Mgmt', i: '👥' },
-    { key: 'venues', l: 'Venues & Sites', i: '🏟️' },
-    { key: 'audit', l: 'Audit Logs', i: '📋' },
-    { key: 'banners', l: 'Banners', i: '🖼️' },
-    { key: 'coupons', l: 'Coupons', i: '🎟️' },
     { key: 'zreport', l: 'Z-Report', i: '📑' },
+    { key: 'coupons', l: 'Coupons', i: '🎟️' },
+    { type: 'group', l: 'System' },
+    { key: 'venues', l: 'Venues & Sites', i: '🏟️' },
+    { key: 'banners', l: 'Banners', i: '🖼️' },
+    { key: 'users', l: 'User Access', i: '🔑' },
+    { key: 'audit', l: 'Audit Logs', i: '📋' },
     { key: 'settings', l: 'Settings', i: '⚙️' },
   ],
   manager: [
+    { type: 'group', l: 'Operations' },
     { key: 'dashboard', l: 'Dashboard', i: '📊' },
-    { key: 'pos', l: 'POS Terminal', i: '🛒' },
-    { key: 'staffdash', l: 'Staff Dashboard', i: '🖥️' },
-    { key: 'pickup', l: 'Pickup Orders', i: '📦' },
-    { key: 'products', l: 'Products', i: '🏷️' },
-    { key: 'categories', l: 'Categories', i: '🗂️' },
-    { key: 'inventory', l: 'Inventory', i: '📦' },
-    { key: 'staff', l: 'Staff Mgmt', i: '👥' },
-    { key: 'cashiers', l: 'Cashier Mgmt', i: '🛒' },
-    { key: 'counters', l: 'Counters', i: '🏪' },
-    { key: 'returns', l: 'Returns', i: '↩️' },
     { key: 'reports', l: 'Reports', i: '📈' },
+    { type: 'group', l: 'Team' },
+    { key: 'team', l: 'Team Management', i: '👥' },
+    { type: 'group', l: 'Inventory' },
+    { key: 'categories', l: 'Categories', i: '🗂️' },
+    { key: 'products', l: 'Products', i: '🏷️' },
+    { key: 'inventory', l: 'Stock Levels', i: '📦' },
+    { key: 'damage-lost', l: 'Damaged/Lost', i: '⚠️' },
+    { key: 'stock-transfer', l: 'Stock Transfer', i: '🚛' },
+    { key: 'stocktake', l: 'Stocktake', i: '📝' },
+    { type: 'group', l: 'Sales' },
+    { key: 'pos', l: 'POS Terminal', i: '🛒' },
+    { key: 'returns', l: 'Returns', i: '↩️' },
+    { key: 'pickup', l: 'Pickup Orders', i: '📦' },
   ],
   cashier: [
+    { type: 'group', l: 'Selling' },
     { key: 'pos', l: 'POS Terminal', i: '🛒' },
-    { key: 'cash', l: 'Cash Mgmt', i: '💰' },
+    { key: 'cash', l: 'Cash Management', i: '💰' },
+    { type: 'group', l: 'Order Info' },
     { key: 'orders', l: 'My Orders', i: '🧾' },
     { key: 'pickup', l: 'Pickup Orders', i: '📦' },
     { key: 'hardware', l: 'Hardware', i: '🖨️' },
-    { key: 'profile', l: 'Profile', i: '👤' },
   ],
   staff: [
+    { type: 'group', l: 'Fulfillment' },
     { key: 'staffdash', l: 'Order Queue', i: '📋' },
     { key: 'pickup', l: 'Pickup Verify', i: '📦' },
-    { key: 'profile', l: 'Profile', i: '👤' },
   ],
   customer: [
-    { key: 'shop', l: 'Shop', i: '🛍️' },
-    { key: 'history', l: 'My Orders', i: '📜' },
+    { type: 'group', l: 'Shop' },
+    { key: 'shop', l: 'Start Shopping', i: '🛍️' },
+    { type: 'group', l: 'My Account' },
+    { key: 'history', l: 'Order History', i: '📜' },
     { key: 'tracking', l: 'Track Orders', i: '📍' },
     { key: 'returns', l: 'Returns', i: '↩️' },
-    { key: 'profile', l: 'Profile', i: '👤' },
   ],
 }
 
@@ -215,7 +222,26 @@ export function Sidebar() {
         )}
       </div>
       <nav style={{ flex: 1, padding: '8px 8px', overflowY: 'auto' }}>
-        {nav.map((item) => {
+        {nav.map((item, idx) => {
+          if (item.type === 'group') {
+            return (
+              <div
+                key={`grp-${idx}`}
+                style={{
+                  fontSize: 10,
+                  fontWeight: 800,
+                  color: theme.text4,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em',
+                  padding: '16px 12px 6px',
+                  marginTop: idx === 0 ? 0 : 4,
+                }}
+              >
+                {item.l}
+              </div>
+            )
+          }
+
           const active = isActive(item)
           return (
             <button

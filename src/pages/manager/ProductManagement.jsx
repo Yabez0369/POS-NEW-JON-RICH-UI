@@ -260,7 +260,7 @@ export const ProductManagement = ({ products, setProducts, addAudit, currentUser
             </div>,
             <span style={{ fontWeight: 800, color: t.green }}>{fmt(p.price, settings?.sym)}</span>,
             <span style={{ fontWeight: 700, color: (p.discount || 0) > 0 ? t.accent : t.text3 }}>{(p.discount || 0) > 0 ? '-' + p.discount + '%' : '—'}</span>,
-            <Badge t={t} text={String(p.stock)} color={p.stock < 10 ? 'red' : p.stock < 20 ? 'yellow' : 'green'} />,
+            <Badge t={t} text={String(p.stock || 0)} color={(p.stock || 0) < 10 ? 'red' : (p.stock || 0) < 20 ? 'yellow' : 'green'} />,
             <div style={{ display: 'flex', gap: 5 }}>
               <Btn t={t} variant="secondary" size="sm" onClick={() => {
                 setEditP(p)
