@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useTheme } from '@/context/ThemeContext'
 import { useAuth } from '@/context/AuthContext'
 import { Btn, Input, Badge, Card, StatCard, Modal, Table, Select } from '@/components/ui'
@@ -9,6 +10,7 @@ import { PRODUCT_IMAGES } from '@/lib/seed-data'
 const DEFAULT_REORDER = 10
 
 export function InventoryManagement({ products, setProducts, addAudit, currentUser, t: tProp }) {
+  const navigate = useNavigate()
   const { t: tTheme } = useTheme()
   const { currentUser: authUser } = useAuth()
   const t = tProp ?? tTheme
@@ -16,14 +18,8 @@ export function InventoryManagement({ products, setProducts, addAudit, currentUs
   const [editStock, setEditStock] = useState(null)
   const [ns, setNs] = useState('')
   const [addQ, setAddQ] = useState('')
-  const [showTransfer, setShowTransfer] = useState(false)
   const [showReceiving, setShowReceiving] = useState(false)
-  const [showStocktake, setShowStocktake] = useState(false)
-  const [showDamaged, setShowDamaged] = useState(false)
-  const [transferForm, setTransferForm] = useState({ productId: '', fromSite: '', toSite: '', qty: '' })
   const [receivingForm, setReceivingForm] = useState({ productId: '', qty: '', notes: '' })
-  const [damagedForm, setDamagedForm] = useState({ productId: '', qty: '', reason: '' })
-  const [stocktakeItems, setStocktakeItems] = useState([])
   const [movements, setMovements] = useState([])
 
   const user = currentUser ?? authUser
@@ -52,22 +48,6 @@ export function InventoryManagement({ products, setProducts, addAudit, currentUs
     addMovement(type, product.name, productId, newStock - prevStock, details)
   }
 
-  const handleTransfer = () => {
-    const product = products.find(p => String(p.id) === transferForm.productId)
-    if (!product) { notify('Select a product', 'error'); return }
-    const qty = parseInt(transferForm.qty)
-    if (!qty || qty <= 0) { notify('Enter a valid quantity', 'error'); return }
-    if (!transferForm.fromSite || !transferForm.toSite) { notify('Select both sites', 'error'); return }
-    if (transferForm.fromSite === transferForm.toSite) { notify('Cannot transfer to same site', 'error'); return }
-
-    addAudit(user, 'Stock Transfer', 'Inventory', `${product.name}: ${qty} units from ${transferForm.fromSite} → ${transferForm.toSite}`)
-    addMovement('Transfer', product.name, product.id, -qty, `${transferForm.fromSite} → ${transferForm.toSite}`)
-    addMovement('Transfer', product.name, product.id, qty, `${transferForm.fromSite} → ${transferForm.toSite}`)
-    notify(`Transferred ${qty}× ${product.name} from ${transferForm.fromSite} to ${transferForm.toSite}`, 'success')
-    setShowTransfer(false)
-    setTransferForm({ productId: '', fromSite: '', toSite: '', qty: '' })
-  }
-
   const handleReceiving = () => {
     const product = products.find(p => String(p.id) === receivingForm.productId)
     if (!product) { notify('Select a product', 'error'); return }
@@ -81,45 +61,11 @@ export function InventoryManagement({ products, setProducts, addAudit, currentUs
     setReceivingForm({ productId: '', qty: '', notes: '' })
   }
 
-  const handleDamagedLost = () => {
-    const product = products.find(p => String(p.id) === damagedForm.productId)
-    if (!product) { notify('Select a product', 'error'); return }
-    const qty = parseInt(damagedForm.qty)
-    if (!qty || qty <= 0) { notify('Enter a valid quantity', 'error'); return }
-    if (!damagedForm.reason?.trim()) { notify('Enter a reason', 'error'); return }
-    if (qty > product.stock) { notify(`Only ${product.stock} in stock`, 'error'); return }
-
-    const newStock = product.stock - qty
-    applyStockChange(product.id, newStock, 'Damaged/Lost', `${damagedForm.reason} (-${qty})`)
-    notify(`Recorded ${qty}× ${product.name} as ${damagedForm.reason}`, 'success')
-    setShowDamaged(false)
-    setDamagedForm({ productId: '', qty: '', reason: '' })
-  }
-
   const handleUpdateStock = () => {
     const q = Math.max(0, ns !== '' ? +ns : editStock.stock + (+addQ || 0))
     applyStockChange(editStock.id, q, 'Stock Updated', `${editStock.name} → ${q}`)
     notify(`Stock updated to ${q}`, 'success')
     setEditStock(null)
-  }
-
-  const startStocktake = () => {
-    setStocktakeItems(products.map(p => ({ ...p, physicalCount: p.stock })))
-    setShowStocktake(true)
-  }
-
-  const applyStocktakeAdjustments = () => {
-    let adjusted = 0
-    stocktakeItems.forEach(item => {
-      const diff = item.physicalCount - item.stock
-      if (diff !== 0) {
-        applyStockChange(item.id, item.physicalCount, 'Stocktake Adjustment', `System: ${item.stock} → Physical: ${item.physicalCount}`)
-        adjusted++
-      }
-    })
-    notify(adjusted ? `Applied ${adjusted} stocktake adjustment(s)` : 'No adjustments needed', adjusted ? 'success' : 'info')
-    setShowStocktake(false)
-    setStocktakeItems([])
   }
 
   const getStatusBadge = (p) => {
@@ -136,9 +82,9 @@ export function InventoryManagement({ products, setProducts, addAudit, currentUs
         <div style={{ fontSize: 22, fontWeight: 900, color: t.text }}>Inventory</div>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           <Btn t={t} variant="secondary" onClick={() => setShowReceiving(true)}>📥 Goods Receiving</Btn>
-          <Btn t={t} variant="secondary" onClick={startStocktake}>📋 Stocktake</Btn>
-          <Btn t={t} variant="secondary" onClick={() => setShowTransfer(true)}>🔄 Transfer Stock</Btn>
-          <Btn t={t} variant="secondary" onClick={() => setShowDamaged(true)}>⚠️ Damaged/Lost</Btn>
+          <Btn t={t} variant="secondary" onClick={() => navigate('/app/stocktake')}>📋 Stocktake</Btn>
+          <Btn t={t} variant="secondary" onClick={() => navigate('/app/stock-transfer')}>🔄 Transfer Stock</Btn>
+          <Btn t={t} variant="secondary" onClick={() => navigate('/app/damage-lost')}>🔴 Damaged/Lost</Btn>
         </div>
       </div>
 
@@ -222,41 +168,6 @@ export function InventoryManagement({ products, setProducts, addAudit, currentUs
         </Modal>
       )}
 
-      {/** 4. Stock transfer modal */}
-      {showTransfer && (
-        <Modal t={t} title="Transfer Stock Between Sites" onClose={() => setShowTransfer(false)}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-            <div style={{ background: t.blueBg, border: `1px solid ${t.blueBorder}`, borderRadius: 9, padding: '10px 14px', fontSize: 12, color: t.blue }}>
-              ℹ️ Transfer stock between your store locations. This will log the movement for audit purposes.
-            </div>
-            <Select
-              t={t} label="Product"
-              value={transferForm.productId}
-              onChange={v => setTransferForm(f => ({ ...f, productId: v }))}
-              options={[{ value: '', label: '— Select Product —' }, ...products.map(p => ({ value: String(p.id), label: `${p.emoji} ${p.name} (${p.stock} in stock)` }))]}
-            />
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 13 }}>
-              <Select
-                t={t} label="From Site"
-                value={transferForm.fromSite}
-                onChange={v => setTransferForm(f => ({ ...f, fromSite: v }))}
-                options={[{ value: '', label: '— Select —' }, ...sites.map(s => ({ value: s, label: s }))]}
-              />
-              <Select
-                t={t} label="To Site"
-                value={transferForm.toSite}
-                onChange={v => setTransferForm(f => ({ ...f, toSite: v }))}
-                options={[{ value: '', label: '— Select —' }, ...sites.map(s => ({ value: s, label: s }))]}
-              />
-            </div>
-            <Input t={t} label="Quantity" value={transferForm.qty} onChange={v => setTransferForm(f => ({ ...f, qty: v }))} type="number" placeholder="Units to transfer" />
-            <Btn t={t} onClick={handleTransfer} disabled={!transferForm.productId || !transferForm.fromSite || !transferForm.toSite || !transferForm.qty}>
-              🔄 Confirm Transfer
-            </Btn>
-          </div>
-        </Modal>
-      )}
-
       {/** 5. Goods receiving modal */}
       {showReceiving && (
         <Modal t={t} title="Goods Receiving" onClose={() => setShowReceiving(false)}>
@@ -279,62 +190,6 @@ export function InventoryManagement({ products, setProducts, addAudit, currentUs
         </Modal>
       )}
 
-      {/** 6. Stocktake modal */}
-      {showStocktake && (
-        <Modal t={t} title="Stocktake Mode" onClose={() => { setShowStocktake(false); setStocktakeItems([]) }} width={700}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-            <div style={{ background: t.blueBg, border: `1px solid ${t.blueBorder}`, borderRadius: 9, padding: '10px 14px', fontSize: 12, color: t.blue }}>
-              ℹ️ Compare system count vs physical count. Enter physical counts and apply adjustments to sync.
-            </div>
-            <div style={{ maxHeight: 320, overflow: 'auto' }}>
-              <Table
-                t={t}
-                cols={['Product', 'System Count', 'Physical Count', 'Variance']}
-                rows={stocktakeItems.map(item => {
-                  const diff = (item.physicalCount ?? item.stock) - item.stock
-                  return [
-                    <span style={{ fontWeight: 600, color: t.text }}>{item.emoji} {item.name}</span>,
-                    <span style={{ fontWeight: 700, color: t.text }}>{item.stock}</span>,
-                    <input
-                      type="number"
-                      value={item.physicalCount ?? item.stock}
-                      onChange={e => {
-                        const v = parseInt(e.target.value) || 0
-                        setStocktakeItems(items => items.map(i => i.id === item.id ? { ...i, physicalCount: v } : i))
-                      }}
-                      style={{ width: 70, padding: '6px 8px', borderRadius: 6, border: `1px solid ${t.border}`, background: t.input, color: t.text, fontSize: 13 }}
-                    />,
-                    <span style={{ fontWeight: 700, color: diff === 0 ? t.text3 : diff > 0 ? t.green : t.red }}>{diff === 0 ? '—' : diff > 0 ? `+${diff}` : diff}</span>,
-                  ]
-                })}
-              />
-            </div>
-            <Btn t={t} onClick={applyStocktakeAdjustments}>Apply Stocktake Adjustments</Btn>
-          </div>
-        </Modal>
-      )}
-
-      {/** 8. Damaged/Lost modal */}
-      {showDamaged && (
-        <Modal t={t} title="Record Damaged / Lost Stock" onClose={() => setShowDamaged(false)}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-            <div style={{ background: t.redBg || t.bg3, border: `1px solid ${t.red || t.border}`, borderRadius: 9, padding: '10px 14px', fontSize: 12, color: t.red }}>
-              ⚠️ Record damaged or lost items. Stock will be reduced by the entered quantity.
-            </div>
-            <Select
-              t={t} label="Product"
-              value={damagedForm.productId}
-              onChange={v => setDamagedForm(f => ({ ...f, productId: v }))}
-              options={[{ value: '', label: '— Select Product —' }, ...products.filter(p => p.stock > 0).map(p => ({ value: String(p.id), label: `${p.emoji} ${p.name} (${p.stock} in stock)` }))]}
-            />
-            <Input t={t} label="Quantity" value={damagedForm.qty} onChange={v => setDamagedForm(f => ({ ...f, qty: v }))} type="number" placeholder="Units to deduct" />
-            <Input t={t} label="Reason" value={damagedForm.reason} onChange={v => setDamagedForm(f => ({ ...f, reason: v }))} placeholder="e.g. Damaged in transit, Lost" required />
-            <Btn t={t} onClick={handleDamagedLost} disabled={!damagedForm.productId || !damagedForm.qty || !damagedForm.reason?.trim()}>
-              ⚠️ Record
-            </Btn>
-          </div>
-        </Modal>
-      )}
     </div>
   )
 }

@@ -41,6 +41,9 @@ const CashierManagement = lazyRetry(() => import('@/pages/manager/CashierManagem
 const CounterManagement = lazyRetry(() => import('@/pages/manager/CounterManagement'), 'CounterManagement')
 const ReturnManagement = lazyRetry(() => import('@/pages/manager/ReturnManagement'), 'ReturnManagement')
 const ReportsPage = lazyRetry(() => import('@/pages/manager/ReportsPage'), 'ReportsPage')
+const DamageManagement = lazyRetry(() => import('@/pages/manager/DamageManagement'), 'default')
+const StockTransferManagement = lazyRetry(() => import('@/pages/manager/StockTransferManagement'), 'default')
+const StocktakeManagement = lazyRetry(() => import('@/pages/manager/StocktakeManagement'), 'default')
 
 const POSTerminal = lazyRetry(() => import('@/pages/pos/POSTerminal'), 'POSTerminal')
 const CashierOrders = lazyRetry(() => import('@/pages/cashier/CashierOrders'), 'CashierOrders')
@@ -362,6 +365,21 @@ function AppContent() {
             <Route path="reports" element={
               <ProtectedRoute allowedRoles={['manager', 'admin']}>
                 <ReportsPage orders={orders} users={users} products={products} settings={settings} t={t} />
+              </ProtectedRoute>
+            } />
+            <Route path="damage-lost" element={
+              <ProtectedRoute allowedRoles={['manager', 'admin']}>
+                <DamageManagement t={t} currentUser={currentUser} />
+              </ProtectedRoute>
+            } />
+            <Route path="stock-transfer" element={
+              <ProtectedRoute allowedRoles={['manager', 'admin']}>
+                <StockTransferManagement t={t} currentUser={currentUser} />
+              </ProtectedRoute>
+            } />
+            <Route path="stocktake" element={
+              <ProtectedRoute allowedRoles={['manager', 'admin']}>
+                <StocktakeManagement t={t} currentUser={currentUser} />
               </ProtectedRoute>
             } />
 
