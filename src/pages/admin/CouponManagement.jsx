@@ -3,7 +3,7 @@ import { Btn, Input, Badge, Card, Modal, Select } from '@/components/ui'
 import { notify } from '@/components/shared'
 import { fmt } from '@/lib/utils'
 
-export const CouponManagement = ({ coupons, setCoupons, addAudit, currentUser, t }) => {
+export const CouponManagement = ({ coupons, setCoupons, addAudit, currentUser, t, settings }) => {
   const [showAdd, setShowAdd] = useState(false)
   const [form, setForm] = useState({
     code: '', description: '', type: 'percent', value: 10,
@@ -33,8 +33,8 @@ export const CouponManagement = ({ coupons, setCoupons, addAudit, currentUser, t
             </div>
             <div style={{ fontSize: 13, color: t.text2, marginBottom: 10 }}>{c.description}</div>
             {[
-              ['Type', c.type === 'percent' ? `${c.value}% off` : c.type === 'fixed' ? `${fmt(c.value)} off` : 'Free delivery'],
-              ['Min Order', fmt(c.minOrder)],
+              ['Type', c.type === 'percent' ? `${c.value}% off` : c.type === 'fixed' ? `${fmt(c.value, settings?.sym)} off` : 'Free delivery'],
+              ['Min Order', fmt(c.minOrder, settings?.sym)],
               ['Uses', `${c.uses}/${c.maxUses}`],
               ['Expires', c.expiry],
             ].map(([k, v]) => (
@@ -61,7 +61,7 @@ export const CouponManagement = ({ coupons, setCoupons, addAudit, currentUser, t
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
               <Input t={t} label="Code" value={form.code} onChange={v => setForm(f => ({ ...f, code: v.toUpperCase() }))} placeholder="SAVE20" required />
               <Input t={t} label="Discount Value" value={form.value} onChange={v => setForm(f => ({ ...f, value: +v }))} type="number" />
-              <Input t={t} label="Min Order (£)" value={form.minOrder} onChange={v => setForm(f => ({ ...f, minOrder: +v }))} type="number" />
+              <Input t={t} label={`Min Order (${settings?.sym || '£'})`} value={form.minOrder} onChange={v => setForm(f => ({ ...f, minOrder: +v }))} type="number" />
               <Input t={t} label="Max Uses" value={form.maxUses} onChange={v => setForm(f => ({ ...f, maxUses: +v }))} type="number" />
               <Input t={t} label="Expiry Date" value={form.expiry} onChange={v => setForm(f => ({ ...f, expiry: v }))} type="date" />
             </div>

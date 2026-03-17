@@ -106,7 +106,7 @@ export function POSCartPanel({
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 11, fontWeight: 700, color: t.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.name}</div>
                 <div style={{ fontSize: 10, color: item.discount > 0 ? t.accent : t.green, fontWeight: 800 }}>
-                  {item.discount > 0 ? `${fmt(item.price * (1 - item.discount / 100))} (-${item.discount}%)` : fmt(item.price)}
+                  {item.discount > 0 ? `${fmt(item.price * (1 - item.discount / 100), settings?.sym)} (-${item.discount}%)` : fmt(item.price, settings?.sym)}
                 </div>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
@@ -142,17 +142,17 @@ export function POSCartPanel({
 
         {selCust && (selCust.loyaltyPoints || 0) > 0 && (
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 8, background: t.yellowBg, border: `1px solid ${t.yellowBorder}`, borderRadius: 8, padding: '7px 12px' }}>
-            <span style={{ fontSize: 12, color: t.yellow, fontWeight: 700 }}>⭐ Redeem {selCust.loyaltyPoints} pts = {fmt(selCust.loyaltyPoints * (settings.loyaltyValue || 0.01))}</span>
+            <span style={{ fontSize: 12, color: t.yellow, fontWeight: 700 }}>⭐ Redeem {selCust.loyaltyPoints} pts = {fmt(selCust.loyaltyPoints * (settings.loyaltyValue || 0.01), settings?.sym)}</span>
             <Toggle t={t} value={loyaltyRedeem} onChange={setLoyaltyRedeem} />
           </div>
         )}
 
         <div style={{ marginTop: 10 }}>
-          {[['Subtotal', fmt(cartSubtotal)], [`VAT (${settings.vatRate}%)`, fmt(cartTax)], couponDiscount > 0 && [`Coupon (${appliedCoupon?.code})`, `-${fmt(couponDiscount)}`], loyaltyDiscount > 0 && ['Loyalty Discount', `-${fmt(loyaltyDiscount)}`]].filter(Boolean).map(([k, v]) => (
+          {[['Subtotal', fmt(cartSubtotal, settings?.sym)], [`VAT (${settings.vatRate}%)`, fmt(cartTax, settings?.sym)], couponDiscount > 0 && [`Coupon (${appliedCoupon?.code})`, `-${fmt(couponDiscount, settings?.sym)}`], loyaltyDiscount > 0 && ['Loyalty Discount', `-${fmt(loyaltyDiscount, settings?.sym)}`]].filter(Boolean).map(([k, v]) => (
             <div key={k} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: v.startsWith?.('-') ? t.green : t.text3, marginBottom: 4 }}><span>{k}</span><span style={{ fontWeight: 700 }}>{v}</span></div>
           ))}
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 20, fontWeight: 900, color: t.text, paddingTop: 10, borderTop: `2px solid ${t.border}`, marginTop: 4 }}>
-            <span>Total</span><span style={{ color: t.accent }}>{fmt(cartTotal)}</span>
+            <span>Total</span><span style={{ color: t.accent }}>{fmt(cartTotal, settings?.sym)}</span>
           </div>
           {selCust && pointsEarned > 0 && <div style={{ fontSize: 11, color: t.yellow, textAlign: 'right', marginTop: 3 }}>+{pointsEarned} loyalty pts will be earned</div>}
         </div>
@@ -163,14 +163,14 @@ export function POSCartPanel({
           ))}
         </div>
 
-        {payMethod === 'Card' && <CardTerminal total={cartTotal} onApproved={() => { setCardNum('4242424242424242'); setCardExp('12/26'); setCardCvv('123') }} t={t} />}
+        {payMethod === 'Card' && <CardTerminal total={cartTotal} onApproved={() => { setCardNum('4242424242424242'); setCardExp('12/26'); setCardCvv('123') }} settings={settings} t={t} />}
 
         {payMethod === 'Cash' && (
           <div style={{ marginTop: 8 }}>
-            <input value={cashGiven} onChange={e => setCashGiven(e.target.value)} placeholder="Cash received (£)" type="number" style={{ width: '100%', background: t.input, border: `1px solid ${cashGiven && cashGivenNum >= cartTotal ? t.greenBorder : t.border}`, borderRadius: 8, padding: '9px 12px', color: t.text, fontSize: 14, fontWeight: 800, outline: 'none', boxSizing: 'border-box' }} />
+            <input value={cashGiven} onChange={e => setCashGiven(e.target.value)} placeholder={`Cash received (${settings?.sym || '£'})`} type="number" style={{ width: '100%', background: t.input, border: `1px solid ${cashGiven && cashGivenNum >= cartTotal ? t.greenBorder : t.border}`, borderRadius: 8, padding: '9px 12px', color: t.text, fontSize: 14, fontWeight: 800, outline: 'none', boxSizing: 'border-box' }} />
             {cashGiven !== '' && (
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, marginTop: 6 }}>
-                {[['Cash Given', fmt(cashGivenNum), t.text], ['Change Due', cashChange >= 0 ? fmt(cashChange) : 'Insufficient', cashChange >= 0 ? t.green : t.red]].map(([k, v, c]) => (
+                {[['Cash Given', fmt(cashGivenNum, settings?.sym), t.text], ['Change Due', cashChange >= 0 ? fmt(cashChange, settings?.sym) : 'Insufficient', cashChange >= 0 ? t.green : t.red]].map(([k, v, c]) => (
                   <div key={k} style={{ background: t.bg3, borderRadius: 8, padding: '8px 10px', textAlign: 'center' }}>
                     <div style={{ fontSize: 10, color: t.text4 }}>{k}</div>
                     <div style={{ fontSize: 15, fontWeight: 900, color: c }}>{v}</div>
@@ -198,7 +198,7 @@ export function POSCartPanel({
             </div>
             {(parseFloat(splitCash) || 0) + (parseFloat(splitCard) || 0) > 0 && (
               <div style={{ background: t.bg3, borderRadius: 8, padding: '6px 10px', display: 'flex', justifyContent: 'space-between', fontSize: 12 }}>
-                <span style={{ color: t.text3 }}>Total: {fmt((parseFloat(splitCash) || 0) + (parseFloat(splitCard) || 0))}</span>
+                <span style={{ color: t.text3 }}>Total: {fmt((parseFloat(splitCash) || 0) + (parseFloat(splitCard) || 0), settings?.sym)}</span>
                 <span style={{ color: Math.abs((parseFloat(splitCash) || 0) + (parseFloat(splitCard) || 0) - cartTotal) < 0.01 ? t.green : t.red, fontWeight: 800 }}>
                   {Math.abs((parseFloat(splitCash) || 0) + (parseFloat(splitCard) || 0) - cartTotal) < 0.01 ? '✓ Balanced' : 'Amounts must equal total'}
                 </span>
@@ -210,7 +210,7 @@ export function POSCartPanel({
         <div style={{ display: 'flex', gap: 6, marginTop: 10 }}>
           <button onClick={checkout} disabled={cart.length === 0}
             style={{ flex: 1, padding: '13px', background: cart.length === 0 ? t.bg4 : `linear-gradient(135deg,${t.accent},${t.accent2})`, color: cart.length === 0 ? t.text3 : '#fff', border: 'none', borderRadius: 10, fontSize: 13, fontWeight: 900, cursor: cart.length === 0 ? 'not-allowed' : 'pointer', boxShadow: cart.length > 0 ? `0 4px 14px ${t.accent}40` : 'none' }}>
-            {cart.length === 0 ? 'Add items to cart' : `${payMethod === 'Card' ? '💳' : payMethod === 'Cash' ? '💵' : payMethod === 'Split' ? '✂️' : '📱'} Pay ${fmt(cartTotal)}`}
+            {cart.length === 0 ? 'Add items to cart' : `${payMethod === 'Card' ? '💳' : payMethod === 'Cash' ? '💵' : payMethod === 'Split' ? '✂️' : '📱'} Pay ${fmt(cartTotal, settings?.sym)}`}
           </button>
           <button onClick={() => setShowCustDisplay(true)} title="Customer Display" style={{ padding: '13px 12px', background: t.tealBg, border: `1px solid ${t.tealBorder}`, borderRadius: 10, color: t.teal, cursor: 'pointer', fontSize: 16 }}>🖥️</button>
         </div>

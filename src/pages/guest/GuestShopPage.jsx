@@ -6,7 +6,7 @@ import { PRODUCT_IMAGES } from '@/lib/seed-data'
 import { ImgWithFallback } from '@/components/shared'
 import { CATEGORIES } from '@/lib/constants'
 
-export function GuestShopPage({ products = [], banners = [] }) {
+export function GuestShopPage({ products = [], banners = [], settings = {} }) {
   const { t } = useTheme()
   const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState('All')
@@ -87,7 +87,7 @@ export function GuestShopPage({ products = [], banners = [] }) {
                   <div style={{ fontSize: 14, fontWeight: 700, color: t.text, marginBottom: 10, lineHeight: 1.3, cursor: 'pointer' }} onClick={() => goToProductDetail(p)}>{p.name}</div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div>
-                      {disc > 0 ? <><div style={{ fontSize: 11, color: t.text4, textDecoration: 'line-through' }}>{fmt(p.price)}</div><div style={{ fontSize: 17, fontWeight: 900, color: t.accent }}>{fmt(p.price * (1 - disc / 100))}</div></> : <div style={{ fontSize: 17, fontWeight: 900, color: t.green }}>{fmt(p.price)}</div>}
+                      {disc > 0 ? <><div style={{ fontSize: 11, color: t.text4, textDecoration: 'line-through' }}>{fmt(p.price, settings?.sym)}</div><div style={{ fontSize: 17, fontWeight: 900, color: t.accent }}>{fmt(p.price * (1 - disc / 100), settings?.sym)}</div></> : <div style={{ fontSize: 17, fontWeight: 900, color: t.green }}>{fmt(p.price, settings?.sym)}</div>}
                     </div>
                     <button onClick={() => addToCart(p)} disabled={p.stock === 0} style={{ background: p.stock === 0 ? t.bg4 : t.accent, color: p.stock === 0 ? t.text3 : '#fff', border: 'none', borderRadius: 9, padding: '7px 16px', fontSize: 12, fontWeight: 800, cursor: p.stock === 0 ? 'not-allowed' : 'pointer', boxShadow: p.stock === 0 ? 'none' : `0 2px 8px ${t.accent}40` }}>Add</button>
                   </div>

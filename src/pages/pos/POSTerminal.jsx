@@ -193,7 +193,7 @@ export const POSTerminal = ({ products, setProducts, orders, setOrders, users, s
   const applyCoupon = () => {
     const c = coupons.find(x => x.code === couponCode.toUpperCase() && x.active && new Date(x.expiry) >= new Date())
     if (!c) { notify('Invalid or expired coupon', 'error'); return }
-    if (cartSubtotal < c.minOrder) { notify(`Minimum order ${fmt(c.minOrder)} required`, 'error'); return }
+    if (cartSubtotal < c.minOrder) { notify(`Minimum order ${fmt(c.minOrder, settings?.sym)} required`, 'error'); return }
     setAppliedCoupon(c); notify(`Coupon ${c.code} applied!`, 'success')
   }
 
@@ -282,7 +282,7 @@ export const POSTerminal = ({ products, setProducts, orders, setOrders, users, s
       const newSpent = (selCust.totalSpent || 0) + cartTotal
       setUsers(us => us.map(u => u.id === selCust.id ? { ...u, loyaltyPoints: newPts, totalSpent: newSpent, tier: getTier(newSpent) } : u))
     }
-    addAudit(user, 'Payment Completed', 'POS', `${orderId} — ${fmt(cartTotal)} via ${payMethod}`)
+    addAudit(user, 'Payment Completed', 'POS', `${orderId} — ${fmt(cartTotal, settings?.sym)} via ${payMethod}`)
     notify(`Order ${orderId} complete! 🎉`, 'success')
     setShowReceipt(newOrder)
     setCart([]); setCashGiven(''); setCardNum(''); setCardExp(''); setCardCvv(''); setQrPaid(false); setAppliedCoupon(null); setCouponCode(''); setLoyaltyRedeem(false); setShowQrModal(false); setSplitCash(''); setSplitCard('')
@@ -304,7 +304,7 @@ export const POSTerminal = ({ products, setProducts, orders, setOrders, users, s
 
   return (
     <div style={{ display: 'flex', height: 'calc(100vh - 48px)', overflow: 'hidden', fontFamily: 'inherit' }} className="pos-layout">
-      <POSProductGrid search={search} setSearch={setSearch} cat={cat} setCat={setCat} filteredProds={filteredProds} favProds={favProds} getItemDiscount={getItemDiscount} addToCart={handleProductClick} scanMsg={scanMsg} parkBill={parkBill} parked={parked} recallBill={recallBill} showParkedDropdown={showParkedDropdown} setShowParkedDropdown={setShowParkedDropdown} setShowBarcodeInput={setShowBarcodeInput} t={t} />
+      <POSProductGrid search={search} setSearch={setSearch} cat={cat} setCat={setCat} filteredProds={filteredProds} favProds={favProds} getItemDiscount={getItemDiscount} addToCart={handleProductClick} scanMsg={scanMsg} parkBill={parkBill} parked={parked} recallBill={recallBill} showParkedDropdown={showParkedDropdown} setShowParkedDropdown={setShowParkedDropdown} setShowBarcodeInput={setShowBarcodeInput} settings={settings} t={t} />
 
       <POSCartPanel cart={cart} updateQty={updateQty} setCart={setCart} removeFromCart={removeFromCart} removeMode={removeMode} setRemoveMode={setRemoveMode} cartSearch={cartSearch} setCartSearch={setCartSearch} selCust={selCust} setSelCust={setSelCust} custSearch={custSearch} setCustSearch={setCustSearch} lookupCustomer={lookupCustomer} setShowNewCust={setShowNewCust} loyaltyRedeem={loyaltyRedeem} setLoyaltyRedeem={setLoyaltyRedeem} appliedCoupon={appliedCoupon} setAppliedCoupon={setAppliedCoupon} couponCode={couponCode} setCouponCode={setCouponCode} applyCoupon={applyCoupon} cartSubtotal={cartSubtotal} cartTax={cartTax} couponDiscount={couponDiscount} loyaltyDiscount={loyaltyDiscount} cartTotal={cartTotal} pointsEarned={pointsEarned} payMethod={payMethod} setPayMethod={setPayMethod} cashGiven={cashGiven} setCashGiven={setCashGiven} cashGivenNum={cashGivenNum} cashChange={cashChange} cardNum={cardNum} setCardNum={setCardNum} setCardExp={setCardExp} setCardCvv={setCardCvv} splitCash={splitCash} setSplitCash={setSplitCash} splitCard={splitCard} setSplitCard={setSplitCard} checkout={checkout} setShowCustDisplay={setShowCustDisplay} settings={settings} t={t} />
 
@@ -364,14 +364,14 @@ export const POSTerminal = ({ products, setProducts, orders, setOrders, users, s
       )}
 
       {showQrModal && (
-        <Modal t={t} title="QR Payment" subtitle={`Scan to pay ${fmt(cartTotal)}`} onClose={() => setShowQrModal(false)}>
+        <Modal t={t} title="QR Payment" subtitle={`Scan to pay ${fmt(cartTotal, settings?.sym)}`} onClose={() => setShowQrModal(false)}>
           <div style={{ textAlign: 'center' }}>
             <div style={{ background: '#fff', border: '3px solid #000', borderRadius: 12, padding: 24, display: 'inline-block', margin: '0 auto 20px' }}>
               <div style={{ width: 160, height: 160, display: 'grid', gridTemplateColumns: 'repeat(8,1fr)', gap: 1 }}>
                 {Array.from({ length: 64 }, (_, i) => <div key={i} style={{ background: (i + Math.floor(i / 8)) % 3 === 0 ? '#000' : '#fff', borderRadius: 1 }} />)}
               </div>
             </div>
-            <div style={{ fontSize: 28, fontWeight: 900, color: t.accent, marginBottom: 6 }}>{fmt(cartTotal)}</div>
+            <div style={{ fontSize: 28, fontWeight: 900, color: t.accent, marginBottom: 6 }}>{fmt(cartTotal, settings?.sym)}</div>
             <div style={{ fontSize: 14, color: t.text3, marginBottom: 24 }}>Scan with Google Pay, Apple Pay, or bank app</div>
             <Btn t={t} variant="success" size="lg" fullWidth onClick={() => { setQrPaid(true); setShowQrModal(false); processOrder() }}>✓ Confirm Payment Received</Btn>
           </div>
@@ -411,11 +411,11 @@ export const POSTerminal = ({ products, setProducts, orders, setOrders, users, s
             <div style={{ maxHeight: 200, overflowY: 'auto', marginBottom: 14 }}>
               {cart.map(i => <div key={i.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '7px 0', borderBottom: '1px solid #1e293b', fontSize: 13 }}>
                 <span style={{ color: '#e2e8f0' }}>{i.emoji} {i.name} × {i.qty}</span>
-                <span style={{ color: '#4ade80', fontWeight: 700 }}>{fmt(i.price * (1 - (i.discount || 0) / 100) * i.qty)}</span>
+                <span style={{ color: '#4ade80', fontWeight: 700 }}>{fmt(i.price * (1 - (i.discount || 0) / 100) * i.qty, settings?.sym)}</span>
               </div>)}
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 26, fontWeight: 900, color: '#fff', paddingTop: 10, borderTop: '2px solid #334155', marginTop: 6 }}>
-              <span>TOTAL</span><span style={{ color: '#ef4444' }}>{fmt(cartTotal)}</span>
+              <span>TOTAL</span><span style={{ color: '#ef4444' }}>{fmt(cartTotal, settings?.sym)}</span>
             </div>
             <button onClick={() => setShowCustDisplay(false)} style={{ width: '100%', marginTop: 20, padding: 12, background: '#ef4444', color: '#fff', border: 'none', borderRadius: 10, fontWeight: 700, cursor: 'pointer', fontSize: 14 }}>Close Display</button>
           </div>

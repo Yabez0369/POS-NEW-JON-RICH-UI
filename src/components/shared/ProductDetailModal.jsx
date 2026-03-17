@@ -4,7 +4,7 @@ import { ImgWithFallback } from './ImgWithFallback'
 import { fmt } from '@/lib/utils'
 import { PRODUCT_IMAGES } from '@/lib/seed-data'
 
-export function ProductDetailModal({ product, onClose, onAddToCart, t }) {
+export function ProductDetailModal({ product, onClose, onAddToCart, t, settings }) {
   const [selectedSize, setSelectedSize] = useState(product.sizes?.[0] || null)
   const [qty, setQty] = useState(1)
 
@@ -36,8 +36,8 @@ export function ProductDetailModal({ product, onClose, onAddToCart, t }) {
           <div style={{ fontSize: 11, color: t.text4, marginBottom: 12 }}>SKU: {product.sku || 'N/A'}</div>
 
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 12 }}>
-            <span style={{ fontSize: 22, fontWeight: 900, color: t.accent }}>{fmt(finalPrice)}</span>
-            {hasDiscount && <span style={{ fontSize: 14, color: t.text4, textDecoration: 'line-through' }}>{fmt(product.price)}</span>}
+            <span style={{ fontSize: 22, fontWeight: 900, color: t.accent }}>{fmt(finalPrice, settings?.sym)}</span>
+            {hasDiscount && <span style={{ fontSize: 14, color: t.text4, textDecoration: 'line-through' }}>{fmt(product.price, settings?.sym)}</span>}
           </div>
 
           <div style={{ fontSize: 12, color: product.stock > 0 ? '#16a34a' : '#ef4444', fontWeight: 700, marginBottom: 12 }}>
@@ -74,7 +74,7 @@ export function ProductDetailModal({ product, onClose, onAddToCart, t }) {
           </div>
 
           <Btn t={t} onClick={handleAdd} disabled={product.stock === 0} style={{ width: '100%' }}>
-            {product.stock === 0 ? 'Out of Stock' : `Add to Cart — ${fmt(finalPrice * qty)}`}
+            {product.stock === 0 ? 'Out of Stock' : `Add to Cart — ${fmt(finalPrice * qty, settings?.sym)}`}
           </Btn>
         </div>
       </div>

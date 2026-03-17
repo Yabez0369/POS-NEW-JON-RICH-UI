@@ -8,7 +8,7 @@ const SHOPS = [
   { id: 's3', name: 'Airport Pop-up', location: 'Terminal 2, Departures' },
 ]
 
-export const AdminDashboard = ({ orders, users, products, t }) => {
+export const AdminDashboard = ({ orders, users, products, t, settings }) => {
   const [activeShop, setActiveShop] = useState('all')
 
   const total = orders.reduce((s, o) => s + o.total, 0)
@@ -56,7 +56,7 @@ export const AdminDashboard = ({ orders, users, products, t }) => {
       )}
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(min(180px,45vw),1fr))', gap: 14 }}>
-        <StatCard t={t} title="Revenue" value={fmt(shopTotal)} color={t.accent} icon="💰" trend={activeShop === 'all' ? 12 : undefined} />
+        <StatCard t={t} title="Revenue" value={fmt(shopTotal, settings?.sym)} color={t.accent} icon="💰" trend={activeShop === 'all' ? 12 : undefined} />
         <StatCard t={t} title="Orders" value={activeShopOrders.length} color={t.blue} icon="🧾" trend={activeShop === 'all' ? 8 : undefined} />
         <StatCard t={t} title="Users" value={users.length} color={t.green} icon="👥" />
         <StatCard t={t} title="Products" value={(products || []).length} color={t.yellow} icon="📦" />
@@ -77,7 +77,7 @@ export const AdminDashboard = ({ orders, users, products, t }) => {
                   </div>
                   <div style={{ display: 'flex', gap: 12 }}>
                     <span style={{ color: t.text3, fontSize: 12 }}>{shopOrders[si].length} orders</span>
-                    <span style={{ fontWeight: 800, color: t.accent }}>{fmt(shopRev)}</span>
+                    <span style={{ fontWeight: 800, color: t.accent }}>{fmt(shopRev, settings?.sym)}</span>
                     <span style={{ fontSize: 11, color: t.text3 }}>{pct}%</span>
                   </div>
                 </div>
@@ -111,7 +111,7 @@ export const AdminDashboard = ({ orders, users, products, t }) => {
               <div key={c} style={{ marginBottom: 14 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, marginBottom: 5 }}>
                   <span style={{ color: t.text2 }}>{c}</span>
-                  <span style={{ fontWeight: 800, color: t.text }}>{fmt(r)}</span>
+                  <span style={{ fontWeight: 800, color: t.text }}>{fmt(r, settings?.sym)}</span>
                 </div>
                 <div style={{ height: 6, background: t.bg4, borderRadius: 3 }}>
                   <div style={{ height: '100%', width: `${p}%`, background: t.accent, borderRadius: 3 }} />
@@ -143,7 +143,7 @@ export const AdminDashboard = ({ orders, users, products, t }) => {
             o.id,
             o.customerName,
             o.cashierName,
-            fmt(o.total),
+            fmt(o.total, settings?.sym),
             o.payment,
             <Badge t={t} text={o.status} color={o.status === 'completed' ? 'green' : 'red'} />,
           ])}

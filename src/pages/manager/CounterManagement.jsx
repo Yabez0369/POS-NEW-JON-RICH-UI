@@ -3,7 +3,7 @@ import { Btn, Input, Badge, Card, Modal } from '@/components/ui'
 import { notify } from '@/components/shared'
 import { fmt } from '@/lib/utils'
 
-export const CounterManagement = ({ counters, setCounters, orders, addAudit, currentUser, t }) => {
+export const CounterManagement = ({ counters, setCounters, orders, addAudit, currentUser, t, settings }) => {
   const [showAdd, setShowAdd] = useState(false)
   const [form, setForm] = useState({ name: '', location: '' })
 
@@ -28,7 +28,7 @@ export const CounterManagement = ({ counters, setCounters, orders, addAudit, cur
                 <Badge t={t} text={c.active ? 'Active' : 'Off'} color={c.active ? 'green' : 'red'} />
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 14 }}>
-                {[['Revenue', fmt(rev), t.accent], ['Orders', cnt, t.blue]].map(([k, v, col]) => (
+                {[['Revenue', fmt(rev, settings?.sym), t.accent], ['Orders', cnt, t.blue]].map(([k, v, col]) => (
                   <div key={k} style={{ background: t.bg3, borderRadius: 8, padding: '8px 12px', textAlign: 'center' }}>
                     <div style={{ fontSize: 16, fontWeight: 900, color: col }}>{v}</div>
                     <div style={{ fontSize: 10, color: t.text3 }}>{k}</div>

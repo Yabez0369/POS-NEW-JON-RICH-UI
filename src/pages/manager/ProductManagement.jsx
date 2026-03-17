@@ -7,7 +7,7 @@ import { PRODUCT_IMAGES } from '@/lib/seed-data'
 
 const SITES = ['Main Store', 'Outdoor Kiosk', 'Warehouse']
 
-export const ProductManagement = ({ products, setProducts, addAudit, currentUser, t }) => {
+export const ProductManagement = ({ products, setProducts, addAudit, currentUser, t, settings }) => {
   const [search, setSearch] = useState('')
   const [cat, setCat] = useState('All')
   const [showForm, setShowForm] = useState(false)
@@ -61,7 +61,7 @@ export const ProductManagement = ({ products, setProducts, addAudit, currentUser
       return
     }
     setProducts(ps => ps.map(x => x.id === p.id ? { ...x, price: newPrice } : x))
-    addAudit(currentUser, 'Price Override', 'Inventory', `Price Override: ${p.name} from ${fmt(p.price)} to ${fmt(newPrice)}. Reason: ${priceOverrideForm.reason}`)
+    addAudit(currentUser, 'Price Override', 'Inventory', `Price Override: ${p.name} from ${fmt(p.price, settings?.sym)} to ${fmt(newPrice, settings?.sym)}. Reason: ${priceOverrideForm.reason}`)
     notify('Price updated', 'success')
     setShowPriceOverride(null)
     setPriceOverrideForm({ newPrice: '', reason: '', pin: '' })
@@ -147,7 +147,7 @@ export const ProductManagement = ({ products, setProducts, addAudit, currentUser
             <span style={{ fontWeight: 700, color: t.text }}>{p.name}</span>,
             <span style={{ fontSize: 10, fontFamily: 'monospace', color: t.text3 }}>{p.sku}</span>,
             <Badge t={t} text={p.category} color="blue" />,
-            <span style={{ fontWeight: 800, color: t.green }}>{fmt(p.price)}</span>,
+            <span style={{ fontWeight: 800, color: t.green }}>{fmt(p.price, settings?.sym)}</span>,
             <span style={{ fontWeight: 700, color: (p.discount || 0) > 0 ? t.accent : t.text3 }}>{(p.discount || 0) > 0 ? '-' + p.discount + '%' : '—'}</span>,
             <Badge t={t} text={String(p.stock)} color={p.stock < 10 ? 'red' : p.stock < 20 ? 'yellow' : 'green'} />,
             <div style={{ display: 'flex', gap: 5 }}>
@@ -161,7 +161,7 @@ export const ProductManagement = ({ products, setProducts, addAudit, currentUser
                 })
                 setShowForm(true)
               }}>Edit</Btn>
-              <Btn t={t} variant="secondary" size="sm" onClick={() => { setShowPriceOverride(p); setPriceOverrideForm({ newPrice: '', reason: '', pin: '' }) }} title="Manager Price Override">£ Override</Btn>
+              <Btn t={t} variant="secondary" size="sm" onClick={() => { setShowPriceOverride(p); setPriceOverrideForm({ newPrice: '', reason: '', pin: '' }) }} title="Manager Price Override">{settings?.sym || '£'} Override</Btn>
               <Btn t={t} variant="danger" size="sm" onClick={() => { setProducts(ps => ps.filter(x => x.id !== p.id)); notify('Deleted', 'warning') }}>Del</Btn>
             </div>,
           ])}
@@ -174,7 +174,7 @@ export const ProductManagement = ({ products, setProducts, addAudit, currentUser
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 13 }}>
               <Input t={t} label="Name" value={form.name} onChange={v => setForm(f => ({ ...f, name: v }))} required />
               <Input t={t} label="SKU" value={form.sku} onChange={v => setForm(f => ({ ...f, sku: v }))} />
-              <Input t={t} label="Price (£)" value={form.price} onChange={v => setForm(f => ({ ...f, price: v }))} type="number" required />
+              <Input t={t} label={`Price (${settings?.sym || '£'})`} value={form.price} onChange={v => setForm(f => ({ ...f, price: v }))} type="number" required />
               <Input t={t} label="Stock" value={form.stock} onChange={v => setForm(f => ({ ...f, stock: v }))} type="number" required />
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 13 }}>
@@ -192,7 +192,7 @@ export const ProductManagement = ({ products, setProducts, addAudit, currentUser
               {(form.priceOverrides || []).map((o, idx) => (
                 <div key={idx} style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 8 }}>
                   <div style={{ flex: 1 }}><Select t={t} label="Site" value={o.site} onChange={v => setForm(f => ({ ...f, priceOverrides: f.priceOverrides.map((x, i) => i === idx ? { ...x, site: v } : x) }))} options={SITES.map(s => ({ value: s, label: s }))} /></div>
-                  <Input t={t} label="Price (£)" value={o.price} onChange={v => setForm(f => ({ ...f, priceOverrides: f.priceOverrides.map((x, i) => i === idx ? { ...x, price: v } : x) }))} type="number" />
+                  <Input t={t} label={`Price (${settings?.sym || '£'})`} value={o.price} onChange={v => setForm(f => ({ ...f, priceOverrides: f.priceOverrides.map((x, i) => i === idx ? { ...x, price: v } : x) }))} type="number" />
                   <button type="button" onClick={() => setForm(f => ({ ...f, priceOverrides: f.priceOverrides.filter((_, i) => i !== idx) }))} style={{ background: t.redBg, color: t.red, border: `1px solid ${t.redBorder}`, borderRadius: 6, padding: '6px 10px', cursor: 'pointer', fontSize: 12 }}>Remove</button>
                 </div>
               ))}
@@ -209,7 +209,7 @@ export const ProductManagement = ({ products, setProducts, addAudit, currentUser
               </div>
               {form.promo?.active && (
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
-                  <Input t={t} label="Promo price (£)" value={form.promo?.price ?? ''} onChange={v => setForm(f => ({ ...f, promo: { ...f.promo, price: v } }))} type="number" />
+                  <Input t={t} label={`Promo price (${settings?.sym || '£'})`} value={form.promo?.price ?? ''} onChange={v => setForm(f => ({ ...f, promo: { ...f.promo, price: v } }))} type="number" />
                   <Input t={t} label="Start date" value={form.promo?.startDate ?? ''} onChange={v => setForm(f => ({ ...f, promo: { ...f.promo, startDate: v } }))} type="date" />
                   <Input t={t} label="End date" value={form.promo?.endDate ?? ''} onChange={v => setForm(f => ({ ...f, promo: { ...f.promo, endDate: v } }))} type="date" />
                 </div>
@@ -309,9 +309,9 @@ export const ProductManagement = ({ products, setProducts, addAudit, currentUser
       )}
 
       {showPriceOverride && (
-        <Modal t={t} title="Manager Price Override" subtitle={`Override price for ${showPriceOverride.name} (current: ${fmt(showPriceOverride.price)})`} onClose={() => { setShowPriceOverride(null); setPriceOverrideForm({ newPrice: '', reason: '', pin: '' }) }}>
+        <Modal t={t} title="Manager Price Override" subtitle={`Override price for ${showPriceOverride.name} (current: ${fmt(showPriceOverride.price, settings?.sym)})`} onClose={() => { setShowPriceOverride(null); setPriceOverrideForm({ newPrice: '', reason: '', pin: '' }) }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-            <Input t={t} label="New price (£)" value={priceOverrideForm.newPrice} onChange={v => setPriceOverrideForm(f => ({ ...f, newPrice: v }))} type="number" required />
+            <Input t={t} label={`New price (${settings?.sym || '£'})`} value={priceOverrideForm.newPrice} onChange={v => setPriceOverrideForm(f => ({ ...f, newPrice: v }))} type="number" required />
             <Input t={t} label="Reason" value={priceOverrideForm.reason} onChange={v => setPriceOverrideForm(f => ({ ...f, reason: v }))} placeholder="e.g. Price match, damaged stock" required />
             <Input t={t} label="Manager PIN (4 digits)" value={priceOverrideForm.pin} onChange={v => setPriceOverrideForm(f => ({ ...f, pin: v.replace(/\D/g, '').slice(0, 4) }))} placeholder="••••" type="password" required />
             <div style={{ display: 'flex', gap: 10 }}>

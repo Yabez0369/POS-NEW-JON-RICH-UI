@@ -5,7 +5,7 @@ import { Btn, Input, Badge, Card, StatCard, Modal } from '@/components/ui'
 import { notify } from '@/components/shared'
 import { fmt, ts } from '@/lib/utils'
 
-export const PickupOrders = ({ orders, setOrders, addAudit, currentUser: cuProp, t: tProp }) => {
+export const PickupOrders = ({ orders, setOrders, addAudit, currentUser: cuProp, t: tProp, settings }) => {
   const { t: tCtx } = useTheme()
   const { currentUser: cuCtx } = useAuth()
   const t = tProp || tCtx
@@ -82,14 +82,14 @@ export const PickupOrders = ({ orders, setOrders, addAudit, currentUser: cuProp,
                 {order.items.slice(0, 3).map((item, i) => (
                   <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: t.text2, marginBottom: 2 }}>
                     <span>{item.name} ×{item.qty}</span>
-                    <span>{fmt(item.price * item.qty)}</span>
+                    <span>{fmt(item.price * item.qty, settings?.sym)}</span>
                   </div>
                 ))}
                 {order.items.length > 3 && <div style={{ fontSize: 11, color: t.text4 }}>+{order.items.length - 3} more</div>}
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: 10, borderTop: `1px solid ${t.border}` }}>
-                <div style={{ fontSize: 15, fontWeight: 900, color: t.accent }}>{fmt(order.total)}</div>
+                <div style={{ fontSize: 15, fontWeight: 900, color: t.accent }}>{fmt(order.total, settings?.sym)}</div>
                 <div style={{ display: 'flex', gap: 6 }}>
                   <Btn t={t} variant="secondary" size="sm" onClick={() => setViewOrder(order)}>Details</Btn>
                   {(order.status === 'ready' || order.status === 'completed') && (
@@ -114,7 +114,7 @@ export const PickupOrders = ({ orders, setOrders, addAudit, currentUser: cuProp,
             <div style={{ background: t.bg3, borderRadius: 10, padding: '12px 14px' }}>
               <div style={{ fontSize: 13, color: t.text2, marginBottom: 4 }}><strong>Customer:</strong> {verifyModal.customerName}</div>
               <div style={{ fontSize: 13, color: t.text2, marginBottom: 4 }}><strong>Items:</strong> {verifyModal.items.length}</div>
-              <div style={{ fontSize: 15, fontWeight: 900, color: t.accent }}>{fmt(verifyModal.total)}</div>
+              <div style={{ fontSize: 15, fontWeight: 900, color: t.accent }}>{fmt(verifyModal.total, settings?.sym)}</div>
             </div>
 
             <div style={{ background: t.bg3, borderRadius: 10, padding: '12px 14px' }}>
@@ -122,7 +122,7 @@ export const PickupOrders = ({ orders, setOrders, addAudit, currentUser: cuProp,
               {verifyModal.items.map((item, i) => (
                 <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: t.text2, padding: '4px 0' }}>
                   <span>{item.name} ×{item.qty}</span>
-                  <span>{fmt(item.price * item.qty)}</span>
+                  <span>{fmt(item.price * item.qty, settings?.sym)}</span>
                 </div>
               ))}
             </div>
@@ -151,11 +151,11 @@ export const PickupOrders = ({ orders, setOrders, addAudit, currentUser: cuProp,
               {viewOrder.items.map((item, i) => (
                 <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: t.text2, padding: '5px 0', borderBottom: i < viewOrder.items.length - 1 ? `1px solid ${t.border}` : 'none' }}>
                   <span>{item.name} ×{item.qty}</span>
-                  <span style={{ fontWeight: 600 }}>{fmt(item.price * item.qty)}</span>
+                  <span style={{ fontWeight: 600 }}>{fmt(item.price * item.qty, settings?.sym)}</span>
                 </div>
               ))}
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 16, fontWeight: 900, color: t.text, paddingTop: 8, borderTop: `1px solid ${t.border}`, marginTop: 4 }}>
-                <span>Total</span><span style={{ color: t.accent }}>{fmt(viewOrder.total)}</span>
+                <span>Total</span><span style={{ color: t.accent }}>{fmt(viewOrder.total, settings?.sym)}</span>
               </div>
             </div>
           </div>

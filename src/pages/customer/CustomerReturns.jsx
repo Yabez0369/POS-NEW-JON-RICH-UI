@@ -113,7 +113,7 @@ export const CustomerReturns = ({ orders, returns, setReturns, products, setProd
     }
 
     setReturns(prev => [ret, ...(prev || [])])
-    if (addAudit) addAudit(user, 'Return Request', 'Returns', `${ret.id} for ${selOrder} — ${fmt(ret.refundAmount)}`)
+    if (addAudit) addAudit(user, 'Return Request', 'Returns', `${ret.id} for ${selOrder} — ${fmt(ret.refundAmount, settings?.sym)}`)
     notify('Return request submitted: ' + ret.id, 'success')
 
     setShowForm(false)
@@ -174,7 +174,7 @@ export const CustomerReturns = ({ orders, returns, setReturns, products, setProd
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div style={{ fontSize: 12, color: t.text3 }}>{ret.reason}</div>
-                <div style={{ fontSize: 14, fontWeight: 900, color: t.accent }}>{fmt(ret.refundAmount)}</div>
+                <div style={{ fontSize: 14, fontWeight: 900, color: t.accent }}>{fmt(ret.refundAmount, settings?.sym)}</div>
               </div>
             </Card>
           ))}
@@ -193,7 +193,7 @@ export const CustomerReturns = ({ orders, returns, setReturns, products, setProd
             ) : (
               <>
                 <Select t={t} label="Select Order" value={selOrder} onChange={v => { setSelOrder(v); setSelItemQtys({}) }}
-                  options={[{ value: '', label: 'Choose an order...' }, ...myOrders.map(o => ({ value: o.id, label: `${o.id} — ${fmt(o.total)} — ${o.date}` }))]} />
+                  options={[{ value: '', label: 'Choose an order...' }, ...myOrders.map(o => ({ value: o.id, label: `${o.id} — ${fmt(o.total, settings?.sym)} — ${o.date}` }))]} />
 
                 {selectedOrder && (
                   <div style={{ background: t.bg3, borderRadius: 10, padding: '12px 14px' }}>
@@ -204,7 +204,7 @@ export const CustomerReturns = ({ orders, returns, setReturns, products, setProd
                           style={{ width: 16, height: 16, accentColor: t.accent }} />
                         <div style={{ flex: 1 }}>
                           <div style={{ fontSize: 13, fontWeight: 600, color: t.text }}>{item.name}</div>
-                          <div style={{ fontSize: 11, color: t.text3 }}>Qty: {item.qty} · {fmt(item.price * item.qty)}</div>
+                          <div style={{ fontSize: 11, color: t.text3 }}>Qty: {item.qty} · {fmt(item.price * item.qty, settings?.sym)}</div>
                         </div>
                       </label>
                     ))}
@@ -220,7 +220,7 @@ export const CustomerReturns = ({ orders, returns, setReturns, products, setProd
                   <div style={{ background: t.yellowBg, border: `1px solid ${t.yellowBorder}`, borderRadius: 10, padding: '10px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <span style={{ fontSize: 13, fontWeight: 700, color: t.yellow }}>Estimated Refund</span>
                     <span style={{ fontSize: 16, fontWeight: 900, color: t.yellow }}>
-                      {fmt(selectedItems.reduce((s, { item, qty }) => s + item.price * (1 - (item.discount || 0) / 100) * qty, 0))}
+                      {fmt(selectedItems.reduce((s, { item, qty }) => s + item.price * (1 - (item.discount || 0) / 100) * qty, 0), settings?.sym)}
                     </span>
                   </div>
                 )}
@@ -246,7 +246,7 @@ export const CustomerReturns = ({ orders, returns, setReturns, products, setProd
               {(viewReturn.items || (viewReturn.productName ? [{ name: viewReturn.productName, qty: viewReturn.qty || 1, price: viewReturn.refundAmount / (viewReturn.qty || 1) }] : [])).map((item, i) => (
                 <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: t.text2, padding: '4px 0' }}>
                   <span>{item.name || item.productName} ×{item.qty || 1}</span>
-                  <span>{fmt((item.price || 0) * (item.qty || 1))}</span>
+                  <span>{fmt((item.price || 0) * (item.qty || 1), settings?.sym)}</span>
                 </div>
               ))}
             </div>
@@ -259,7 +259,7 @@ export const CustomerReturns = ({ orders, returns, setReturns, products, setProd
               })()}
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 16, fontWeight: 900, color: t.text, paddingTop: 8, borderTop: `2px solid ${t.border}` }}>
-              <span>Refund Amount</span><span style={{ color: t.accent }}>{fmt(viewReturn.refundAmount)}</span>
+              <span>Refund Amount</span><span style={{ color: t.accent }}>{fmt(viewReturn.refundAmount, settings?.sym)}</span>
             </div>
           </div>
         </Modal>

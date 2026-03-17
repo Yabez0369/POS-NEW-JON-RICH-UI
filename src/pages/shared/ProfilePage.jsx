@@ -6,7 +6,7 @@ import { Btn, Input, Card } from '@/components/ui'
 import { fmt } from '@/lib/utils'
 import { TIER_CONFIG } from '@/lib/constants'
 
-export function ProfilePage() {
+export function ProfilePage({ settings = {} }) {
   const { t } = useTheme()
   const { currentUser } = useAuth()
   const navigate = useNavigate()
@@ -119,7 +119,7 @@ export function ProfilePage() {
             </div>
             <div style={{ background: t.bg3, borderRadius: 12, padding: 16, border: `1px solid ${t.border}` }}>
               <div style={{ fontSize: 11, color: t.text4, fontWeight: 800, textTransform: 'uppercase', letterSpacing: 0.7 }}>Total Spent</div>
-              <div style={{ fontSize: 20, fontWeight: 900, color: t.green, marginTop: 4 }}>{fmt(currentUser.totalSpent ?? 0)}</div>
+              <div style={{ fontSize: 20, fontWeight: 900, color: t.green, marginTop: 4 }}>{fmt(currentUser.totalSpent ?? 0, settings?.sym)}</div>
             </div>
           </div>
         </Card>

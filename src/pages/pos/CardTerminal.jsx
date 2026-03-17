@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { fmt } from '@/lib/utils'
 
-export const CardTerminal = ({ total, onApproved, t }) => {
+export const CardTerminal = ({ total, onApproved, settings, t }) => {
   const [status, setStatus] = useState('idle')
   const tap = () => {
     if (status !== 'idle') return
@@ -26,7 +26,7 @@ export const CardTerminal = ({ total, onApproved, t }) => {
       {status === 'approved' && (
         <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px' }}>
           <span style={{ fontSize: 14 }}>✅</span>
-          <span style={{ fontSize: 11, fontWeight: 900, color: t.green }}>APPROVED — {fmt(total)}</span>
+          <span style={{ fontSize: 11, fontWeight: 900, color: t.green }}>APPROVED — {fmt(total, settings?.sym)}</span>
         </div>
       )}
     </div>

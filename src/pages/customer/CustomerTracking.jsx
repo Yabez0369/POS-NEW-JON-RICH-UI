@@ -19,7 +19,7 @@ const PICKUP_STEPS = [
   { key: 'picked-up', label: 'Picked Up', icon: '✅' },
 ]
 
-export const CustomerTracking = ({ orders, t: tProp }) => {
+export const CustomerTracking = ({ orders, t: tProp, settings }) => {
   const { t: tCtx } = useTheme()
   const { currentUser } = useAuth()
   const t = tProp || tCtx
@@ -99,7 +99,7 @@ export const CustomerTracking = ({ orders, t: tProp }) => {
         </div>
         <div style={{ display: 'flex', gap: 6 }}>
           <Badge t={t} text={order.orderType} color={order.orderType === 'delivery' ? 'teal' : 'blue'} />
-          <Badge t={t} text={fmt(order.total)} color="green" />
+          <Badge t={t} text={fmt(order.total, settings?.sym)} color="green" />
         </div>
       </div>
       {renderTimeline(order)}
@@ -168,11 +168,11 @@ export const CustomerTracking = ({ orders, t: tProp }) => {
               {selectedOrder.items.map((item, i) => (
                 <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: t.text2, padding: '4px 0' }}>
                   <span>{item.name} ×{item.qty}</span>
-                  <span>{fmt(item.price * item.qty)}</span>
+                  <span>{fmt(item.price * item.qty, settings?.sym)}</span>
                 </div>
               ))}
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 15, fontWeight: 900, color: t.text, paddingTop: 8, borderTop: `1px solid ${t.border}`, marginTop: 6 }}>
-                <span>Total</span><span style={{ color: t.accent }}>{fmt(selectedOrder.total)}</span>
+                <span>Total</span><span style={{ color: t.accent }}>{fmt(selectedOrder.total, settings?.sym)}</span>
               </div>
             </div>
           </div>

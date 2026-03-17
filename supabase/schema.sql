@@ -513,6 +513,18 @@ RETURNS SETOF profiles AS $$
   SELECT * FROM profiles WHERE id = auth.uid();
 $$ LANGUAGE sql SECURITY DEFINER;
 
+-- 2b. Get authenticated user's role (bypasses RLS to prevent infinite recursion)
+CREATE OR REPLACE FUNCTION get_my_role()
+RETURNS TEXT AS $$
+  SELECT role FROM public.profiles WHERE id = auth.uid();
+$$ LANGUAGE sql SECURITY DEFINER STABLE;
+
+-- 2c. Get authenticated user's venue_id (bypasses RLS)
+CREATE OR REPLACE FUNCTION get_my_venue_id()
+RETURNS UUID AS $$
+  SELECT venue_id FROM public.profiles WHERE id = auth.uid();
+$$ LANGUAGE sql SECURITY DEFINER STABLE;
+
 -- 3. Auto-create profile on auth.users insert
 CREATE OR REPLACE FUNCTION handle_new_user()
 RETURNS TRIGGER AS $$
@@ -604,12 +616,8 @@ CREATE POLICY "Users can update own profile"
 CREATE POLICY "Admins and managers can read all profiles in venue"
   ON profiles FOR SELECT
   USING (
-    EXISTS (
-      SELECT 1 FROM profiles p
-      WHERE p.id = auth.uid()
-      AND p.role IN ('admin', 'manager')
-      AND (p.venue_id = profiles.venue_id OR p.venue_id IS NULL)
-    )
+    get_my_role() IN ('admin', 'manager')
+    AND (get_my_venue_id() = profiles.venue_id OR get_my_venue_id() IS NULL)
   );
 
 CREATE POLICY "Service role can manage profiles"
@@ -623,13 +631,7 @@ CREATE POLICY "Everyone can read products"
 
 CREATE POLICY "Managers and admins can update products"
   ON products FOR ALL
-  USING (
-    EXISTS (
-      SELECT 1 FROM profiles p
-      WHERE p.id = auth.uid()
-      AND p.role IN ('admin', 'manager')
-    )
-  );
+  USING (get_my_role() IN ('admin', 'manager'));
 
 -- product_variants
 CREATE POLICY "Everyone can read product_variants"
@@ -638,13 +640,7 @@ CREATE POLICY "Everyone can read product_variants"
 
 CREATE POLICY "Managers and admins can manage product_variants"
   ON product_variants FOR ALL
-  USING (
-    EXISTS (
-      SELECT 1 FROM profiles p
-      WHERE p.id = auth.uid()
-      AND p.role IN ('admin', 'manager')
-    )
-  );
+  USING (get_my_role() IN ('admin', 'manager'));
 
 -- product_barcodes
 CREATE POLICY "Everyone can read product_barcodes"
@@ -653,13 +649,7 @@ CREATE POLICY "Everyone can read product_barcodes"
 
 CREATE POLICY "Managers and admins can manage product_barcodes"
   ON product_barcodes FOR ALL
-  USING (
-    EXISTS (
-      SELECT 1 FROM profiles p
-      WHERE p.id = auth.uid()
-      AND p.role IN ('admin', 'manager')
-    )
-  );
+  USING (get_my_role() IN ('admin', 'manager'));
 
 -- inventory: everyone can read, managers/cashiers/admins can write
 CREATE POLICY "Everyone can read inventory"
@@ -668,13 +658,7 @@ CREATE POLICY "Everyone can read inventory"
 
 CREATE POLICY "Managers, cashiers and admins can manage inventory"
   ON inventory FOR ALL
-  USING (
-    EXISTS (
-      SELECT 1 FROM profiles p
-      WHERE p.id = auth.uid()
-      AND p.role IN ('admin', 'manager', 'cashier')
-    )
-  );
+  USING (get_my_role() IN ('admin', 'manager', 'cashier'));
 
 -- inventory_movements
 CREATE POLICY "Everyone can read inventory_movements"
@@ -683,24 +667,12 @@ CREATE POLICY "Everyone can read inventory_movements"
 
 CREATE POLICY "Managers, cashiers and admins can manage inventory_movements"
   ON inventory_movements FOR ALL
-  USING (
-    EXISTS (
-      SELECT 1 FROM profiles p
-      WHERE p.id = auth.uid()
-      AND p.role IN ('admin', 'manager', 'cashier')
-    )
-  );
+  USING (get_my_role() IN ('admin', 'manager', 'cashier'));
 
 -- orders: cashiers can create, customers read own, managers/admins read all in venue
 CREATE POLICY "Cashiers can create orders"
   ON orders FOR INSERT
-  WITH CHECK (
-    EXISTS (
-      SELECT 1 FROM profiles p
-      WHERE p.id = auth.uid()
-      AND p.role IN ('admin', 'manager', 'cashier')
-    )
-  );
+  WITH CHECK (get_my_role() IN ('admin', 'manager', 'cashier'));
 
 CREATE POLICY "Customers can read own orders"
   ON orders FOR SELECT
@@ -708,23 +680,11 @@ CREATE POLICY "Customers can read own orders"
 
 CREATE POLICY "Managers and admins can read all orders"
   ON orders FOR SELECT
-  USING (
-    EXISTS (
-      SELECT 1 FROM profiles p
-      WHERE p.id = auth.uid()
-      AND p.role IN ('admin', 'manager')
-    )
-  );
+  USING (get_my_role() IN ('admin', 'manager'));
 
 CREATE POLICY "Managers and admins can update orders"
   ON orders FOR UPDATE
-  USING (
-    EXISTS (
-      SELECT 1 FROM profiles p
-      WHERE p.id = auth.uid()
-      AND p.role IN ('admin', 'manager')
-    )
-  );
+  USING (get_my_role() IN ('admin', 'manager'));
 
 -- order_items
 CREATE POLICY "Customers can read own order items"
@@ -739,23 +699,11 @@ CREATE POLICY "Customers can read own order items"
 
 CREATE POLICY "Staff can read order items"
   ON order_items FOR SELECT
-  USING (
-    EXISTS (
-      SELECT 1 FROM profiles p
-      WHERE p.id = auth.uid()
-      AND p.role IN ('admin', 'manager', 'cashier', 'staff')
-    )
-  );
+  USING (get_my_role() IN ('admin', 'manager', 'cashier', 'staff'));
 
 CREATE POLICY "Cashiers can create order items"
   ON order_items FOR INSERT
-  WITH CHECK (
-    EXISTS (
-      SELECT 1 FROM profiles p
-      WHERE p.id = auth.uid()
-      AND p.role IN ('admin', 'manager', 'cashier')
-    )
-  );
+  WITH CHECK (get_my_role() IN ('admin', 'manager', 'cashier'));
 
 -- returns: customers create, managers approve/reject
 CREATE POLICY "Customers can create returns"
@@ -768,23 +716,11 @@ CREATE POLICY "Customers can read own returns"
 
 CREATE POLICY "Managers and admins can read all returns"
   ON returns FOR SELECT
-  USING (
-    EXISTS (
-      SELECT 1 FROM profiles p
-      WHERE p.id = auth.uid()
-      AND p.role IN ('admin', 'manager')
-    )
-  );
+  USING (get_my_role() IN ('admin', 'manager'));
 
 CREATE POLICY "Managers and admins can update returns (approve/reject)"
   ON returns FOR UPDATE
-  USING (
-    EXISTS (
-      SELECT 1 FROM profiles p
-      WHERE p.id = auth.uid()
-      AND p.role IN ('admin', 'manager')
-    )
-  );
+  USING (get_my_role() IN ('admin', 'manager'));
 
 -- return_items
 CREATE POLICY "Customers can read own return items"
@@ -799,111 +735,51 @@ CREATE POLICY "Customers can read own return items"
 
 CREATE POLICY "Staff can manage return items"
   ON return_items FOR ALL
-  USING (
-    EXISTS (
-      SELECT 1 FROM profiles p
-      WHERE p.id = auth.uid()
-      AND p.role IN ('admin', 'manager', 'cashier')
-    )
-  );
+  USING (get_my_role() IN ('admin', 'manager', 'cashier'));
 
 -- audit_logs: admins can read all, insert only (no update/delete)
 CREATE POLICY "Admins can read audit_logs"
   ON audit_logs FOR SELECT
-  USING (
-    EXISTS (
-      SELECT 1 FROM profiles p
-      WHERE p.id = auth.uid()
-      AND p.role = 'admin'
-    )
-  );
+  USING (get_my_role() = 'admin');
 
 CREATE POLICY "Authenticated users can insert audit_logs"
   ON audit_logs FOR INSERT
   WITH CHECK (auth.uid() IS NOT NULL);
 
--- settings: admins can read/write
-CREATE POLICY "Admins can read settings"
+-- settings: authenticated users can read, admins can write
+CREATE POLICY "Authenticated users can read settings"
   ON settings FOR SELECT
-  USING (
-    EXISTS (
-      SELECT 1 FROM profiles p
-      WHERE p.id = auth.uid()
-      AND p.role = 'admin'
-    )
-  );
+  USING (auth.uid() IS NOT NULL);
 
 CREATE POLICY "Admins can manage settings"
   ON settings FOR ALL
-  USING (
-    EXISTS (
-      SELECT 1 FROM profiles p
-      WHERE p.id = auth.uid()
-      AND p.role = 'admin'
-    )
-  );
+  USING (get_my_role() = 'admin');
 
 -- venues, sites, counters, categories, coupons, banners, cash_sessions, cash_movements, parked_bills
 -- Allow authenticated staff to read/manage as needed
 CREATE POLICY "Staff can read venues"
   ON venues FOR SELECT
-  USING (
-    EXISTS (
-      SELECT 1 FROM profiles p
-      WHERE p.id = auth.uid()
-      AND p.role IN ('admin', 'manager', 'cashier', 'staff')
-    )
-  );
+  USING (get_my_role() IN ('admin', 'manager', 'cashier', 'staff'));
 
 CREATE POLICY "Admins can manage venues"
   ON venues FOR ALL
-  USING (
-    EXISTS (
-      SELECT 1 FROM profiles p
-      WHERE p.id = auth.uid()
-      AND p.role = 'admin'
-    )
-  );
+  USING (get_my_role() = 'admin');
 
 CREATE POLICY "Staff can read sites"
   ON sites FOR SELECT
-  USING (
-    EXISTS (
-      SELECT 1 FROM profiles p
-      WHERE p.id = auth.uid()
-      AND p.role IN ('admin', 'manager', 'cashier', 'staff')
-    )
-  );
+  USING (get_my_role() IN ('admin', 'manager', 'cashier', 'staff'));
 
 CREATE POLICY "Admins can manage sites"
   ON sites FOR ALL
-  USING (
-    EXISTS (
-      SELECT 1 FROM profiles p
-      WHERE p.id = auth.uid()
-      AND p.role = 'admin'
-    )
-  );
+  USING (get_my_role() = 'admin');
 
 CREATE POLICY "Staff can read counters"
   ON counters FOR SELECT
-  USING (
-    EXISTS (
-      SELECT 1 FROM profiles p
-      WHERE p.id = auth.uid()
-      AND p.role IN ('admin', 'manager', 'cashier', 'staff')
-    )
-  );
+  USING (get_my_role() IN ('admin', 'manager', 'cashier', 'staff'));
 
 CREATE POLICY "Admins can manage counters"
   ON counters FOR ALL
-  USING (
-    EXISTS (
-      SELECT 1 FROM profiles p
-      WHERE p.id = auth.uid()
-      AND p.role = 'admin'
-    )
-  );
+  USING (get_my_role() = 'admin');
 
 CREATE POLICY "Everyone can read categories"
   ON categories FOR SELECT
@@ -911,13 +787,7 @@ CREATE POLICY "Everyone can read categories"
 
 CREATE POLICY "Managers and admins can manage categories"
   ON categories FOR ALL
-  USING (
-    EXISTS (
-      SELECT 1 FROM profiles p
-      WHERE p.id = auth.uid()
-      AND p.role IN ('admin', 'manager')
-    )
-  );
+  USING (get_my_role() IN ('admin', 'manager'));
 
 CREATE POLICY "Everyone can read coupons"
   ON coupons FOR SELECT
@@ -925,63 +795,27 @@ CREATE POLICY "Everyone can read coupons"
 
 CREATE POLICY "Admins can manage coupons"
   ON coupons FOR ALL
-  USING (
-    EXISTS (
-      SELECT 1 FROM profiles p
-      WHERE p.id = auth.uid()
-      AND p.role = 'admin'
-    )
-  );
+  USING (get_my_role() = 'admin');
 
 CREATE POLICY "Staff can read banners"
   ON banners FOR SELECT
-  USING (
-    EXISTS (
-      SELECT 1 FROM profiles p
-      WHERE p.id = auth.uid()
-      AND p.role IN ('admin', 'manager', 'cashier', 'staff')
-    )
-  );
+  USING (get_my_role() IN ('admin', 'manager', 'cashier', 'staff'));
 
 CREATE POLICY "Admins can manage banners"
   ON banners FOR ALL
-  USING (
-    EXISTS (
-      SELECT 1 FROM profiles p
-      WHERE p.id = auth.uid()
-      AND p.role = 'admin'
-    )
-  );
+  USING (get_my_role() = 'admin');
 
 CREATE POLICY "Cashiers can manage cash_sessions"
   ON cash_sessions FOR ALL
-  USING (
-    EXISTS (
-      SELECT 1 FROM profiles p
-      WHERE p.id = auth.uid()
-      AND p.role IN ('admin', 'manager', 'cashier')
-    )
-  );
+  USING (get_my_role() IN ('admin', 'manager', 'cashier'));
 
 CREATE POLICY "Cashiers can manage cash_movements"
   ON cash_movements FOR ALL
-  USING (
-    EXISTS (
-      SELECT 1 FROM profiles p
-      WHERE p.id = auth.uid()
-      AND p.role IN ('admin', 'manager', 'cashier')
-    )
-  );
+  USING (get_my_role() IN ('admin', 'manager', 'cashier'));
 
 CREATE POLICY "Cashiers can manage parked_bills"
   ON parked_bills FOR ALL
-  USING (
-    EXISTS (
-      SELECT 1 FROM profiles p
-      WHERE p.id = auth.uid()
-      AND p.role IN ('admin', 'manager', 'cashier')
-    )
-  );
+  USING (get_my_role() IN ('admin', 'manager', 'cashier'));
 
 -- =============================================================================
 -- END OF MIGRATION
