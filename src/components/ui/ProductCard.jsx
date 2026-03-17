@@ -3,7 +3,7 @@ import { THEMES } from '@/lib/theme'
 import { fmt } from '@/lib/utils'
 import { PRODUCT_IMAGES } from '@/lib/seed-data'
 
-export const ProductCard = ({ p, onAdd, showAdd = true, t, compact = false }) => {
+export const ProductCard = ({ p, onAdd, showAdd = true, t, compact = false, settings }) => {
   const theme = t || THEMES.light
   const img = PRODUCT_IMAGES[p.name] || `https://via.placeholder.com/300x200/e2e8f0/64748b?text=${encodeURIComponent(p.emoji)}`
   const [imgErr, setImgErr] = useState(false)
@@ -21,7 +21,7 @@ export const ProductCard = ({ p, onAdd, showAdd = true, t, compact = false }) =>
       <div style={{ padding: compact ? "8px 10px" : "10px 12px" }}>
         <div style={{ fontSize: compact ? 11 : 12, fontWeight: 700, color: theme.text, lineHeight: 1.3, marginBottom: 4 }}>{p.name}</div>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <span style={{ fontSize: compact ? 12 : 14, fontWeight: 900, color: theme.green }}>{fmt(p.price)}</span>
+          <span style={{ fontSize: compact ? 12 : 14, fontWeight: 900, color: theme.green }}>{fmt(p.price, settings?.sym)}</span>
           {showAdd && p.stock > 0 && <span style={{ width: 22, height: 22, borderRadius: "50%", background: theme.accent, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 900 }}>+</span>}
         </div>
       </div>

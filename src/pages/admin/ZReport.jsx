@@ -4,7 +4,7 @@ import { Btn, Badge, Card, StatCard } from '@/components/ui'
 import { notify } from '@/components/shared'
 import { fmt } from '@/lib/utils'
 
-export const ZReport = ({ orders, t }) => {
+export const ZReport = ({ orders, settings, t }) => {
   const [selectedDate, setSelectedDate] = useState(dayjs().format('YYYY-MM-DD'))
   const reportDate = dayjs(selectedDate)
   const dateLabel = reportDate.format('DD/MM/YYYY')
@@ -34,7 +34,7 @@ export const ZReport = ({ orders, t }) => {
   })
 
   const exportCsv = () => {
-    const d = `Z-REPORT,${dateLabel}\nTotal Revenue,${fmt(total)}\nCard,${fmt(card)}\nCash,${fmt(cash)}\nQR,${fmt(qr)}\nSplit,${fmt(split)}\nVAT,${fmt(tax)}\nOrders,${dayOrders.length}\nRefunds,${fmt(refunded)}`
+    const d = `Z-REPORT,${dateLabel}\nTotal Revenue,${fmt(total, settings?.sym)}\nCard,${fmt(card, settings?.sym)}\nCash,${fmt(cash, settings?.sym)}\nQR,${fmt(qr, settings?.sym)}\nSplit,${fmt(split, settings?.sym)}\nVAT,${fmt(tax, settings?.sym)}\nOrders,${dayOrders.length}\nRefunds,${fmt(refunded, settings?.sym)}`
     const b = new Blob([d], { type: 'text/csv' })
     const url = URL.createObjectURL(b)
     const a = document.createElement('a')
@@ -62,19 +62,19 @@ export const ZReport = ({ orders, t }) => {
 
       <div style={{ background: `linear-gradient(135deg,${t.accent},${t.accent2})`, borderRadius: 16, padding: 24, color: '#fff' }}>
         <div style={{ fontSize: 13, opacity: 0.8, marginBottom: 4 }}>Revenue Summary — {dateLabel}</div>
-        <div style={{ fontSize: 48, fontWeight: 900, letterSpacing: -2 }}>{fmt(total)}</div>
+        <div style={{ fontSize: 48, fontWeight: 900, letterSpacing: -2 }}>{fmt(total, settings?.sym)}</div>
         <div style={{ fontSize: 14, opacity: 0.75, marginTop: 4 }}>{dayOrders.length} transactions processed</div>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(min(180px,45vw),1fr))', gap: 14 }}>
         {[
-          ['Card Sales', fmt(card), t.blue, '💳'],
-          ['Cash Sales', fmt(cash), t.green, '💵'],
-          ['QR Sales', fmt(qr), t.purple, '📱'],
-          ['Split Sales', fmt(split), t.teal, '✂️'],
-          ['VAT Collected', fmt(tax), t.yellow, '🏛️'],
-          ['Refunds', fmt(refunded), t.red, '↩️'],
-          ['Net Revenue', fmt(total - refunded), t.accent, '💰'],
+          ['Card Sales', fmt(card, settings?.sym), t.blue, '💳'],
+          ['Cash Sales', fmt(cash, settings?.sym), t.green, '💵'],
+          ['QR Sales', fmt(qr, settings?.sym), t.purple, '📱'],
+          ['Split Sales', fmt(split, settings?.sym), t.teal, '✂️'],
+          ['VAT Collected', fmt(tax, settings?.sym), t.yellow, '🏛️'],
+          ['Refunds', fmt(refunded, settings?.sym), t.red, '↩️'],
+          ['Net Revenue', fmt(total - refunded, settings?.sym), t.accent, '💰'],
         ].map(([k, v, c, i]) => <StatCard key={k} t={t} title={k} value={v} color={c} icon={i} />)}
       </div>
 
@@ -99,7 +99,7 @@ export const ZReport = ({ orders, t }) => {
               <span style={{ color: t.text }}>{c}</span>
               <div style={{ display: 'flex', gap: 10 }}>
                 <span style={{ color: t.text3 }}>{stats.orders} orders</span>
-                <span style={{ fontWeight: 800, color: t.accent }}>{fmt(stats.rev)}</span>
+                <span style={{ fontWeight: 800, color: t.accent }}>{fmt(stats.rev, settings?.sym)}</span>
               </div>
             </div>
           ))}

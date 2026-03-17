@@ -12,6 +12,7 @@ import { OfflineBanner } from '@/components/shared/OfflineBanner'
 import { MainLayout } from '@/components/layout/MainLayout'
 import { GuestLayout } from '@/components/layout/GuestLayout'
 import { isSupabaseConfigured } from '@/lib/supabase'
+import { fetchSettings } from '@/services/settings'
 import { useRealtimeOrders, useRealtimeInventory, useRealtimeReturns, useRealtimeCashSessions } from '@/hooks/useRealtime'
 
 import { LoginPage } from '@/pages/auth/LoginPage'
@@ -62,6 +63,26 @@ import { supabase } from '@/lib/supabase'
 import { ts } from '@/lib/utils'
 
 import '@/styles/global.css'
+
+const DEFAULT_VENUE_ID = 'a0000000-0000-0000-0000-000000000001'
+const DEFAULT_SITE_ID = 'b0000000-0000-0000-0000-000000000001'
+
+function useSettingsSync(setSettings) {
+  useEffect(() => {
+    if (!isSupabaseConfigured()) return
+    let cancelled = false
+    fetchSettings(DEFAULT_VENUE_ID, DEFAULT_SITE_ID)
+      .then((data) => {
+        if (!cancelled && data && Object.keys(data).length > 0) {
+          setSettings((prev) => ({ ...INITIAL_SETTINGS, ...prev, ...data }))
+        }
+      })
+      .catch((err) => {
+        console.warn('Settings sync skipped:', err?.message || err)
+      })
+    return () => { cancelled = true }
+  }, [setSettings])
+}
 
 function lazyRetry(importFn, namedExport) {
   return lazy(() =>
@@ -181,6 +202,7 @@ function AppContent() {
   useSupabaseSync(setCounters, 'counters', INITIAL_COUNTERS)
   useSupabaseSync(setBanners, 'banners', INITIAL_BANNERS)
   useSupabaseSync(setCoupons, 'coupons', INITIAL_COUPONS)
+  useSettingsSync(setSettings)
 
   const addAudit = useCallback((u, action, module, details = '') => {
     const entry = {
@@ -224,9 +246,9 @@ function AppContent() {
         <Routes>
           {/* Guest Routes */}
           <Route element={<GuestLayout />}>
-            <Route index element={<GuestHomePage products={products} banners={banners} />} />
-            <Route path="shop" element={<GuestShopPage products={products} banners={banners} />} />
-            <Route path="product/:productId" element={<GuestProductDetail products={products} />} />
+            <Route index element={<GuestHomePage products={products} banners={banners} settings={settings} />} />
+            <Route path="shop" element={<GuestShopPage products={products} banners={banners} settings={settings} />} />
+            <Route path="product/:productId" element={<GuestProductDetail products={products} settings={settings} />} />
           </Route>
 
           {/* Auth Routes */}
@@ -246,9 +268,9 @@ function AppContent() {
             {/* Dashboard - role-specific */}
             <Route path="dashboard" element={
               currentUser?.role === 'admin'
-                ? <AdminDashboard orders={orders} users={users} products={products} t={t} />
+                ? <AdminDashboard orders={orders} users={users} products={products} settings={settings} t={t} />
                 : currentUser?.role === 'manager'
-                  ? <ManagerDashboard orders={orders} products={products} users={users} counters={counters} t={t} />
+                  ? <ManagerDashboard orders={orders} products={products} users={users} counters={counters} settings={settings} t={t} />
                   : <Navigate to="/app" replace />
             } />
 
@@ -262,12 +284,12 @@ function AppContent() {
             {/* Admin Routes */}
             <Route path="analytics" element={
               <ProtectedRoute allowedRoles={['admin']}>
-                <AdminAnalytics orders={orders} products={products} t={t} />
+                <AdminAnalytics orders={orders} products={products} settings={settings} t={t} />
               </ProtectedRoute>
             } />
             <Route path="customers" element={
               <ProtectedRoute allowedRoles={['admin']}>
-                <AdminCustomers users={users} orders={orders} t={t} />
+                <AdminCustomers users={users} orders={orders} settings={settings} t={t} />
               </ProtectedRoute>
             } />
             <Route path="users" element={
@@ -287,12 +309,12 @@ function AppContent() {
             } />
             <Route path="coupons" element={
               <ProtectedRoute allowedRoles={['admin']}>
-                <CouponManagement coupons={coupons} setCoupons={setCoupons} addAudit={addAudit} currentUser={currentUser} t={t} />
+                <CouponManagement coupons={coupons} setCoupons={setCoupons} addAudit={addAudit} currentUser={currentUser} settings={settings} t={t} />
               </ProtectedRoute>
             } />
             <Route path="z-report" element={
               <ProtectedRoute allowedRoles={['admin']}>
-                <ZReport orders={orders} t={t} />
+                <ZReport orders={orders} settings={settings} t={t} />
               </ProtectedRoute>
             } />
             <Route path="settings" element={
@@ -309,7 +331,7 @@ function AppContent() {
             {/* Manager Routes */}
             <Route path="products" element={
               <ProtectedRoute allowedRoles={['manager', 'admin']}>
-                <ProductManagement products={products} setProducts={setProducts} addAudit={addAudit} currentUser={currentUser} t={t} />
+                <ProductManagement products={products} setProducts={setProducts} addAudit={addAudit} currentUser={currentUser} settings={settings} t={t} />
               </ProtectedRoute>
             } />
             <Route path="inventory" element={
@@ -324,12 +346,12 @@ function AppContent() {
             } />
             <Route path="cashiers" element={
               <ProtectedRoute allowedRoles={['manager', 'admin']}>
-                <CashierManagement users={users} setUsers={setUsers} counters={counters} orders={orders} addAudit={addAudit} currentUser={currentUser} t={t} />
+                <CashierManagement users={users} setUsers={setUsers} counters={counters} orders={orders} addAudit={addAudit} currentUser={currentUser} settings={settings} t={t} />
               </ProtectedRoute>
             } />
             <Route path="counters" element={
               <ProtectedRoute allowedRoles={['manager', 'admin']}>
-                <CounterManagement counters={counters} setCounters={setCounters} orders={orders} addAudit={addAudit} currentUser={currentUser} t={t} />
+                <CounterManagement counters={counters} setCounters={setCounters} orders={orders} addAudit={addAudit} currentUser={currentUser} settings={settings} t={t} />
               </ProtectedRoute>
             } />
             <Route path="returns" element={
@@ -339,16 +361,16 @@ function AppContent() {
             } />
             <Route path="reports" element={
               <ProtectedRoute allowedRoles={['manager', 'admin']}>
-                <ReportsPage orders={orders} users={users} products={products} t={t} />
+                <ReportsPage orders={orders} users={users} products={products} settings={settings} t={t} />
               </ProtectedRoute>
             } />
 
             {/* Cashier Routes */}
-            <Route path="orders" element={<CashierOrders orders={orders} setOrders={setOrders} t={t} />} />
-            <Route path="hardware" element={<HardwarePanel addAudit={addAudit} t={t} />} />
+            <Route path="orders" element={<CashierOrders orders={orders} setOrders={setOrders} settings={settings} t={t} />} />
+            <Route path="hardware" element={<HardwarePanel addAudit={addAudit} settings={settings} t={t} />} />
             <Route path="cash" element={
               <ProtectedRoute allowedRoles={['cashier', 'admin', 'manager']}>
-                <CashManagement addAudit={addAudit} t={t} />
+                <CashManagement addAudit={addAudit} settings={settings} t={t} />
               </ProtectedRoute>
             } />
 
@@ -357,22 +379,22 @@ function AppContent() {
               <CustomerShop products={products} orders={orders} setOrders={setOrders} users={users} setUsers={setUsers}
                 currentUser={currentUser} banners={banners} coupons={coupons} settings={settings} t={t} addGlobalNotif={addGlobalNotif} />
             } />
-            <Route path="my-orders" element={<CustomerOrderHistory orders={orders} t={t} />} />
-            <Route path="tracking" element={<CustomerTracking orders={orders} t={t} />} />
+            <Route path="my-orders" element={<CustomerOrderHistory orders={orders} settings={settings} t={t} />} />
+            <Route path="tracking" element={<CustomerTracking orders={orders} settings={settings} t={t} />} />
             <Route path="my-returns" element={
               <CustomerReturns orders={orders} returns={returns} setReturns={setReturns} products={products} setProducts={setProducts} addAudit={addAudit} currentUser={currentUser} settings={settings} t={t} />
             } />
 
             {/* Staff Routes */}
             <Route path="staff-dashboard" element={
-              <StaffDashboard orders={orders} setOrders={setOrders} products={products} users={users} addAudit={addAudit} currentUser={currentUser} t={t} />
+              <StaffDashboard orders={orders} setOrders={setOrders} products={products} users={users} addAudit={addAudit} currentUser={currentUser} settings={settings} t={t} />
             } />
             <Route path="pickup" element={
-              <PickupOrders orders={orders} setOrders={setOrders} addAudit={addAudit} currentUser={currentUser} t={t} />
+              <PickupOrders orders={orders} setOrders={setOrders} addAudit={addAudit} currentUser={currentUser} settings={settings} t={t} />
             } />
 
             {/* Shared */}
-            <Route path="profile" element={<ProfilePage />} />
+            <Route path="profile" element={<ProfilePage settings={settings} />} />
           </Route>
 
           {/* Catch all */}

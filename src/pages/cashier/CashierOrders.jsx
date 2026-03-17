@@ -5,7 +5,7 @@ import { Btn, Input, Badge, Card, StatCard, Modal, Table, Select } from '@/compo
 import { notify } from '@/components/shared'
 import { fmt } from '@/lib/utils'
 
-export const CashierOrders = ({ orders, setOrders, t: tProp }) => {
+export const CashierOrders = ({ orders, setOrders, t: tProp, settings }) => {
   const { t: tCtx } = useTheme()
   const { currentUser } = useAuth()
   const t = tProp || tCtx
@@ -22,7 +22,7 @@ export const CashierOrders = ({ orders, setOrders, t: tProp }) => {
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(min(180px,45vw),1fr))', gap: 14 }}>
         <StatCard t={t} title="Orders" value={my.length} color={t.green} icon="🧾" />
-        <StatCard t={t} title="Revenue" value={fmt(my.reduce((s, o) => s + o.total, 0))} color={t.accent} icon="💰" />
+        <StatCard t={t} title="Revenue" value={fmt(my.reduce((s, o) => s + o.total, 0), settings?.sym)} color={t.accent} icon="💰" />
         <StatCard t={t} title="Deliveries" value={my.filter(o => o.orderType === 'delivery').length} color={t.teal} icon="🚚" />
         <StatCard t={t} title="Pickups" value={my.filter(o => o.orderType === 'pickup').length} color={t.blue} icon="📦" />
       </div>
@@ -32,7 +32,7 @@ export const CashierOrders = ({ orders, setOrders, t: tProp }) => {
           o.id,
           o.customerName,
           <Badge t={t} text={o.orderType || 'in-store'} color={o.orderType === 'delivery' ? 'teal' : o.orderType === 'pickup' ? 'blue' : 'green'} />,
-          fmt(o.total),
+          fmt(o.total, settings?.sym),
           o.payment,
           <Badge t={t} text={o.status} color={o.status === 'completed' ? 'green' : 'red'} />,
           <div style={{ display: 'flex', gap: 5 }}>
@@ -53,7 +53,7 @@ export const CashierOrders = ({ orders, setOrders, t: tProp }) => {
               <div style={{ fontSize: 13, color: t.blue, fontWeight: 700 }}>👤 {pickupModal.customerName}</div>
               <div style={{ fontSize: 12, color: t.text3, marginTop: 4 }}>Scheduled: {pickupModal.pickupDate || 'No date set'}</div>
               <div style={{ fontSize: 12, color: t.text3 }}>Items: {pickupModal.items.map(i => `${i.name} ×${i.qty}`).join(', ')}</div>
-              <div style={{ fontSize: 16, fontWeight: 900, color: t.accent, marginTop: 6 }}>{fmt(pickupModal.total)}</div>
+              <div style={{ fontSize: 16, fontWeight: 900, color: t.accent, marginTop: 6 }}>{fmt(pickupModal.total, settings?.sym)}</div>
             </div>
             <Btn t={t} variant="success" fullWidth onClick={() => { notify(`Pickup confirmed for ${pickupModal.customerName}`, 'success'); setPickupModal(null) }}>✓ Confirm Collected</Btn>
             <Btn t={t} variant="ghost" fullWidth onClick={() => setPickupModal(null)}>Cancel</Btn>

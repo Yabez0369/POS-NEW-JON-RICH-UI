@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Badge, Card, StatCard, Select } from '@/components/ui'
 import { fmt } from '@/lib/utils'
 
-export const AdminAnalytics = ({ orders, products, t }) => {
+export const AdminAnalytics = ({ orders, products, t, settings }) => {
   const [shopFilter, setShopFilter] = useState('all')
   const SHOPS_LIST = ['all', 'Main Stadium Store', 'East Wing Megastore', 'Airport Pop-up']
   const shopOrders = shopFilter === 'all'
@@ -34,9 +34,9 @@ export const AdminAnalytics = ({ orders, products, t }) => {
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(170px,1fr))', gap: 14 }}>
-        <StatCard t={t} title="Total Revenue" value={fmt(totalRev)} color={t.accent} icon="💰" trend={12} />
+        <StatCard t={t} title="Total Revenue" value={fmt(totalRev, settings?.sym)} color={t.accent} icon="💰" trend={12} />
         <StatCard t={t} title="Orders" value={shopOrders.length} color={t.blue} icon="🧾" trend={8} />
-        <StatCard t={t} title="Avg Order" value={fmt(shopOrders.length ? totalRev / shopOrders.length : 0)} color={t.green} icon="📊" />
+        <StatCard t={t} title="Avg Order" value={fmt(shopOrders.length ? totalRev / shopOrders.length : 0, settings?.sym)} color={t.green} icon="📊" />
         <StatCard t={t} title="Online Orders" value={shopOrders.filter(o => o.payment === 'Online').length} color={t.teal} icon="🌐" />
       </div>
 
@@ -48,7 +48,7 @@ export const AdminAnalytics = ({ orders, products, t }) => {
               <div key={cat}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 4 }}>
                   <span style={{ color: t.text2, fontWeight: 600 }}>{cat}</span>
-                  <span style={{ fontWeight: 800, color: t.text }}>{fmt(rev)}</span>
+                  <span style={{ fontWeight: 800, color: t.text }}>{fmt(rev, settings?.sym)}</span>
                 </div>
                 <div style={{ height: 8, background: t.bg4, borderRadius: 4, overflow: 'hidden' }}>
                   <div style={{ height: '100%', width: `${(rev / maxRev) * 100}%`, background: colors[i % colors.length], borderRadius: 4, transition: 'width .6s' }} />
@@ -95,7 +95,7 @@ export const AdminAnalytics = ({ orders, products, t }) => {
             {Object.entries(byPayment).filter(([, v]) => v > 0).map(([k, v]) => (
               <div key={k} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 5 }}>
                 <span style={{ color: t.text2 }}>{k}</span>
-                <span style={{ fontWeight: 800, color: t.accent }}>{fmt(v)}</span>
+                <span style={{ fontWeight: 800, color: t.accent }}>{fmt(v, settings?.sym)}</span>
               </div>
             ))}
           </div>

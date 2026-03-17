@@ -4,7 +4,7 @@ import { useAuth } from '@/context/AuthContext'
 import { Btn, Badge, Card } from '@/components/ui'
 import { notify } from '@/components/shared'
 
-export const HardwarePanel = ({ addAudit, t: tProp }) => {
+export const HardwarePanel = ({ addAudit, settings, t: tProp }) => {
   const { t: tCtx } = useTheme()
   const { currentUser } = useAuth()
   const t = tProp || tCtx
@@ -34,7 +34,7 @@ export const HardwarePanel = ({ addAudit, t: tProp }) => {
       const simulatedResponses = {
         scan: 'Simulated: Barcode 123456789 read successfully',
         print: 'Simulated: Receipt printed (42 chars)',
-        card: 'Simulated: Card approved — £0.00',
+        card: `Simulated: Card approved — ${settings?.sym || '£'}0.00`,
         drawer: 'Simulated: Drawer opened and closed OK',
       }
       setTest(x => ({ ...x, [d.id]: simulatedResponses[d.id] || 'Simulated: OK' }))

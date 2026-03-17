@@ -2,23 +2,49 @@ import { useState } from 'react'
 import { Btn, Input, Card, Toggle, Select } from '@/components/ui'
 import { notify } from '@/components/shared'
 import { isOptimoEnabled, syncUsers, syncVenues, syncSites } from '@/services/optimo'
+import { upsertSetting } from '@/services/settings'
+import { isSupabaseConfigured } from '@/lib/supabase'
+import { useVenueStore } from '@/stores/venueStore'
+
+const DEFAULT_VENUE_ID = 'a0000000-0000-0000-0000-000000000001'
+const DEFAULT_SITE_ID = 'b0000000-0000-0000-0000-000000000001'
 
 export const SettingsPage = ({ settings, setSettings, addAudit, currentUser, darkMode, setDarkMode, t }) => {
   const [form, setForm] = useState({ ...settings })
   const [saved, setSaved] = useState(false)
+  const [saving, setSaving] = useState(false)
   const [optimoSyncing, setOptimoSyncing] = useState(false)
+  const { selectedVenueId, selectedSiteId } = useVenueStore()
+
+  const venueId = selectedVenueId || currentUser?.venue_id || currentUser?.venueId || DEFAULT_VENUE_ID
+  const siteId = selectedSiteId || currentUser?.site_id || currentUser?.siteId || DEFAULT_SITE_ID
 
   const sections = [
     { title: 'Store Info', fields: [['Store Name', 'storeName'], ['Address', 'storeAddress'], ['Phone', 'storePhone'], ['Email', 'storeEmail']] },
-    { title: 'Financial', fields: [['Currency Symbol', 'sym', 'select', [{ value: '£', label: '£ (GBP)' }, { value: '$', label: '$ (USD)' }, { value: '€', label: '€ (EUR)' }]], ['Loyalty Rate (pts/£)', 'loyaltyRate', 'number'], ['Point Value (£/pt)', 'loyaltyValue', 'number']] },
+    { title: 'Financial', fields: [['Currency Symbol', 'sym', 'select', [{ value: '£', label: '£ (GBP)' }, { value: '$', label: '$ (USD)' }, { value: '€', label: '€ (EUR)' }]], [`Loyalty Rate (pts/${form.sym || '£'})`, 'loyaltyRate', 'number'], [`Point Value (${form.sym || '£'}/pt)`, 'loyaltyValue', 'number']] },
     { title: 'Receipt', fields: [['Footer Text', 'receiptFooter'], ['Return Days', 'returnDays', 'number']] },
   ]
 
-  const handleSave = () => {
+  const handleSave = async () => {
+    setSaving(true)
     setSettings(form)
     addAudit(currentUser, 'Settings Updated', 'Settings', 'Settings saved')
+
+    if (isSupabaseConfigured()) {
+      try {
+        for (const [key, value] of Object.entries(form)) {
+          if (value !== undefined && value !== null) {
+            await upsertSetting(key, value, venueId, siteId)
+          }
+        }
+      } catch (err) {
+        console.warn('Supabase settings sync failed:', err?.message)
+      }
+    }
+
     notify('Settings saved!', 'success')
     setSaved(true)
+    setSaving(false)
     setTimeout(() => setSaved(false), 2000)
   }
 
@@ -110,8 +136,8 @@ export const SettingsPage = ({ settings, setSettings, addAudit, currentUser, dar
         </div>
       </Card>
 
-      <Btn t={t} size="lg" onClick={handleSave}>
-        {saved ? '✓ Saved!' : 'Save Settings'}
+      <Btn t={t} size="lg" onClick={handleSave} disabled={saving}>
+        {saving ? 'Saving...' : saved ? '✓ Saved!' : 'Save Settings'}
       </Btn>
     </div>
   )

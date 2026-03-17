@@ -19,19 +19,19 @@ export const ReceiptModal = ({ order, settings, onClose, t }) => (
         {order.items.map((i, idx) => (
           <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 4 }}>
             <span>{i.name} × {i.qty}{i.discount > 0 ? ` (-${i.discount}%)` : ''}</span>
-            <span style={{ fontWeight: 700 }}>{fmt(i.price * (1 - (i.discount || 0) / 100) * i.qty)}</span>
+            <span style={{ fontWeight: 700 }}>{fmt(i.price * (1 - (i.discount || 0) / 100) * i.qty, settings?.sym)}</span>
           </div>
         ))}
       </div>
       <div style={{ fontSize: 12 }}>
-        {[['Subtotal', fmt(order.subtotal)], [`VAT (${settings.vatRate}%)`, fmt(order.tax)], order.deliveryCharge > 0 && ['Delivery', fmt(order.deliveryCharge)], order.couponDiscount > 0 && [`Coupon (${order.couponCode})`, `-${fmt(order.couponDiscount)}`], order.loyaltyDiscount > 0 && ['Loyalty Discount', `-${fmt(order.loyaltyDiscount)}`]].filter(Boolean).map(([k, v]) => (
+        {[['Subtotal', fmt(order.subtotal, settings?.sym)], [`VAT (${settings.vatRate}%)`, fmt(order.tax, settings?.sym)], order.deliveryCharge > 0 && ['Delivery', fmt(order.deliveryCharge, settings?.sym)], order.couponDiscount > 0 && [`Coupon (${order.couponCode})`, `-${fmt(order.couponDiscount, settings?.sym)}`], order.loyaltyDiscount > 0 && ['Loyalty Discount', `-${fmt(order.loyaltyDiscount, settings?.sym)}`]].filter(Boolean).map(([k, v]) => (
           <div key={k} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 3 }}><span style={{ color: '#666' }}>{k}</span><span>{v}</span></div>
         ))}
-        <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 900, fontSize: 17, borderTop: '1px dashed #aaa', marginTop: 6, paddingTop: 6 }}><span>TOTAL</span><span>{fmt(order.total)}</span></div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 900, fontSize: 17, borderTop: '1px dashed #aaa', marginTop: 6, paddingTop: 6 }}><span>TOTAL</span><span>{fmt(order.total, settings?.sym)}</span></div>
         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginTop: 3 }}><span>Payment</span><span style={{ fontWeight: 700 }}>{order.payment}{order.cardLast4 ? ` ****${order.cardLast4}` : ''}</span></div>
         {order.payment === 'Cash' && <>
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12 }}><span>Cash Given</span><span>{fmt(order.cashGiven)}</span></div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, fontWeight: 800, color: '#16a34a' }}><span>Change</span><span>{fmt(order.cashChange)}</span></div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12 }}><span>Cash Given</span><span>{fmt(order.cashGiven, settings?.sym)}</span></div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, fontWeight: 800, color: '#16a34a' }}><span>Change</span><span>{fmt(order.cashChange, settings?.sym)}</span></div>
         </>}
         {order.loyaltyEarned > 0 && <div style={{ marginTop: 8, background: '#fef9c3', border: '1px solid #fde047', borderRadius: 6, padding: '6px 10px', fontSize: 12, textAlign: 'center', color: '#a16207', fontWeight: 800 }}>⭐ +{order.loyaltyEarned} loyalty points earned!</div>}
       </div>

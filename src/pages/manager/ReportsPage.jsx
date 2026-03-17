@@ -16,7 +16,7 @@ const exportCsvHelper = (filename, headers, rows) => {
   notify('Report exported as CSV!', 'success')
 }
 
-export const ReportsPage = ({ orders, users, products, t }) => {
+export const ReportsPage = ({ orders, users, products, t, settings }) => {
   const [activeReport, setActiveReport] = useState('sales-category')
   const [dateFrom, setDateFrom] = useState(dayjs().subtract(30, 'day').format('YYYY-MM-DD'))
   const [dateTo, setDateTo] = useState(dayjs().format('YYYY-MM-DD'))
@@ -140,7 +140,7 @@ export const ReportsPage = ({ orders, users, products, t }) => {
             <label style={{ display: 'block', fontSize: 11, color: t.text3, fontWeight: 800, textTransform: 'uppercase', letterSpacing: 0.7, marginBottom: 4 }}>To</label>
             <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} style={{ background: t.input, border: `1px solid ${t.border}`, borderRadius: 9, padding: '8px 12px', color: t.text, fontSize: 13, outline: 'none' }} />
           </div>
-          <div style={{ fontSize: 12, color: t.text3, padding: '8px 0' }}>{filtered.length} orders · {fmt(totalRev)} revenue</div>
+          <div style={{ fontSize: 12, color: t.text3, padding: '8px 0' }}>{filtered.length} orders · {fmt(totalRev, settings?.sym)} revenue</div>
         </div>
       </Card>
 
@@ -170,7 +170,7 @@ export const ReportsPage = ({ orders, users, products, t }) => {
                   </svg>
                   <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column' }}>
                     <div style={{ fontSize: 10, color: t.text3, fontWeight: 700 }}>TOTAL</div>
-                    <div style={{ fontSize: 11, fontWeight: 900, color: t.text }}>{fmt(totalCatRev)}</div>
+                    <div style={{ fontSize: 11, fontWeight: 900, color: t.text }}>{fmt(totalCatRev, settings?.sym)}</div>
                   </div>
                 </div>
                 <div style={{ flex: 1 }}>
@@ -180,7 +180,7 @@ export const ReportsPage = ({ orders, users, products, t }) => {
                       <div style={{ flex: 1 }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 2 }}>
                           <span style={{ color: t.text2 }}>{cat}</span>
-                          <span style={{ fontWeight: 800, color: t.text }}>{fmt(rev)}</span>
+                          <span style={{ fontWeight: 800, color: t.text }}>{fmt(rev, settings?.sym)}</span>
                         </div>
                         <div style={{ height: 4, background: t.bg4, borderRadius: 2 }}>
                           <div style={{ height: '100%', width: `${totalCatRev > 0 ? (rev / totalCatRev) * 100 : 0}%`, background: colors[i % colors.length], borderRadius: 2 }} />
@@ -198,7 +198,7 @@ export const ReportsPage = ({ orders, users, products, t }) => {
                   <span style={{ color: t.text }}>{cat}</span>
                   <div style={{ display: 'flex', gap: 12 }}>
                     <span style={{ color: t.text3 }}>{totalCatRev > 0 ? (rev / totalCatRev * 100).toFixed(1) : 0}%</span>
-                    <span style={{ fontWeight: 800, color: t.accent }}>{fmt(rev)}</span>
+                    <span style={{ fontWeight: 800, color: t.accent }}>{fmt(rev, settings?.sym)}</span>
                   </div>
                 </div>
               ))}
@@ -219,7 +219,7 @@ export const ReportsPage = ({ orders, users, products, t }) => {
                     <div style={{ fontSize: 12, fontWeight: 700, color: t.text }}>{name}</div>
                     <div style={{ fontSize: 11, color: t.text3 }}>{stats.qty} sold</div>
                   </div>
-                  <span style={{ fontWeight: 800, color: t.accent }}>{fmt(stats.rev)}</span>
+                  <span style={{ fontWeight: 800, color: t.accent }}>{fmt(stats.rev, settings?.sym)}</span>
                 </div>
               ))}
             </Card>
@@ -242,7 +242,7 @@ export const ReportsPage = ({ orders, users, products, t }) => {
                   <div style={{ fontSize: 14, fontWeight: 800, color: t.text, marginBottom: 12 }}>🏪 {counter}</div>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 12 }}>
                     <div style={{ background: t.bg3, borderRadius: 8, padding: '10px 12px', textAlign: 'center' }}>
-                      <div style={{ fontSize: 20, fontWeight: 900, color: t.accent }}>{fmt(stats.rev)}</div>
+                      <div style={{ fontSize: 20, fontWeight: 900, color: t.accent }}>{fmt(stats.rev, settings?.sym)}</div>
                       <div style={{ fontSize: 10, color: t.text3 }}>Revenue</div>
                     </div>
                     <div style={{ background: t.bg3, borderRadius: 8, padding: '10px 12px', textAlign: 'center' }}>
@@ -273,7 +273,7 @@ export const ReportsPage = ({ orders, users, products, t }) => {
                     <div style={{ fontSize: 13, fontWeight: 700, color: t.text }}>{name}</div>
                     <div style={{ fontSize: 11, color: t.text3 }}>{stats.orders} orders</div>
                   </div>
-                  <div style={{ fontSize: 15, fontWeight: 900, color: t.accent }}>{fmt(stats.rev)}</div>
+                  <div style={{ fontSize: 15, fontWeight: 900, color: t.accent }}>{fmt(stats.rev, settings?.sym)}</div>
                 </div>
               ))}
             </Card>
@@ -281,7 +281,7 @@ export const ReportsPage = ({ orders, users, products, t }) => {
               <div style={{ fontSize: 14, fontWeight: 800, color: t.text, marginBottom: 16 }}>Operator Stats</div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                 <StatCard t={t} title="Operators" value={sortedOperators.length} color={t.blue} icon="👤" />
-                <StatCard t={t} title="Avg Revenue" value={fmt(sortedOperators.length > 0 ? totalRev / sortedOperators.length : 0)} color={t.green} icon="📊" />
+                <StatCard t={t} title="Avg Revenue" value={fmt(sortedOperators.length > 0 ? totalRev / sortedOperators.length : 0, settings?.sym)} color={t.green} icon="📊" />
               </div>
             </Card>
           </>
@@ -293,7 +293,7 @@ export const ReportsPage = ({ orders, users, products, t }) => {
               <div style={{ fontSize: 14, fontWeight: 800, color: t.text, marginBottom: 16 }}>↩️ Returns Summary</div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                 <StatCard t={t} title="Refunded Orders" value={returnOrders.length} color={t.red} icon="↩️" />
-                <StatCard t={t} title="Refund Total" value={fmt(returnOrders.reduce((s, o) => s + o.total, 0))} color={t.yellow} icon="💸" />
+                <StatCard t={t} title="Refund Total" value={fmt(returnOrders.reduce((s, o) => s + o.total, 0), settings?.sym)} color={t.yellow} icon="💸" />
               </div>
               {returnOrders.length === 0 && <div style={{ color: t.text3, fontSize: 13, padding: '20px 0', textAlign: 'center' }}>No returns in this period</div>}
             </Card>
@@ -336,11 +336,11 @@ export const ReportsPage = ({ orders, users, products, t }) => {
             <Card t={t}>
               <div style={{ fontSize: 14, fontWeight: 800, color: t.text, marginBottom: 16 }}>💰 Cash Reconciliation</div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-                <StatCard t={t} title="Cash Sales" value={fmt(cashSales)} color={t.green} icon="💵" />
-                <StatCard t={t} title="Cash Received" value={fmt(cashReceived)} color={t.blue} icon="📥" />
-                <StatCard t={t} title="Change Given" value={fmt(cashChangeGiven)} color={t.yellow} icon="🔄" />
-                <StatCard t={t} title="Cash Refunds" value={fmt(cashRefunds)} color={t.red} icon="↩️" />
-                <StatCard t={t} title="Net Cash" value={fmt(cashSales - cashRefunds)} color={t.accent} icon="💰" />
+                <StatCard t={t} title="Cash Sales" value={fmt(cashSales, settings?.sym)} color={t.green} icon="💵" />
+                <StatCard t={t} title="Cash Received" value={fmt(cashReceived, settings?.sym)} color={t.blue} icon="📥" />
+                <StatCard t={t} title="Change Given" value={fmt(cashChangeGiven, settings?.sym)} color={t.yellow} icon="🔄" />
+                <StatCard t={t} title="Cash Refunds" value={fmt(cashRefunds, settings?.sym)} color={t.red} icon="↩️" />
+                <StatCard t={t} title="Net Cash" value={fmt(cashSales - cashRefunds, settings?.sym)} color={t.accent} icon="💰" />
               </div>
             </Card>
             <Card t={t}>
@@ -352,7 +352,7 @@ export const ReportsPage = ({ orders, users, products, t }) => {
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: `1px solid ${t.border}`, fontSize: 13 }}>
                   <span style={{ color: t.text }}>Expected in Drawer</span>
-                  <span style={{ fontWeight: 800, color: t.accent }}>{fmt(cashReceived - cashChangeGiven - cashRefunds)}</span>
+                  <span style={{ fontWeight: 800, color: t.accent }}>{fmt(cashReceived - cashChangeGiven - cashRefunds, settings?.sym)}</span>
                 </div>
               </div>
             </Card>
@@ -365,7 +365,7 @@ export const ReportsPage = ({ orders, users, products, t }) => {
               <div style={{ fontSize: 14, fontWeight: 800, color: t.text, marginBottom: 16 }}>🏷️ Discount/Coupon Usage</div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                 <StatCard t={t} title="Discounted Orders" value={discountOrders.length} color={t.yellow} icon="🏷️" />
-                <StatCard t={t} title="Total Discounts" value={fmt(discountOrders.reduce((s, o) => s + (o.discountAmt || 0) + (o.couponDiscount || 0), 0))} color={t.accent} icon="💸" />
+                <StatCard t={t} title="Total Discounts" value={fmt(discountOrders.reduce((s, o) => s + (o.discountAmt || 0) + (o.couponDiscount || 0), 0), settings?.sym)} color={t.accent} icon="💸" />
               </div>
             </Card>
             <Card t={t}>
@@ -387,7 +387,7 @@ export const ReportsPage = ({ orders, users, products, t }) => {
                       <span style={{ fontWeight: 800, fontFamily: 'monospace', color: t.text }}>{code}</span>
                       <span style={{ fontSize: 11, color: t.text3, marginLeft: 8 }}>Used {s.count}×</span>
                     </div>
-                    <span style={{ fontWeight: 800, color: t.accent }}>{fmt(s.savings)} saved</span>
+                    <span style={{ fontWeight: 800, color: t.accent }}>{fmt(s.savings, settings?.sym)} saved</span>
                   </div>
                 ))
               })()}

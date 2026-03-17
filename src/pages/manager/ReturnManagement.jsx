@@ -77,7 +77,7 @@ export const ReturnManagement = ({
 
     setReturns(rs => rs.map(x => x.id === r.id ? { ...x, status: 'approved', restocked: restock, approvedAt: ts(), approvedBy: currentUser?.name } : x))
 
-    if (addAudit) addAudit(currentUser, 'Refund Approved', 'Returns', `${r.id} — ${fmt(r.refundAmount)}${restock ? ' (restocked)' : ''}${isExchange ? ' + exchange order created' : ''}`)
+    if (addAudit) addAudit(currentUser, 'Refund Approved', 'Returns', `${r.id} — ${fmt(r.refundAmount, settings?.sym)}${restock ? ' (restocked)' : ''}${isExchange ? ' + exchange order created' : ''}`)
     notify(`Refund approved for ${r.customerName}`, 'success')
   }
 
@@ -150,7 +150,7 @@ export const ReturnManagement = ({
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(min(180px,45vw),1fr))', gap: 14 }}>
         <StatCard t={t} title="Pending" value={pendingCount} color={t.yellow} icon="⏳" />
         <StatCard t={t} title="Approved" value={approvedCount} color={t.green} icon="✅" />
-        <StatCard t={t} title="Total Refunded" value={fmt(totalRefunded)} color={t.accent} icon="💸" />
+        <StatCard t={t} title="Total Refunded" value={fmt(totalRefunded, settings?.sym)} color={t.accent} icon="💸" />
       </div>
 
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'center' }}>
@@ -189,7 +189,7 @@ export const ReturnManagement = ({
                   {r.rejectReason && <div style={{ fontSize: 12, color: t.red, marginTop: 2 }}>Rejection: {r.rejectReason}</div>}
                 </div>
                 <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontSize: 22, fontWeight: 900, color: t.accent }}>{fmt(r.refundAmount)}</div>
+                  <div style={{ fontSize: 22, fontWeight: 900, color: t.accent }}>{fmt(r.refundAmount, settings?.sym)}</div>
                   {r.status === 'pending' && (
                     <div style={{ display: 'flex', gap: 8, marginTop: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
                       <Btn t={t} variant="success" size="sm" onClick={() => approve(r)}>✓ Approve</Btn>

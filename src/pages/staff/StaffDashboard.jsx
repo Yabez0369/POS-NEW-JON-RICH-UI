@@ -7,7 +7,7 @@ import { fmt, ts } from '@/lib/utils'
 
 const ORDER_STATUSES = ['pending', 'preparing', 'ready', 'completed']
 
-export const StaffDashboard = ({ orders, setOrders, products, users, addAudit, currentUser: cuProp, t: tProp }) => {
+export const StaffDashboard = ({ orders, setOrders, products, users, addAudit, currentUser: cuProp, t: tProp, settings }) => {
   const { t: tCtx } = useTheme()
   const { currentUser: cuCtx } = useAuth()
   const t = tProp || tCtx
@@ -105,14 +105,14 @@ export const StaffDashboard = ({ orders, setOrders, products, users, addAudit, c
                   {order.items.slice(0, 4).map((item, i) => (
                     <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: t.text2 }}>
                       <span>{item.name} ×{item.qty}</span>
-                      <span>{fmt(item.price * item.qty)}</span>
+                      <span>{fmt(item.price * item.qty, settings?.sym)}</span>
                     </div>
                   ))}
                   {order.items.length > 4 && <div style={{ fontSize: 11, color: t.text4 }}>+{order.items.length - 4} more</div>}
                 </div>
 
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: 10, borderTop: `1px solid ${t.border}` }}>
-                  <div style={{ fontSize: 15, fontWeight: 900, color: t.accent }}>{fmt(order.total)}</div>
+                  <div style={{ fontSize: 15, fontWeight: 900, color: t.accent }}>{fmt(order.total, settings?.sym)}</div>
                   <div style={{ display: 'flex', gap: 6 }}>
                     <Btn t={t} variant="secondary" size="sm" onClick={() => setViewOrder(order)}>Details</Btn>
                     {next && (
@@ -145,11 +145,11 @@ export const StaffDashboard = ({ orders, setOrders, products, users, addAudit, c
               {viewOrder.items.map((item, i) => (
                 <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: t.text2, padding: '5px 0', borderBottom: i < viewOrder.items.length - 1 ? `1px solid ${t.border}` : 'none' }}>
                   <span>{item.name} ×{item.qty}</span>
-                  <span style={{ fontWeight: 600 }}>{fmt(item.price * item.qty)}</span>
+                  <span style={{ fontWeight: 600 }}>{fmt(item.price * item.qty, settings?.sym)}</span>
                 </div>
               ))}
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 16, fontWeight: 900, color: t.text, paddingTop: 8, borderTop: `1px solid ${t.border}`, marginTop: 4 }}>
-                <span>Total</span><span style={{ color: t.accent }}>{fmt(viewOrder.total)}</span>
+                <span>Total</span><span style={{ color: t.accent }}>{fmt(viewOrder.total, settings?.sym)}</span>
               </div>
             </div>
 

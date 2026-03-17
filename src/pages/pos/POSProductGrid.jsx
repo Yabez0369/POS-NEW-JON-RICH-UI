@@ -7,7 +7,7 @@ export function POSProductGrid({
   search, setSearch, cat, setCat, filteredProds, favProds,
   getItemDiscount, addToCart, scanMsg,
   parkBill, parked, recallBill, showParkedDropdown, setShowParkedDropdown,
-  setShowBarcodeInput, t,
+  setShowBarcodeInput, settings, t,
 }) {
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', background: t.posLeft, borderRight: `1px solid ${t.border}` }} className="pos-left">
@@ -44,7 +44,7 @@ export function POSProductGrid({
                   <span style={{ fontSize: 16 }}>{p.emoji}</span>
                   <div style={{ textAlign: 'left' }}>
                     <div style={{ fontSize: 11, fontWeight: 700, color: t.text, whiteSpace: 'nowrap' }}>{p.name}</div>
-                    <div style={{ fontSize: 10, color: t.green, fontWeight: 800 }}>{disc > 0 ? <><s style={{ color: t.text3 }}>{fmt(p.price)}</s> {fmt(p.price * (1 - disc / 100))}</> : fmt(p.price)}</div>
+                    <div style={{ fontSize: 10, color: t.green, fontWeight: 800 }}>{disc > 0 ? <><s style={{ color: t.text3 }}>{fmt(p.price, settings?.sym)}</s> {fmt(p.price * (1 - disc / 100), settings?.sym)}</> : fmt(p.price, settings?.sym)}</div>
                   </div>
                   {disc > 0 && <span style={{ fontSize: 9, background: t.accent, color: '#fff', borderRadius: 5, padding: '1px 5px', fontWeight: 900 }}>-{disc}%</span>}
                 </button>
@@ -73,7 +73,7 @@ export function POSProductGrid({
                 <div style={{ fontSize: 'clamp(9px,2.5vw,11px)', fontWeight: 700, color: t.text, lineHeight: 1.3, marginBottom: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div>
-                    {disc > 0 ? <><div style={{ fontSize: 10, color: t.text4, textDecoration: 'line-through' }}>{fmt(p.price)}</div><div style={{ fontSize: 12, fontWeight: 900, color: t.accent }}>{fmt(p.price * (1 - disc / 100))}</div></> : <div style={{ fontSize: 12, fontWeight: 900, color: t.green }}>{fmt(p.price)}</div>}
+                    {disc > 0 ? <><div style={{ fontSize: 10, color: t.text4, textDecoration: 'line-through' }}>{fmt(p.price, settings?.sym)}</div><div style={{ fontSize: 12, fontWeight: 900, color: t.accent }}>{fmt(p.price * (1 - disc / 100), settings?.sym)}</div></> : <div style={{ fontSize: 12, fontWeight: 900, color: t.green }}>{fmt(p.price, settings?.sym)}</div>}
                   </div>
                   <div style={{ fontSize: 9, color: p.stock <= 5 ? t.red : t.text4 }}>Stk:{p.stock}</div>
                 </div>

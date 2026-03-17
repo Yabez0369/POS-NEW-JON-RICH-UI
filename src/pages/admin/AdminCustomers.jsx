@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Btn, Badge, Card, StatCard, Modal, Table } from '@/components/ui'
 import { fmt } from '@/lib/utils'
 
-export const AdminCustomers = ({ users, orders, t }) => {
+export const AdminCustomers = ({ users, orders, t, settings }) => {
   const [selected, setSelected] = useState(null)
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState('All')
@@ -92,7 +92,7 @@ export const AdminCustomers = ({ users, orders, t }) => {
               <span style={{ fontSize: 12, color: t.text3 }}>{u.phone || '—'}</span>,
               <Badge t={t} text={u.tier || 'Bronze'} color={u.tier === 'Gold' ? 'yellow' : u.tier === 'Silver' ? 'blue' : 'orange'} />,
               <span style={{ color: t.yellow, fontWeight: 700 }}>⭐{u.loyaltyPoints || 0}</span>,
-              <span style={{ fontWeight: 800, color: t.accent }}>{fmt(u.totalSpent || 0)}</span>,
+              <span style={{ fontWeight: 800, color: t.accent }}>{fmt(u.totalSpent || 0, settings?.sym)}</span>,
               <span style={{ color: t.blue, fontWeight: 700 }}>{myOrders.length}</span>,
               <Btn t={t} variant="secondary" size="sm" onClick={() => setSelected(u)}>View Profile</Btn>,
             ]
@@ -121,7 +121,7 @@ export const AdminCustomers = ({ users, orders, t }) => {
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
                   <StatCard t={t} title="Total Orders" value={myOrders.length} color={t.blue} icon="🧾" />
-                  <StatCard t={t} title="Total Spent" value={fmt(totalSpent)} color={t.accent} icon="💰" />
+                  <StatCard t={t} title="Total Spent" value={fmt(totalSpent, settings?.sym)} color={t.accent} icon="💰" />
                   <StatCard t={t} title="Loyalty Points" value={selected.loyaltyPoints || 0} color={t.yellow} icon="⭐" />
                 </div>
 
@@ -136,7 +136,7 @@ export const AdminCustomers = ({ users, orders, t }) => {
                           <div style={{ fontSize: 11, color: t.text3 }}>{o.date} · {o.items.length} items</div>
                         </div>
                         <div style={{ textAlign: 'right' }}>
-                          <div style={{ fontSize: 14, fontWeight: 800, color: t.accent }}>{fmt(o.total)}</div>
+                          <div style={{ fontSize: 14, fontWeight: 800, color: t.accent }}>{fmt(o.total, settings?.sym)}</div>
                           <Badge t={t} text={o.status} color={o.status === 'completed' ? 'green' : 'yellow'} />
                         </div>
                       </div>

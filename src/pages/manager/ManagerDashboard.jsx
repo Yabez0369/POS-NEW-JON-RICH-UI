@@ -1,7 +1,7 @@
 import { Badge, Card, StatCard, Table } from '@/components/ui'
 import { fmt } from '@/lib/utils'
 
-export const ManagerDashboard = ({ orders, products, users, counters, t }) => {
+export const ManagerDashboard = ({ orders, products, users, counters, t, settings }) => {
   const storeOrders = orders
   const todayRevenue = storeOrders.reduce((s, o) => s + o.total, 0)
   const pendingOrders = storeOrders.filter(o => o.status === 'preparing').length
@@ -20,7 +20,7 @@ export const ManagerDashboard = ({ orders, products, users, counters, t }) => {
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(170px,1fr))', gap: 14 }}>
-        <StatCard t={t} title="Total Revenue" value={fmt(todayRevenue)} color={t.accent} icon="💰" trend={8} />
+        <StatCard t={t} title="Total Revenue" value={fmt(todayRevenue, settings?.sym)} color={t.accent} icon="💰" trend={8} />
         <StatCard t={t} title="Total Orders" value={storeOrders.length} color={t.blue} icon="🧾" trend={5} />
         <StatCard t={t} title="Pending Orders" value={pendingOrders} color={t.yellow} icon="⏳" />
         <StatCard t={t} title="Staff Active" value={staffCount} color={t.green} icon="👥" />
@@ -53,7 +53,7 @@ export const ManagerDashboard = ({ orders, products, users, counters, t }) => {
                   <span style={{ color: t.text2, fontWeight: 600 }}>
                     {c.name} <span style={{ fontSize: 10, color: c.active ? t.green : t.text4 }}>({c.active ? 'active' : 'inactive'})</span>
                   </span>
-                  <span style={{ fontWeight: 800, color: t.text }}>{fmt(rev)}</span>
+                  <span style={{ fontWeight: 800, color: t.text }}>{fmt(rev, settings?.sym)}</span>
                 </div>
                 <div style={{ height: 6, background: t.bg4, borderRadius: 3 }}>
                   <div style={{ height: '100%', width: `${pct}%`, background: t.accent, borderRadius: 3 }} />
@@ -86,7 +86,7 @@ export const ManagerDashboard = ({ orders, products, users, counters, t }) => {
               <span style={{ fontSize: 11, fontFamily: 'monospace' }}>{o.id}</span>,
               o.customerName,
               <Badge t={t} text={o.orderType || 'in-store'} color={o.orderType === 'delivery' ? 'teal' : o.orderType === 'pickup' ? 'blue' : 'green'} />,
-              fmt(o.total),
+              fmt(o.total, settings?.sym),
               <Badge t={t} text={o.status} color={o.status === 'completed' ? 'green' : o.status === 'preparing' ? 'yellow' : 'red'} />,
             ])}
             empty="No orders yet"

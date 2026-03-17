@@ -4,7 +4,7 @@ import { useAuth } from '@/context/AuthContext'
 import { Btn, Badge, Card, Modal } from '@/components/ui'
 import { fmt } from '@/lib/utils'
 
-export const CustomerOrderHistory = ({ orders, t: tProp }) => {
+export const CustomerOrderHistory = ({ orders, t: tProp, settings }) => {
   const { t: tCtx } = useTheme()
   const { currentUser } = useAuth()
   const t = tProp || tCtx
@@ -55,13 +55,13 @@ export const CustomerOrderHistory = ({ orders, t: tProp }) => {
                 {order.items.slice(0, 3).map((item, i) => (
                   <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: t.text2 }}>
                     <span>{item.name} ×{item.qty}</span>
-                    <span>{fmt(item.price * item.qty)}</span>
+                    <span>{fmt(item.price * item.qty, settings?.sym)}</span>
                   </div>
                 ))}
                 {order.items.length > 3 && <div style={{ fontSize: 11, color: t.text4 }}>+{order.items.length - 3} more item{order.items.length - 3 > 1 ? 's' : ''}</div>}
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: 10, borderTop: `1px solid ${t.border}` }}>
-                <div style={{ fontSize: 16, fontWeight: 900, color: t.accent }}>{fmt(order.total)}</div>
+                <div style={{ fontSize: 16, fontWeight: 900, color: t.accent }}>{fmt(order.total, settings?.sym)}</div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                   <span style={{ fontSize: 12, color: t.text3 }}>{order.payment}</span>
                   {order.loyaltyEarned > 0 && <Badge t={t} text={`+${order.loyaltyEarned} pts`} color="purple" />}
@@ -98,25 +98,25 @@ export const CustomerOrderHistory = ({ orders, t: tProp }) => {
                     {item.size && <span style={{ fontSize: 11, color: t.text3 }}> ({item.size})</span>}
                     {item.discount > 0 && <span style={{ fontSize: 11, color: t.accent }}> -{item.discount}%</span>}
                   </div>
-                  <span style={{ fontWeight: 600 }}>{fmt(item.price * (1 - (item.discount || 0) / 100) * item.qty)}</span>
+                  <span style={{ fontWeight: 600 }}>{fmt(item.price * (1 - (item.discount || 0) / 100) * item.qty, settings?.sym)}</span>
                 </div>
               ))}
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
               {[
-                ['Subtotal', fmt(viewOrder.subtotal)],
-                viewOrder.tax > 0 && ['VAT', fmt(viewOrder.tax)],
-                viewOrder.deliveryCharge > 0 && ['Delivery', fmt(viewOrder.deliveryCharge)],
-                viewOrder.couponDiscount > 0 && ['Coupon Discount', '-' + fmt(viewOrder.couponDiscount)],
-                viewOrder.loyaltyDiscount > 0 && ['Loyalty Discount', '-' + fmt(viewOrder.loyaltyDiscount)],
+                ['Subtotal', fmt(viewOrder.subtotal, settings?.sym)],
+                viewOrder.tax > 0 && ['VAT', fmt(viewOrder.tax, settings?.sym)],
+                viewOrder.deliveryCharge > 0 && ['Delivery', fmt(viewOrder.deliveryCharge, settings?.sym)],
+                viewOrder.couponDiscount > 0 && ['Coupon Discount', '-' + fmt(viewOrder.couponDiscount, settings?.sym)],
+                viewOrder.loyaltyDiscount > 0 && ['Loyalty Discount', '-' + fmt(viewOrder.loyaltyDiscount, settings?.sym)],
               ].filter(Boolean).map(([k, v]) => (
                 <div key={k} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: t.text3 }}>
                   <span>{k}</span><span style={{ fontWeight: 600 }}>{v}</span>
                 </div>
               ))}
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 18, fontWeight: 900, color: t.text, paddingTop: 8, borderTop: `2px solid ${t.border}`, marginTop: 4 }}>
-                <span>Total</span><span style={{ color: t.accent }}>{fmt(viewOrder.total)}</span>
+                <span>Total</span><span style={{ color: t.accent }}>{fmt(viewOrder.total, settings?.sym)}</span>
               </div>
             </div>
 

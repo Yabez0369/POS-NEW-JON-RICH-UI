@@ -3,7 +3,7 @@ import { Btn, Input, Badge, Card, StatCard, Modal, Table, Select } from '@/compo
 import { notify } from '@/components/shared'
 import { fmt, ts } from '@/lib/utils'
 
-export const CashierManagement = ({ users, setUsers, counters, orders, addAudit, currentUser, t }) => {
+export const CashierManagement = ({ users, setUsers, counters, orders, addAudit, currentUser, t, settings }) => {
   const [showAdd, setShowAdd] = useState(false)
   const [editC, setEditC] = useState(null)
   const [form, setForm] = useState({ name: '', email: '', phone: '', password: 'cash123', counter: counters[0]?.name || '' })
@@ -57,7 +57,7 @@ export const CashierManagement = ({ users, setUsers, counters, orders, addAudit,
               <span style={{ fontSize: 12, color: t.text3 }}>{c2.email}</span>,
               <span style={{ fontSize: 12, color: t.text2 }}>{c2.counter || '—'}</span>,
               <span style={{ fontWeight: 700, color: t.blue }}>{myOrds.length}</span>,
-              <span style={{ fontWeight: 700, color: t.accent }}>{fmt(rev)}</span>,
+              <span style={{ fontWeight: 700, color: t.accent }}>{fmt(rev, settings?.sym)}</span>,
               <Badge t={t} text={c2.active ? 'Active' : 'Inactive'} color={c2.active ? 'green' : 'red'} />,
               <div style={{ display: 'flex', gap: 5 }}>
                 <Btn t={t} variant="secondary" size="sm" onClick={() => { setEditC(c2); setForm({ name: c2.name, email: c2.email, phone: c2.phone || '', password: c2.password || '', counter: c2.counter || '' }); setShowAdd(true) }}>Edit</Btn>

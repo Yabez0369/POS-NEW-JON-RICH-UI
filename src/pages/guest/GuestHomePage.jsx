@@ -5,7 +5,7 @@ import { fmt } from '@/lib/utils'
 import { PRODUCT_IMAGES } from '@/lib/seed-data'
 import { ImgWithFallback } from '@/components/shared'
 
-export function GuestHomePage({ products = [], banners = [] }) {
+export function GuestHomePage({ products = [], banners = [], settings = {} }) {
   const { t } = useTheme()
   const navigate = useNavigate()
   const [bIdx, setBIdx] = useState(0)
@@ -70,7 +70,7 @@ export function GuestHomePage({ products = [], banners = [] }) {
       {/* PERKS BAR */}
       <div style={{ background: t.accent, padding: '16px 5%' }}>
         <div style={{ maxWidth: 1100, margin: '0 auto', display: 'flex', justifyContent: 'space-around', flexWrap: 'wrap', gap: 12 }}>
-          {[['🚚', 'Free Delivery', 'Orders over £100'], ['🔄', '30-Day Returns', 'Hassle-free'], ['⭐', 'Loyalty Rewards', 'Earn on every purchase'], ['🔒', 'Secure Checkout', '100% protected']].map(([ic, t1, t2]) => (
+          {[['🚚', 'Free Delivery', `Orders over ${settings?.sym || '£'}100`], ['🔄', '30-Day Returns', 'Hassle-free'], ['⭐', 'Loyalty Rewards', 'Earn on every purchase'], ['🔒', 'Secure Checkout', '100% protected']].map(([ic, t1, t2]) => (
             <div key={t1} style={{ display: 'flex', alignItems: 'center', gap: 10, color: '#fff' }}><span style={{ fontSize: 22 }}>{ic}</span><div><div style={{ fontSize: 13, fontWeight: 800 }}>{t1}</div><div style={{ fontSize: 11, opacity: 0.8 }}>{t2}</div></div></div>
           ))}
         </div>
@@ -113,7 +113,7 @@ export function GuestHomePage({ products = [], banners = [] }) {
                       <div style={{ fontSize: 13, fontWeight: 800, color: t.text, marginBottom: 8, lineHeight: 1.3 }}>{p.name}</div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
                         <div>
-                          {disc > 0 ? <><div style={{ fontSize: 11, color: t.text4, textDecoration: 'line-through' }}>{fmt(p.price)}</div><div style={{ fontSize: 18, fontWeight: 900, color: t.accent }}>{fmt(p.price * (1 - disc / 100))}</div></> : <span style={{ fontSize: 18, fontWeight: 900, color: t.green }}>{fmt(p.price)}</span>}
+                          {disc > 0 ? <><div style={{ fontSize: 11, color: t.text4, textDecoration: 'line-through' }}>{fmt(p.price, settings?.sym)}</div><div style={{ fontSize: 18, fontWeight: 900, color: t.accent }}>{fmt(p.price * (1 - disc / 100), settings?.sym)}</div></> : <span style={{ fontSize: 18, fontWeight: 900, color: t.green }}>{fmt(p.price, settings?.sym)}</span>}
                         </div>
                         <div style={{ display: 'flex', gap: 5 }}>
                           <button onClick={() => goToProductDetail(p)} style={{ background: t.bg3, color: t.text2, border: `1px solid ${t.border}`, borderRadius: 8, padding: '6px 10px', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>Details</button>

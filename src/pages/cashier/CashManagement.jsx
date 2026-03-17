@@ -5,7 +5,7 @@ import { Btn, Input, Badge, Card, StatCard, Modal, Table } from '@/components/ui
 import { notify } from '@/components/shared'
 import { fmt, ts, genId } from '@/lib/utils'
 
-export const CashManagement = ({ addAudit, t: tProp }) => {
+export const CashManagement = ({ addAudit, settings, t: tProp }) => {
   const { t: tCtx } = useTheme()
   const { currentUser } = useAuth()
   const t = tProp || tCtx
@@ -33,8 +33,8 @@ export const CashManagement = ({ addAudit, t: tProp }) => {
     const s = { id: genId('SESS'), openFloat: amt, openedAt: ts(), openedBy: currentUser?.name || 'Cashier', status: 'open' }
     setSession(s)
     setMovements([{ id: genId('MOV'), type: 'open', amount: amt, note: 'Opening float', time: ts(), by: currentUser?.name || 'Cashier' }])
-    if (addAudit) addAudit({ action: 'Till Opened', detail: `Float: ${fmt(amt)}`, user: currentUser?.name || 'Cashier' })
-    notify(`Till opened with ${fmt(amt)} float`, 'success')
+    if (addAudit) addAudit({ action: 'Till Opened', detail: `Float: ${fmt(amt, settings?.sym)}`, user: currentUser?.name || 'Cashier' })
+    notify(`Till opened with ${fmt(amt, settings?.sym)} float`, 'success')
   }
 
   const doCashDrop = () => {
@@ -42,8 +42,8 @@ export const CashManagement = ({ addAudit, t: tProp }) => {
     if (isNaN(amt) || amt <= 0) { notify('Enter a valid amount', 'error'); return }
     if (amt > expected) { notify('Cannot drop more than expected balance', 'error'); return }
     setMovements(prev => [...prev, { id: genId('MOV'), type: 'drop', amount: amt, note: dropNote.trim() || 'Cash drop', time: ts(), by: currentUser?.name || 'Cashier' }])
-    if (addAudit) addAudit({ action: 'Cash Drop', detail: `${fmt(amt)} — ${dropNote || 'No note'}`, user: currentUser?.name || 'Cashier' })
-    notify(`Cash drop: ${fmt(amt)}`, 'success')
+    if (addAudit) addAudit({ action: 'Cash Drop', detail: `${fmt(amt, settings?.sym)} — ${dropNote || 'No note'}`, user: currentUser?.name || 'Cashier' })
+    notify(`Cash drop: ${fmt(amt, settings?.sym)}`, 'success')
     setShowDrop(false); setDropAmt(''); setDropNote('')
   }
 
@@ -51,8 +51,8 @@ export const CashManagement = ({ addAudit, t: tProp }) => {
     const amt = parseFloat(liftAmt)
     if (isNaN(amt) || amt <= 0) { notify('Enter a valid amount', 'error'); return }
     setMovements(prev => [...prev, { id: genId('MOV'), type: 'lift', amount: amt, note: liftNote.trim() || 'Cash lift', time: ts(), by: currentUser?.name || 'Cashier' }])
-    if (addAudit) addAudit({ action: 'Cash Lift', detail: `${fmt(amt)} — ${liftNote || 'No note'}`, user: currentUser?.name || 'Cashier' })
-    notify(`Cash lift: ${fmt(amt)}`, 'success')
+    if (addAudit) addAudit({ action: 'Cash Lift', detail: `${fmt(amt, settings?.sym)} — ${liftNote || 'No note'}`, user: currentUser?.name || 'Cashier' })
+    notify(`Cash lift: ${fmt(amt, settings?.sym)}`, 'success')
     setShowLift(false); setLiftAmt(''); setLiftNote('')
   }
 
@@ -66,8 +66,8 @@ export const CashManagement = ({ addAudit, t: tProp }) => {
       cashIn, cashOut
     }
     setHistory(prev => [closed, ...prev])
-    if (addAudit) addAudit({ action: 'Till Closed', detail: `Expected: ${fmt(expected)}, Actual: ${fmt(actual)}, Variance: ${fmt(variance)}`, user: currentUser?.name || 'Cashier' })
-    notify(`Till closed. Variance: ${fmt(variance)}`, variance === 0 ? 'success' : 'warning')
+    if (addAudit) addAudit({ action: 'Till Closed', detail: `Expected: ${fmt(expected, settings?.sym)}, Actual: ${fmt(actual, settings?.sym)}, Variance: ${fmt(variance, settings?.sym)}`, user: currentUser?.name || 'Cashier' })
+    notify(`Till closed. Variance: ${fmt(variance, settings?.sym)}`, variance === 0 ? 'success' : 'warning')
     setSession(null); setMovements([]); setShowClose(false); setCloseActual('')
   }
 
@@ -90,10 +90,10 @@ export const CashManagement = ({ addAudit, t: tProp }) => {
       ) : (
         <>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(min(160px,45vw),1fr))', gap: 14 }}>
-            <StatCard t={t} title="Opening Float" value={fmt(session.openFloat)} color={t.blue} icon="💵" />
-            <StatCard t={t} title="Cash In" value={fmt(cashIn)} color={t.green} icon="📥" />
-            <StatCard t={t} title="Cash Out" value={fmt(cashOut)} color={t.red} icon="📤" />
-            <StatCard t={t} title="Expected Balance" value={fmt(expected)} color={t.accent} icon="🧮" />
+            <StatCard t={t} title="Opening Float" value={fmt(session.openFloat, settings?.sym)} color={t.blue} icon="💵" />
+            <StatCard t={t} title="Cash In" value={fmt(cashIn, settings?.sym)} color={t.green} icon="📥" />
+            <StatCard t={t} title="Cash Out" value={fmt(cashOut, settings?.sym)} color={t.red} icon="📤" />
+            <StatCard t={t} title="Expected Balance" value={fmt(expected, settings?.sym)} color={t.accent} icon="🧮" />
           </div>
 
           <Card t={t}>
@@ -119,7 +119,7 @@ export const CashManagement = ({ addAudit, t: tProp }) => {
               rows={movements.map(m => [
                 m.time,
                 <Badge t={t} text={m.type} color={m.type === 'lift' || m.type === 'open' ? 'green' : m.type === 'drop' ? 'red' : 'blue'} />,
-                <span style={{ fontWeight: 800, color: m.type === 'drop' ? t.red : t.green }}>{m.type === 'drop' ? '-' : '+'}{fmt(m.amount)}</span>,
+                <span style={{ fontWeight: 800, color: m.type === 'drop' ? t.red : t.green }}>{m.type === 'drop' ? '-' : '+'}{fmt(m.amount, settings?.sym)}</span>,
                 m.note,
                 m.by
               ])} empty="No movements yet" />
@@ -137,11 +137,11 @@ export const CashManagement = ({ addAudit, t: tProp }) => {
               h.id,
               h.openedAt,
               h.closedAt,
-              fmt(h.openFloat),
-              fmt(h.expectedCash),
-              fmt(h.actualCash),
+              fmt(h.openFloat, settings?.sym),
+              fmt(h.expectedCash, settings?.sym),
+              fmt(h.actualCash, settings?.sym),
               <span style={{ fontWeight: 800, color: h.variance === 0 ? t.green : h.variance > 0 ? t.blue : t.red }}>
-                {h.variance >= 0 ? '+' : ''}{fmt(h.variance)}
+                {h.variance >= 0 ? '+' : ''}{fmt(h.variance, settings?.sym)}
               </span>
             ])} empty="No session history" />
         </Card>
@@ -151,7 +151,7 @@ export const CashManagement = ({ addAudit, t: tProp }) => {
         <Modal t={t} title="📤 Cash Drop" subtitle="Remove cash from the till" onClose={() => { setShowDrop(false); setDropAmt(''); setDropNote('') }} width={400}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             <div style={{ background: t.bg3, borderRadius: 10, padding: '10px 14px', fontSize: 13, color: t.text2 }}>
-              Current expected balance: <strong style={{ color: t.accent }}>{fmt(expected)}</strong>
+              Current expected balance: <strong style={{ color: t.accent }}>{fmt(expected, settings?.sym)}</strong>
             </div>
             <Input t={t} label="Amount" value={dropAmt} onChange={setDropAmt} placeholder="0.00" type="number" />
             <Input t={t} label="Note (optional)" value={dropNote} onChange={setDropNote} placeholder="Reason for drop" />
@@ -181,16 +181,16 @@ export const CashManagement = ({ addAudit, t: tProp }) => {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             <div style={{ background: t.bg3, borderRadius: 10, padding: '14px 16px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: t.text2, marginBottom: 4 }}>
-                <span>Opening Float</span><span style={{ fontWeight: 700 }}>{fmt(session.openFloat)}</span>
+                <span>Opening Float</span><span style={{ fontWeight: 700 }}>{fmt(session.openFloat, settings?.sym)}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: t.green, marginBottom: 4 }}>
-                <span>Cash In</span><span style={{ fontWeight: 700 }}>+{fmt(cashIn)}</span>
+                <span>Cash In</span><span style={{ fontWeight: 700 }}>+{fmt(cashIn, settings?.sym)}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: t.red, marginBottom: 8 }}>
-                <span>Cash Out</span><span style={{ fontWeight: 700 }}>-{fmt(cashOut)}</span>
+                <span>Cash Out</span><span style={{ fontWeight: 700 }}>-{fmt(cashOut, settings?.sym)}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 16, fontWeight: 900, color: t.text, paddingTop: 8, borderTop: `2px solid ${t.border}` }}>
-                <span>Expected</span><span style={{ color: t.accent }}>{fmt(expected)}</span>
+                <span>Expected</span><span style={{ color: t.accent }}>{fmt(expected, settings?.sym)}</span>
               </div>
             </div>
 
@@ -204,7 +204,7 @@ export const CashManagement = ({ addAudit, t: tProp }) => {
               }}>
                 <span style={{ fontSize: 13, fontWeight: 700, color: parseFloat(closeActual) === expected ? t.green : t.yellow }}>Variance</span>
                 <span style={{ fontSize: 16, fontWeight: 900, color: parseFloat(closeActual) === expected ? t.green : t.yellow }}>
-                  {(parseFloat(closeActual) - expected) >= 0 ? '+' : ''}{fmt(Math.round((parseFloat(closeActual) - expected) * 100) / 100)}
+                  {(parseFloat(closeActual) - expected) >= 0 ? '+' : ''}{fmt(Math.round((parseFloat(closeActual) - expected) * 100) / 100, settings?.sym)}
                 </span>
               </div>
             )}

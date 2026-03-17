@@ -66,7 +66,7 @@ export const CustomerShop = ({ products, orders, setOrders, users, setUsers, cur
   const applyCoupon = () => {
     const c = coupons.find(x => x.code === couponCode.toUpperCase() && x.active)
     if (!c) { notify('Invalid coupon code', 'error'); return }
-    if (subtotal < c.minOrder) { notify('Minimum order £' + c.minOrder + ' required', 'error'); return }
+    if (subtotal < c.minOrder) { notify(`Minimum order ${fmt(c.minOrder, settings?.sym)} required`, 'error'); return }
     setAppliedCoupon(c); notify('Coupon applied! ' + c.description, 'success')
   }
 
@@ -98,7 +98,7 @@ export const CustomerShop = ({ products, orders, setOrders, users, setUsers, cur
     <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
       {cartCount > 0 && (
         <button onClick={() => setShowCart(true)} style={{ position: 'fixed', bottom: 24, right: 24, zIndex: 500, background: `linear-gradient(135deg,${t.accent},${t.accent2})`, color: '#fff', border: 'none', borderRadius: 50, padding: '12px 20px', fontSize: 14, fontWeight: 900, cursor: 'pointer', boxShadow: `0 4px 20px ${t.accent}60`, display: 'flex', alignItems: 'center', gap: 8 }}>
-          🛒 Cart ({cartCount}) · {fmt(total)}
+          🛒 Cart ({cartCount}) · {fmt(total, settings?.sym)}
         </button>
       )}
 
@@ -140,7 +140,7 @@ export const CustomerShop = ({ products, orders, setOrders, users, setUsers, cur
                   <div style={{ fontSize: 13, fontWeight: 700, color: t.text, marginBottom: 6, lineHeight: 1.3 }}>{p.name}</div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div>
-                      {disc > 0 ? <><div style={{ fontSize: 11, color: t.text4, textDecoration: 'line-through' }}>{fmt(p.price)}</div><div style={{ fontSize: 16, fontWeight: 900, color: t.accent }}>{fmt(p.price * (1 - disc / 100))}</div></> : <div style={{ fontSize: 16, fontWeight: 900, color: t.green }}>{fmt(p.price)}</div>}
+                      {disc > 0 ? <><div style={{ fontSize: 11, color: t.text4, textDecoration: 'line-through' }}>{fmt(p.price, settings?.sym)}</div><div style={{ fontSize: 16, fontWeight: 900, color: t.accent }}>{fmt(p.price * (1 - disc / 100), settings?.sym)}</div></> : <div style={{ fontSize: 16, fontWeight: 900, color: t.green }}>{fmt(p.price, settings?.sym)}</div>}
                     </div>
                     {p.stock > 0 && (
                       <button onClick={() => p.sizes?.length > 1 ? setViewProduct(p) : addToCart(p)} style={{ background: t.accent, color: '#fff', border: 'none', borderRadius: 8, padding: '6px 12px', fontSize: 12, fontWeight: 800, cursor: 'pointer' }}>Add</button>
@@ -164,7 +164,7 @@ export const CustomerShop = ({ products, orders, setOrders, users, setUsers, cur
             </div>
             <div style={{ flex: 1, minWidth: 200 }}>
               <div style={{ fontSize: 13, color: t.text2, lineHeight: 1.7, marginBottom: 14 }}>{viewProduct.description}</div>
-              <div style={{ fontSize: 24, fontWeight: 900, color: getDisc(viewProduct) > 0 ? t.accent : t.green, marginBottom: 14 }}>{fmt(viewProduct.price * (1 - getDisc(viewProduct) / 100))}</div>
+              <div style={{ fontSize: 24, fontWeight: 900, color: getDisc(viewProduct) > 0 ? t.accent : t.green, marginBottom: 14 }}>{fmt(viewProduct.price * (1 - getDisc(viewProduct) / 100), settings?.sym)}</div>
               {viewProduct.stock > 0 ? (
                 <Btn t={t} fullWidth onClick={() => { addToCart(viewProduct); setViewProduct(null) }}>🛒 Add to Cart</Btn>
               ) : (
@@ -193,14 +193,14 @@ export const CustomerShop = ({ products, orders, setOrders, users, setUsers, cur
                       </div>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontSize: 13, fontWeight: 700, color: t.text }}>{item.name}</div>
-                        <div style={{ fontSize: 12, color: t.green, fontWeight: 800 }}>{fmt(item.price * (1 - (item.discount || 0) / 100))}</div>
+                        <div style={{ fontSize: 12, color: t.green, fontWeight: 800 }}>{fmt(item.price * (1 - (item.discount || 0) / 100), settings?.sym)}</div>
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
                         <button onClick={() => updateQty(item._key, -1)} style={{ width: 24, height: 24, borderRadius: 6, border: `1px solid ${t.border}`, background: t.bg3, cursor: 'pointer', fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>−</button>
                         <span style={{ fontSize: 14, fontWeight: 900, minWidth: 16, textAlign: 'center' }}>{item.qty}</span>
                         <button onClick={() => updateQty(item._key, 1)} style={{ width: 24, height: 24, borderRadius: 6, border: `1px solid ${t.border}`, background: t.bg3, cursor: 'pointer', fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>+</button>
                       </div>
-                      <div style={{ fontSize: 13, fontWeight: 900, color: t.text, minWidth: 54, textAlign: 'right' }}>{fmt(item.price * (1 - (item.discount || 0) / 100) * item.qty)}</div>
+                      <div style={{ fontSize: 13, fontWeight: 900, color: t.text, minWidth: 54, textAlign: 'right' }}>{fmt(item.price * (1 - (item.discount || 0) / 100) * item.qty, settings?.sym)}</div>
                     </div>
                   ))}
                   <div style={{ marginTop: 14, display: 'flex', gap: 7 }}>
@@ -211,7 +211,7 @@ export const CustomerShop = ({ products, orders, setOrders, users, setUsers, cur
                   {orderType === 'delivery' && (
                     <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 8 }}>
                       <Input t={t} label="Delivery Address" value={deliveryAddr} onChange={setDeliveryAddr} placeholder="Full address including postcode" />
-                      <Select t={t} label="Zone" value={deliveryZone} onChange={setDeliveryZone} options={(settings.deliveryZones || []).map(z => ({ value: z.zone, label: `${z.zone} — ${fmt(z.charge)} (${z.days}d)` }))} />
+                      <Select t={t} label="Zone" value={deliveryZone} onChange={setDeliveryZone} options={(settings.deliveryZones || []).map(z => ({ value: z.zone, label: `${z.zone} — ${fmt(z.charge, settings?.sym)} (${z.days}d)` }))} />
                     </div>
                   )}
                   {appliedCoupon ? (
@@ -226,11 +226,11 @@ export const CustomerShop = ({ products, orders, setOrders, users, setUsers, cur
                     </div>
                   )}
                   <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 4 }}>
-                    {[['Subtotal', fmt(subtotal)], [`VAT (${settings.vatRate}%)`, fmt(vatAmt)], deliveryFee > 0 && ['Delivery', fmt(deliveryFee)], couponDisc > 0 && ['Discount', '-' + fmt(couponDisc)]].filter(Boolean).map(([k, v]) => (
+                    {[['Subtotal', fmt(subtotal, settings?.sym)], [`VAT (${settings.vatRate}%)`, fmt(vatAmt, settings?.sym)], deliveryFee > 0 && ['Delivery', fmt(deliveryFee, settings?.sym)], couponDisc > 0 && ['Discount', '-' + fmt(couponDisc, settings?.sym)]].filter(Boolean).map(([k, v]) => (
                       <div key={k} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: t.text3 }}><span>{k}</span><span style={{ fontWeight: 600 }}>{v}</span></div>
                     ))}
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 18, fontWeight: 900, color: t.text, paddingTop: 10, borderTop: `2px solid ${t.border}`, marginTop: 4 }}>
-                      <span>Total</span><span style={{ color: t.accent }}>{fmt(total)}</span>
+                      <span>Total</span><span style={{ color: t.accent }}>{fmt(total, settings?.sym)}</span>
                     </div>
                   </div>
                 </>
@@ -239,7 +239,7 @@ export const CustomerShop = ({ products, orders, setOrders, users, setUsers, cur
             {cart.length > 0 && (
               <div style={{ padding: '14px 20px', borderTop: `1px solid ${t.border}` }}>
                 <button onClick={() => setShowPayment(true)} style={{ width: '100%', padding: 13, background: `linear-gradient(135deg,${t.accent},${t.accent2})`, color: '#fff', border: 'none', borderRadius: 11, fontSize: 14, fontWeight: 900, cursor: 'pointer', boxShadow: `0 4px 14px ${t.accent}40` }}>
-                  Checkout · {fmt(total)} →
+                  Checkout · {fmt(total, settings?.sym)} →
                 </button>
               </div>
             )}
@@ -248,7 +248,7 @@ export const CustomerShop = ({ products, orders, setOrders, users, setUsers, cur
       )}
 
       {showPayment && (
-        <Modal t={t} title="💳 Payment" subtitle={`Total: ${fmt(total)}`} onClose={() => { setShowPayment(false); setCardApproved(false) }}>
+        <Modal t={t} title="💳 Payment" subtitle={`Total: ${fmt(total, settings?.sym)}`} onClose={() => { setShowPayment(false); setCardApproved(false) }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             <div style={{ display: 'flex', gap: 8 }}>
               {[['card', '💳 Card'], ['cod', '💵 Cash on Delivery']].map(([v, l]) => (
@@ -266,7 +266,7 @@ export const CustomerShop = ({ products, orders, setOrders, users, setUsers, cur
                       <button disabled={!cardDetails.num || cardDetails.num.length < 14 || !cardDetails.name}
                         onClick={() => setCardApproved(true)}
                         style={{ padding: '11px', background: cardDetails.num?.length >= 14 && cardDetails.name ? '#ef4444' : '#1e2d40', color: cardDetails.num?.length >= 14 && cardDetails.name ? '#fff' : '#607090', border: 'none', borderRadius: 9, fontSize: 13, fontWeight: 900, cursor: cardDetails.num?.length >= 14 && cardDetails.name ? 'pointer' : 'not-allowed' }}>
-                        TAP / PAY {fmt(total)}
+                        TAP / PAY {fmt(total, settings?.sym)}
                       </button>
                     </>
                   ) : (
@@ -283,7 +283,7 @@ export const CustomerShop = ({ products, orders, setOrders, users, setUsers, cur
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                 <div style={{ background: t.yellowBg, border: `1px solid ${t.yellowBorder}`, borderRadius: 10, padding: '14px 16px' }}>
                   <div style={{ fontSize: 14, fontWeight: 800, color: t.yellow, marginBottom: 6 }}>💵 Cash on Delivery</div>
-                  <div style={{ fontSize: 13, color: t.text2 }}>Pay <strong>{fmt(total)}</strong> when your order {orderType === 'delivery' ? 'arrives' : 'is ready for pickup'}.</div>
+                  <div style={{ fontSize: 13, color: t.text2 }}>Pay <strong>{fmt(total, settings?.sym)}</strong> when your order {orderType === 'delivery' ? 'arrives' : 'is ready for pickup'}.</div>
                 </div>
                 <Btn t={t} variant="success" fullWidth onClick={() => doPlaceOrder('Cash on Delivery')}>Place COD Order →</Btn>
               </div>
@@ -299,8 +299,8 @@ export const CustomerShop = ({ products, orders, setOrders, users, setUsers, cur
             <div style={{ fontSize: 20, fontWeight: 900, color: t.text, marginBottom: 4 }}>{orderPlaced.id}</div>
             <div style={{ fontSize: 13, color: t.text3, marginBottom: 18 }}>{orderPlaced.orderType === 'delivery' ? 'Delivery in 2-3 days.' : 'Ready for pickup soon.'}</div>
             <div style={{ background: t.bg3, borderRadius: 12, padding: '12px 18px', textAlign: 'left', marginBottom: 14 }}>
-              {orderPlaced.items.map((i, idx) => <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, marginBottom: 4, color: t.text2 }}><span>{i.name} ×{i.qty}</span><span>{fmt(i.price * i.qty)}</span></div>)}
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 16, fontWeight: 900, color: t.text, paddingTop: 8, borderTop: `1px solid ${t.border}`, marginTop: 6 }}><span>Total</span><span style={{ color: t.accent }}>{fmt(orderPlaced.total)}</span></div>
+              {orderPlaced.items.map((i, idx) => <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, marginBottom: 4, color: t.text2 }}><span>{i.name} ×{i.qty}</span><span>{fmt(i.price * i.qty, settings?.sym)}</span></div>)}
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 16, fontWeight: 900, color: t.text, paddingTop: 8, borderTop: `1px solid ${t.border}`, marginTop: 6 }}><span>Total</span><span style={{ color: t.accent }}>{fmt(orderPlaced.total, settings?.sym)}</span></div>
             </div>
             <Btn t={t} onClick={() => setOrderPlaced(null)} fullWidth>Close</Btn>
           </div>

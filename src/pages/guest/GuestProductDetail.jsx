@@ -6,7 +6,7 @@ import { PRODUCT_IMAGES } from '@/lib/seed-data'
 import { ImgWithFallback } from '@/components/shared'
 import { Btn } from '@/components/ui'
 
-export function GuestProductDetail({ products = [] }) {
+export function GuestProductDetail({ products = [], settings = {} }) {
   const { t } = useTheme()
   const { productId } = useParams()
   const location = useLocation()
@@ -93,16 +93,16 @@ export function GuestProductDetail({ products = [] }) {
 
             {/* Price */}
             <div style={{ display: 'flex', alignItems: 'baseline', gap: 12, marginBottom: 20 }}>
-              <span style={{ fontSize: 32, fontWeight: 900, color: t.accent }}>{fmt(finalPrice)}</span>
+              <span style={{ fontSize: 32, fontWeight: 900, color: t.accent }}>{fmt(finalPrice, settings?.sym)}</span>
               {hasDiscount && (
-                <span style={{ fontSize: 18, color: t.text4, textDecoration: 'line-through' }}>{fmt(product.price)}</span>
+                <span style={{ fontSize: 18, color: t.text4, textDecoration: 'line-through' }}>{fmt(product.price, settings?.sym)}</span>
               )}
               {hasDiscount && (
                 <span style={{
                   background: '#fef2f2', color: '#dc2626', fontSize: 12,
                   fontWeight: 800, padding: '3px 10px', borderRadius: 6,
                 }}>
-                  Save {fmt(product.price - finalPrice)}
+                  Save {fmt(product.price - finalPrice, settings?.sym)}
                 </span>
               )}
             </div>
@@ -174,7 +174,7 @@ export function GuestProductDetail({ products = [] }) {
                 onMouseDown={e => { if (product.stock > 0) e.currentTarget.style.transform = 'scale(.97)' }}
                 onMouseUp={e => { e.currentTarget.style.transform = '' }}
               >
-                {product.stock === 0 ? 'Out of Stock' : `Sign In to Buy — ${fmt(finalPrice * qty)}`}
+                {product.stock === 0 ? 'Out of Stock' : `Sign In to Buy — ${fmt(finalPrice * qty, settings?.sym)}`}
               </button>
             </div>
 
