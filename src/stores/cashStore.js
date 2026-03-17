@@ -10,10 +10,15 @@ export const useCashStore = create(
       session: null,
       movements: [],
       history: [],
+      isLoading: true,
 
       // Load active session from Supabase on app start
       loadSession: async (counterId) => {
-        if (!isSupabaseConfigured()) return
+        set({ isLoading: true })
+        if (!isSupabaseConfigured()) {
+          set({ isLoading: false })
+          return
+        }
         try {
           const active = await getActiveSession(counterId)
           if (active) {
@@ -70,8 +75,10 @@ export const useCashStore = create(
               }))
             })
           }
+          set({ isLoading: false })
         } catch (err) {
           console.error('Failed to load cash session from Supabase:', err)
+          set({ isLoading: false })
         }
       },
 
