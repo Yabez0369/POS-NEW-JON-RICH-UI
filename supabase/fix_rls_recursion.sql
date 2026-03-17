@@ -12,16 +12,18 @@
 -- =============================================================================
 
 -- 1. Create helper functions (SECURITY DEFINER bypasses RLS)
-
 CREATE OR REPLACE FUNCTION get_my_role()
 RETURNS TEXT AS $$
+  -- We use current_setting('request.jwt.claims', true) is an alternative, 
+  -- but we need the role from the profiles table.
+  -- SECURITY DEFINER runs as the creator (postgres) and bypasses RLS.
   SELECT role FROM public.profiles WHERE id = auth.uid();
-$$ LANGUAGE sql SECURITY DEFINER STABLE;
+$$ LANGUAGE sql SECURITY DEFINER SET search_path = public STABLE;
 
 CREATE OR REPLACE FUNCTION get_my_venue_id()
 RETURNS UUID AS $$
   SELECT venue_id FROM public.profiles WHERE id = auth.uid();
-$$ LANGUAGE sql SECURITY DEFINER STABLE;
+$$ LANGUAGE sql SECURITY DEFINER SET search_path = public STABLE;
 
 -- 2. Drop all existing policies that cause recursion
 
@@ -100,11 +102,18 @@ DROP POLICY IF EXISTS "Cashiers can manage parked_bills" ON parked_bills;
 -- 3. Recreate all policies using get_my_role() instead of sub-queries
 
 -- profiles
+-- We use a direct subquery for the role check to avoid using a function that triggers RLS on this table
 CREATE POLICY "Admins and managers can read all profiles in venue"
   ON profiles FOR SELECT
   USING (
-    get_my_role() IN ('admin', 'manager')
-    AND (get_my_venue_id() = profiles.venue_id OR get_my_venue_id() IS NULL)
+    id = auth.uid() -- Can always read own
+    OR
+    (
+      -- This subquery targets the current user's profile
+      SELECT role IN ('admin', 'manager') 
+      FROM public.profiles 
+      WHERE id = auth.uid()
+    )
   );
 
 -- products

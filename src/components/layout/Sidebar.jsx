@@ -24,6 +24,7 @@ const navByRole = {
     { key: 'staffdash', l: 'Staff Dashboard', i: '🖥️' },
     { key: 'pickup', l: 'Pickup Orders', i: '📦' },
     { key: 'products', l: 'Products', i: '🏷️' },
+    { key: 'categories', l: 'Categories', i: '🗂️' },
     { key: 'inventory', l: 'Inventory', i: '📦' },
     { key: 'staff', l: 'Staff Mgmt', i: '👥' },
     { key: 'cashiers', l: 'Cashier Mgmt', i: '🛒' },

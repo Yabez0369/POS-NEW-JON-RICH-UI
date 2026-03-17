@@ -41,9 +41,7 @@ const CashierManagement = lazyRetry(() => import('@/pages/manager/CashierManagem
 const CounterManagement = lazyRetry(() => import('@/pages/manager/CounterManagement'), 'CounterManagement')
 const ReturnManagement = lazyRetry(() => import('@/pages/manager/ReturnManagement'), 'ReturnManagement')
 const ReportsPage = lazyRetry(() => import('@/pages/manager/ReportsPage'), 'ReportsPage')
-const DamageManagement = lazyRetry(() => import('@/pages/manager/DamageManagement'), 'default')
-const StockTransferManagement = lazyRetry(() => import('@/pages/manager/StockTransferManagement'), 'default')
-const StocktakeManagement = lazyRetry(() => import('@/pages/manager/StocktakeManagement'), 'default')
+const CategoryManagement = lazyRetry(() => import('@/pages/manager/CategoryManagement'), 'CategoryManagement')
 
 const POSTerminal = lazyRetry(() => import('@/pages/pos/POSTerminal'), 'POSTerminal')
 const CashierOrders = lazyRetry(() => import('@/pages/cashier/CashierOrders'), 'CashierOrders')
@@ -332,6 +330,11 @@ function AppContent() {
             } />
 
             {/* Manager Routes */}
+            <Route path="categories" element={
+              <ProtectedRoute allowedRoles={['manager', 'admin']}>
+                <CategoryManagement t={t} addAudit={addAudit} currentUser={currentUser} />
+              </ProtectedRoute>
+            } />
             <Route path="products" element={
               <ProtectedRoute allowedRoles={['manager', 'admin']}>
                 <ProductManagement products={products} setProducts={setProducts} addAudit={addAudit} currentUser={currentUser} settings={settings} t={t} />

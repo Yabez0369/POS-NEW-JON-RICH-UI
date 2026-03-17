@@ -57,7 +57,7 @@ export const POSTerminal = ({ products, setProducts, orders, setOrders, users, s
   const [cartSearch, setCartSearch] = useState('')
 
   const [variantProduct, setVariantProduct] = useState(null)
-  const [selectedVariant, setSelectedVariant] = useState({ size: '', color: '' })
+  const [selectedVariant, setSelectedVariant] = useState({})
 
   const barcodeBuffer = useRef('')
   const lastKeyTime = useRef(0)
@@ -121,12 +121,14 @@ export const POSTerminal = ({ products, setProducts, orders, setOrders, users, s
   }, [activeOffers])
 
   const handleProductClick = (p) => {
-    if ((p.sizes && p.sizes.length > 0) || (p.colors && p.colors.length > 0)) {
+    const attrs = p.dynamic_attributes || {}
+    const keys = Object.keys(attrs).filter(k => attrs[k] && attrs[k].length > 0)
+    
+    if (keys.length > 0) {
       setVariantProduct(p)
-      setSelectedVariant({
-        size: p.sizes?.length ? p.sizes[0] : '',
-        color: p.colors?.length ? p.colors[0] : ''
-      })
+      const initial = {}
+      keys.forEach(k => { initial[k] = attrs[k][0] })
+      setSelectedVariant(initial)
     } else {
       addToCart(p)
     }
@@ -150,9 +152,9 @@ export const POSTerminal = ({ products, setProducts, orders, setOrders, users, s
 
   const confirmVariant = () => {
     if (!variantProduct) return
-    const parts = []
-    if (selectedVariant.size) parts.push(selectedVariant.size)
-    if (selectedVariant.color) parts.push(selectedVariant.color)
+    const parts = Object.entries(selectedVariant)
+      .filter(([_, val]) => !!val)
+      .map(([key, val]) => `${key}: ${val}`)
     addToCart(variantProduct, parts.join(', '))
     setVariantProduct(null)
   }
@@ -360,26 +362,34 @@ export const POSTerminal = ({ products, setProducts, orders, setOrders, users, s
       {variantProduct && (
         <Modal t={t} title="Select Variant" subtitle={variantProduct.name} onClose={() => setVariantProduct(null)}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-            {variantProduct.sizes && variantProduct.sizes.length > 0 && (
-              <div>
-                <div style={{ fontSize: 12, fontWeight: 700, color: t.text3, marginBottom: 8 }}>Size</div>
-                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                  {variantProduct.sizes.map(s => (
-                    <button key={s} onClick={() => setSelectedVariant(v => ({ ...v, size: s }))} style={{ padding: '8px 16px', borderRadius: 8, border: `2px solid ${selectedVariant.size === s ? t.accent : t.border}`, background: selectedVariant.size === s ? t.accent + '15' : t.bg3, color: selectedVariant.size === s ? t.accent : t.text, fontWeight: 700, cursor: 'pointer' }}>{s}</button>
-                  ))}
+            {Object.entries(variantProduct.dynamic_attributes || {}).map(([key, values]) => (
+              values && values.length > 0 && (
+                <div key={key}>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: t.text3, marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 }}>{key}</div>
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                    {values.map(val => (
+                      <button 
+                        key={val} 
+                        onClick={() => setSelectedVariant(v => ({ ...v, [key]: val }))} 
+                        style={{ 
+                          padding: '8px 16px', 
+                          borderRadius: 10, 
+                          border: `2px solid ${selectedVariant[key] === val ? t.accent : t.border}`, 
+                          background: selectedVariant[key] === val ? t.accent + '15' : t.bg3, 
+                          color: selectedVariant[key] === val ? t.accent : t.text, 
+                          fontWeight: 700, 
+                          cursor: 'pointer',
+                          fontSize: 13,
+                          transition: 'all 0.2s ease'
+                        }}
+                      >
+                        {val}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            )}
-            {variantProduct.colors && variantProduct.colors.length > 0 && (
-              <div>
-                <div style={{ fontSize: 12, fontWeight: 700, color: t.text3, marginBottom: 8 }}>Color</div>
-                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                  {variantProduct.colors.map(c => (
-                    <button key={c} onClick={() => setSelectedVariant(v => ({ ...v, color: c }))} style={{ padding: '8px 16px', borderRadius: 8, border: `2px solid ${selectedVariant.color === c ? t.accent : t.border}`, background: selectedVariant.color === c ? t.accent + '15' : t.bg3, color: selectedVariant.color === c ? t.accent : t.text, fontWeight: 700, cursor: 'pointer' }}>{c}</button>
-                  ))}
-                </div>
-              </div>
-            )}
+              )
+            ))}
             <div style={{ display: 'flex', gap: 10, marginTop: 10 }}>
               <Btn t={t} variant="ghost" onClick={() => setVariantProduct(null)} style={{ flex: 1 }}>Cancel</Btn>
               <Btn t={t} variant="primary" onClick={confirmVariant} style={{ flex: 1 }}>Add to Cart</Btn>
