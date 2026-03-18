@@ -21,10 +21,13 @@ function toDbFormat(product) {
     description: product.description ?? product.shortDescription ?? product.longDescription ?? null,
     category_id: product.category_id || null,
     brand: product.brand || null,
-    base_price: product.price ?? product.base_price,
-    cost_price: product.costPrice ?? product.cost_price ?? null,
+    base_price: Number(product.price ?? product.base_price ?? 0),
+    cost_price:
+      product.costPrice != null || product.cost_price != null
+        ? Number(product.costPrice ?? product.cost_price)
+        : null,
     tax_code: product.taxCode ?? product.tax_code ?? 'standard',
-    status: product.status ?? 'active',
+    status: safeStatus,
     image_url: product.image ?? product.image_url ?? null,
     emoji: product.emoji ?? '📦',
     returnable: product.returnable !== false,
@@ -39,6 +42,77 @@ function toDbFormat(product) {
   }
   if (product.taxPct !== undefined || product.tax_pct !== undefined) {
     db.tax_pct = product.taxPct ?? product.tax_pct ?? 20
+    track_serial: product.track_serial === true,
+  }
+}
+
+/** Extra columns from dynamic_category_system.sql — second request only when needed (avoids 400 if migration not run). */
+function toDbFormatExtended(product) {
+  const ext = {}
+  if (product.subcategory_id != null && product.subcategory_id !== '') {
+    ext.subcategory_id = product.subcategory_id
+  }
+  const dyn = product.dynamic_attributes
+  if (dyn && typeof dyn === 'object' && Object.keys(dyn).length > 0) {
+    ext.dynamic_attributes = dyn
+  }
+  return Object.keys(ext).length ? ext : null
+}
+
+/** Partial base columns for UPDATE (avoids wiping fields when only a subset is sent). */
+function toDbFormatBasePatch(updates) {
+  const db = {}
+  if (updates.sku !== undefined) {
+    const s = String(updates.sku ?? '').trim()
+    if (s) db.sku = s
+  }
+  if (updates.name !== undefined) {
+    const n = String(updates.name ?? '').trim()
+    if (n) db.name = n
+  }
+  if (
+    updates.description !== undefined ||
+    updates.shortDescription !== undefined ||
+    updates.longDescription !== undefined
+  ) {
+    db.description =
+      updates.description ?? updates.shortDescription ?? updates.longDescription ?? null
+  }
+  if (updates.category_id !== undefined) db.category_id = updates.category_id || null
+  if (updates.brand !== undefined) db.brand = updates.brand || null
+  if (updates.price !== undefined || updates.base_price !== undefined) {
+    db.base_price = Number(updates.price ?? updates.base_price ?? 0)
+  }
+  if (updates.costPrice !== undefined || updates.cost_price !== undefined) {
+    db.cost_price =
+      updates.costPrice != null || updates.cost_price != null
+        ? Number(updates.costPrice ?? updates.cost_price)
+        : null
+  }
+  if (updates.taxCode !== undefined || updates.tax_code !== undefined) {
+    db.tax_code = updates.taxCode ?? updates.tax_code ?? 'standard'
+  }
+  if (updates.status !== undefined) {
+    db.status = updates.status === 'inactive' ? 'inactive' : 'active'
+  }
+  if (updates.image !== undefined || updates.image_url !== undefined) {
+    db.image_url = updates.image ?? updates.image_url ?? null
+  }
+  if (updates.emoji !== undefined) db.emoji = updates.emoji ?? '📦'
+  if (updates.returnable !== undefined) db.returnable = updates.returnable !== false
+  if (updates.track_serial !== undefined) db.track_serial = updates.track_serial === true
+  return db
+}
+
+async function applyExtendedProductFields(productId, product) {
+  const ext = toDbFormatExtended(product)
+  if (!ext || !isSupabaseConfigured()) return
+  const { error } = await supabase.from('products').update(ext).eq('id', productId)
+  if (error) {
+    console.warn(
+      'Product extended fields (subcategory/dynamic_attributes) not saved — run supabase/dynamic_category_system.sql if you need them:',
+      error.message
+    )
   }
   if (product.dynamic_attributes && Object.keys(product.dynamic_attributes).length > 0) {
     db.dynamic_attributes = product.dynamic_attributes
@@ -92,11 +166,16 @@ export async function fetchProducts() {
 }
 
 export async function createProduct(product) {
-  const db = toDbFormat(product)
+  const db = toDbFormatBase(product)
+  if (!db.sku || db.sku === 'SKU-PENDING') {
+    db.sku = `SKU-${Date.now()}`
+  }
   if (isSupabaseConfigured()) {
     const { data, error } = await supabase.from('products').insert(db).select().single()
     if (error) throw error
-    const created = toAppFormat(data)
+    await applyExtendedProductFields(data.id, product)
+    const { data: full } = await supabase.from('products').select('*').eq('id', data.id).single()
+    const created = toAppFormat(full || data)
     const barcodes = product.barcodes ?? (product.barcode?.trim() ? [product.barcode.trim()] : [])
     if (barcodes.length) await syncProductBarcodes(created.id, barcodes)
     return created
@@ -105,11 +184,21 @@ export async function createProduct(product) {
 }
 
 export async function updateProduct(id, updates) {
-  const db = toDbFormat(updates)
+  const db = toDbFormatBasePatch(updates)
+  const ext = toDbFormatExtended(updates)
   if (isSupabaseConfigured()) {
-    const { data, error } = await supabase.from('products').update(db).eq('id', id).select().single()
-    if (error) throw error
-    const updated = toAppFormat(data)
+    if (Object.keys(db).length > 0) {
+      const { data, error } = await supabase.from('products').update(db).eq('id', id).select().single()
+      if (error) throw error
+    }
+    await applyExtendedProductFields(id, updates)
+    const { data: full, error: fetchErr } = await supabase
+      .from('products')
+      .select('*')
+      .eq('id', id)
+      .single()
+    if (fetchErr) throw fetchErr
+    const updated = toAppFormat(full)
     if (updates.barcodes !== undefined) {
       await syncProductBarcodes(id, updates.barcodes)
     } else if (updates.barcode !== undefined) {

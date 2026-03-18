@@ -94,6 +94,17 @@ export const CashManagement = ({ addAudit, settings, t: tProp }) => {
         </Card>
       ) : (
         <>
+          {/* Shift already started – compact message with option to close and start new */}
+          <Card t={t} style={{ background: t.bg3, borderLeft: `4px solid ${t.green}` }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
+              <div>
+                <div style={{ fontSize: 16, fontWeight: 800, color: t.text, marginBottom: 4 }}>Shift already started today</div>
+                <div style={{ fontSize: 13, color: t.text3 }}>Opened at {session.openedAt} by {session.openedBy}</div>
+              </div>
+              <Btn t={t} variant="danger" onClick={() => setShowClose(true)}>🔒 Close & Start New Shift</Btn>
+            </div>
+          </Card>
+
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(min(160px,45vw),1fr))', gap: 14 }}>
             <StatCard t={t} title="Opening Float" value={fmt(session.openFloat, settings?.sym)} color={t.blue} icon="💵" />
             <StatCard t={t} title="Cash In" value={fmt(cashIn, settings?.sym)} color={t.green} icon="📥" />
@@ -112,7 +123,7 @@ export const CashManagement = ({ addAudit, settings, t: tProp }) => {
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
               <Btn t={t} variant="secondary" onClick={() => setShowDrop(true)}>📤 Cash Drop</Btn>
               <Btn t={t} variant="secondary" onClick={() => setShowLift(true)}>📥 Cash Lift</Btn>
-              <Btn t={t} variant="danger" onClick={() => setShowClose(true)}>🔒 Close Till</Btn>
+              <Btn t={t} variant="secondary" onClick={() => setShowClose(true)}>🔒 Close Till</Btn>
             </div>
           </Card>
 
@@ -182,7 +193,7 @@ export const CashManagement = ({ addAudit, settings, t: tProp }) => {
       )}
 
       {showClose && session && (
-        <Modal t={t} title="🔒 Close Till" subtitle="End current session" onClose={() => { setShowClose(false); setCloseActual('') }} width={420}>
+        <Modal t={t} title="🔒 Close & Start New Shift" subtitle="End current session, then you can open a new shift" onClose={() => { setShowClose(false); setCloseActual('') }} width={420}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             <div style={{ background: t.bg3, borderRadius: 10, padding: '14px 16px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: t.text2, marginBottom: 4 }}>
@@ -216,7 +227,7 @@ export const CashManagement = ({ addAudit, settings, t: tProp }) => {
 
             <div style={{ display: 'flex', gap: 10 }}>
               <Btn t={t} variant="secondary" fullWidth onClick={() => { setShowClose(false); setCloseActual('') }}>Cancel</Btn>
-              <Btn t={t} variant="danger" fullWidth onClick={closeTill}>🔒 Close Till</Btn>
+              <Btn t={t} variant="danger" fullWidth onClick={closeTill}>🔒 Close & Start New Shift</Btn>
             </div>
           </div>
         </Modal>

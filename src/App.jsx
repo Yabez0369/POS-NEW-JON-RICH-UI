@@ -17,6 +17,7 @@ import { productsService } from '@/services'
 import { useRealtimeOrders, useRealtimeInventory, useRealtimeReturns, useRealtimeCashSessions } from '@/hooks/useRealtime'
 
 import { LoginPage } from '@/pages/auth/LoginPage'
+import { VenueSiteConfirmation } from '@/pages/auth/VenueSiteConfirmation'
 import { RegisterPage } from '@/pages/auth/RegisterPage'
 import { GuestHomePage } from '@/pages/guest/GuestHomePage'
 import { GuestShopPage } from '@/pages/guest/GuestShopPage'
@@ -245,7 +246,7 @@ function AppContent() {
     <>
       <OfflineBanner />
       <NotificationCenter t={t} />
-      {isSupabaseConfigured() && <RealtimeWatcher />}
+      {isSupabaseConfigured() && currentUser && <RealtimeWatcher />}
       {isDemoMode && (
         <div style={{
           position: 'fixed', bottom: 12, right: 12, zIndex: 9999,
@@ -267,6 +268,13 @@ function AppContent() {
           {/* Auth Routes */}
           <Route path="login" element={<LoginPage />} />
           <Route path="register" element={<RegisterPage />} />
+
+          {/* Venue/Site confirmation (after login) */}
+          <Route path="venue-confirm" element={
+            <ProtectedRoute>
+              <VenueSiteConfirmation />
+            </ProtectedRoute>
+          } />
 
           {/* App Routes (Protected) */}
           <Route path="app" element={

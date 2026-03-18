@@ -1,12 +1,19 @@
+import { useState, useEffect } from 'react'
 import { Outlet } from 'react-router-dom'
 import { Sidebar } from './Sidebar'
 import { Topbar } from './Topbar'
 import { useTheme } from '@/context/ThemeContext'
 import { useAppStore } from '@/stores/appStore'
+import { venuesService } from '@/services'
 
 export function MainLayout() {
   const { t } = useTheme()
   const { sidebarOpen, closeSidebar } = useAppStore()
+  const [venues, setVenues] = useState([])
+
+  useEffect(() => {
+    venuesService.fetchVenuesWithSites().then(setVenues)
+  }, [])
 
   return (
     <div
@@ -40,7 +47,7 @@ export function MainLayout() {
           flexDirection: 'column',
         }}
       >
-        <Topbar />
+        <Topbar venues={venues} />
         <div
           style={{
             padding: 'clamp(10px,2vw,24px)',

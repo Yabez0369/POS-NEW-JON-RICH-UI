@@ -32,7 +32,7 @@ export function LoginPage() {
     setLoading(true)
     try {
       await login(email, pass)
-      navigate('/app')
+      navigate('/venue-confirm')
     } catch (e) {
       setErr(e.message || 'Invalid email or password')
     } finally {
