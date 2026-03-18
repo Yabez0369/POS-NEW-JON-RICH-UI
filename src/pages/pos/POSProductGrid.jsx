@@ -71,8 +71,11 @@ export function POSProductGrid({
         </div>
       )}
 
-      <div style={{ display: 'flex', gap: 4, padding: '6px 10px', overflowX: 'auto', borderBottom: `1px solid ${t.border}`, WebkitOverflowScrolling: 'touch' }}>
-        {CATEGORIES.map(c => <button key={c} onClick={() => setCat(c)} style={{ padding: '5px 13px', borderRadius: 20, border: 'none', background: cat === c ? t.accent : t.bg4, color: cat === c ? '#fff' : t.text3, fontSize: 11, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' }}>{c}</button>)}
+      <div style={{ padding: '6px 10px', borderBottom: `1px solid ${t.border}`, display: 'flex', flexDirection: 'column', gap: 6 }}>
+        <div style={{ fontSize: 10, color: t.text3, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5 }}>Product selection: Categories · Search · Favourites · Barcode Scan</div>
+        <div style={{ display: 'flex', gap: 4, overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+          {CATEGORIES.map(c => <button key={c} onClick={() => setCat(c)} style={{ padding: '5px 13px', borderRadius: 20, border: 'none', background: cat === c ? t.accent : t.bg4, color: cat === c ? '#fff' : t.text3, fontSize: 11, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' }}>{c}</button>)}
+        </div>
       </div>
 
       <div className="pos-products-grid" style={{ flex: 1, overflowY: 'auto', padding: 8, display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 6, alignContent: 'start' }}>
