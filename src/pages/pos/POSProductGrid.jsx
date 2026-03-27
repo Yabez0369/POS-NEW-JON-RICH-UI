@@ -1,5 +1,4 @@
 import { CATEGORIES } from '@/lib/constants'
-import { PRODUCT_IMAGES } from '@/lib/seed-data'
 import { ImgWithFallback } from '@/components/shared'
 import { fmt } from '@/lib/utils'
 
@@ -78,24 +77,24 @@ export function POSProductGrid({
         </div>
       </div>
 
-      <div className="pos-products-grid" style={{ flex: 1, overflowY: 'auto', padding: 8, display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 6, alignContent: 'start' }}>
+      <div className="pos-products-grid" style={{ flex: 1, overflowY: 'auto', padding: 8, display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, alignContent: 'start' }}>
         {filteredProds.map(p => {
           const disc = getItemDiscount(p)
           return (
-            <div key={p.id} onClick={() => addToCart(p)} style={{ background: t.card, border: `1px solid ${disc > 0 ? t.accent : t.border}`, borderRadius: 11, overflow: 'hidden', cursor: p.stock === 0 ? 'not-allowed' : 'pointer', opacity: p.stock === 0 ? 0.45 : 1, transition: 'all 0.12s', boxShadow: t.shadow, position: 'relative' }}
+            <div key={p.id} onClick={() => addToCart(p)} style={{ background: t.card, border: `1px solid ${disc > 0 ? t.accent : t.border}`, borderRadius: 11, overflow: 'hidden', cursor: p.stock === 0 ? 'not-allowed' : 'pointer', opacity: p.stock === 0 ? 0.45 : 1, transition: 'all 0.12s', boxShadow: t.shadow, position: 'relative', display: 'flex', flexDirection: 'column', minHeight: 140 }}
               onMouseEnter={e => { if (p.stock > 0) e.currentTarget.style.boxShadow = t.shadowMd }}
               onMouseLeave={e => e.currentTarget.style.boxShadow = t.shadow}>
               {disc > 0 && <div style={{ position: 'absolute', top: 6, left: 6, zIndex: 1, background: t.accent, color: '#fff', borderRadius: 6, padding: '2px 6px', fontSize: 9, fontWeight: 900 }}>-{disc}% OFF</div>}
-              <div style={{ height: 'clamp(60px,12vw,80px)', background: t.bg3, overflow: 'hidden' }}>
-                <ImgWithFallback src={PRODUCT_IMAGES[p.name]} alt={p.name} emoji={p.emoji} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              <div style={{ height: 90, background: '#f8f9fa', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                <ImgWithFallback src={p.image_url || p.image} alt={p.name} emoji={p.emoji} style={{ width: '100%', height: '100%', objectFit: 'contain', padding: 4 }} />
               </div>
-              <div style={{ padding: '7px 9px' }}>
-                <div style={{ fontSize: 'clamp(9px,2.5vw,11px)', fontWeight: 700, color: t.text, lineHeight: 1.3, marginBottom: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ padding: '7px 9px', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: t.text, lineHeight: 1.3, marginBottom: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'auto' }}>
                   <div>
-                    {disc > 0 ? <><div style={{ fontSize: 10, color: t.text4, textDecoration: 'line-through' }}>{fmt(p.price, settings?.sym)}</div><div style={{ fontSize: 12, fontWeight: 900, color: t.accent }}>{fmt(p.price * (1 - disc / 100), settings?.sym)}</div></> : <div style={{ fontSize: 12, fontWeight: 900, color: t.green }}>{fmt(p.price, settings?.sym)}</div>}
+                    {disc > 0 ? <><div style={{ fontSize: 9, color: t.text4, textDecoration: 'line-through' }}>{fmt(p.price, settings?.sym)}</div><div style={{ fontSize: 13, fontWeight: 900, color: t.accent }}>{fmt(p.price * (1 - disc / 100), settings?.sym)}</div></> : <div style={{ fontSize: 13, fontWeight: 900, color: t.green }}>{fmt(p.price, settings?.sym)}</div>}
                   </div>
-                  <div style={{ fontSize: 9, color: p.stock <= 5 ? t.red : t.text4 }}>Stk:{p.stock}</div>
+                  <div style={{ fontSize: 9, color: p.stock <= 5 ? t.red : t.text4, flexShrink: 0 }}>Stk:{p.stock}</div>
                 </div>
               </div>
             </div>

@@ -27,7 +27,7 @@ function toDbFormat(product) {
         ? Number(product.costPrice ?? product.cost_price)
         : null,
     tax_code: product.taxCode ?? product.tax_code ?? 'standard',
-    status: safeStatus,
+    status: product.status === 'inactive' ? 'inactive' : 'active',
     image_url: product.image ?? product.image_url ?? null,
     emoji: product.emoji ?? '📦',
     returnable: product.returnable !== false,
@@ -42,8 +42,8 @@ function toDbFormat(product) {
   }
   if (product.taxPct !== undefined || product.tax_pct !== undefined) {
     db.tax_pct = product.taxPct ?? product.tax_pct ?? 20
-    track_serial: product.track_serial === true,
   }
+  return db
 }
 
 /** Extra columns from dynamic_category_system.sql — second request only when needed (avoids 400 if migration not run). */
@@ -114,11 +114,6 @@ async function applyExtendedProductFields(productId, product) {
       error.message
     )
   }
-  if (product.dynamic_attributes && Object.keys(product.dynamic_attributes).length > 0) {
-    db.dynamic_attributes = product.dynamic_attributes
-  }
-
-  return db
 }
 
 export async function fetchProducts() {
@@ -166,7 +161,7 @@ export async function fetchProducts() {
 }
 
 export async function createProduct(product) {
-  const db = toDbFormatBase(product)
+  const db = toDbFormat(product)
   if (!db.sku || db.sku === 'SKU-PENDING') {
     db.sku = `SKU-${Date.now()}`
   }

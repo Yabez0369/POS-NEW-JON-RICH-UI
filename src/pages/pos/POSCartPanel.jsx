@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { ImgWithFallback } from '@/components/shared'
 import { Toggle, Select } from '@/components/ui'
-import { PRODUCT_IMAGES } from '@/lib/seed-data'
+
 import { fmt } from '@/lib/utils'
 import { CardTerminal } from './CardTerminal'
 
@@ -128,7 +128,7 @@ export function POSCartPanel({
                       {filteredReturn.map(item => (
                         <div key={item.id} style={{ display: 'flex', gap: 6, alignItems: 'center', padding: '6px 0', borderBottom: `1px solid ${t.border}` }}>
                           <div style={{ width: 36, height: 36, borderRadius: 8, overflow: 'hidden', flexShrink: 0, background: t.bg3 }}>
-                            <ImgWithFallback src={PRODUCT_IMAGES[item.name]} alt={item.name} emoji={item.emoji} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            <ImgWithFallback src={item.image_url || item.image} alt={item.name} emoji={item.emoji} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                           </div>
                           <div style={{ flex: 1, minWidth: 0 }}>
                             <div style={{ fontSize: 11, fontWeight: 700, color: t.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.name}</div>
@@ -151,7 +151,7 @@ export function POSCartPanel({
                       {filteredReplacement.map(item => (
                         <div key={item.id} style={{ display: 'flex', gap: 6, alignItems: 'center', padding: '6px 0', borderBottom: `1px solid ${t.border}` }}>
                           <div style={{ width: 36, height: 36, borderRadius: 8, overflow: 'hidden', flexShrink: 0, background: t.bg3 }}>
-                            <ImgWithFallback src={PRODUCT_IMAGES[item.name]} alt={item.name} emoji={item.emoji} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            <ImgWithFallback src={item.image_url || item.image} alt={item.name} emoji={item.emoji} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                           </div>
                           <div style={{ flex: 1, minWidth: 0 }}>
                             <div style={{ fontSize: 11, fontWeight: 700, color: t.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.name}</div>
@@ -187,7 +187,7 @@ export function POSCartPanel({
               }}
             >
               <div style={{ width: 36, height: 36, borderRadius: 8, overflow: 'hidden', flexShrink: 0, background: t.bg3 }}>
-                <ImgWithFallback src={PRODUCT_IMAGES[item.name]} alt={item.name} emoji={item.emoji} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                <ImgWithFallback src={item.image_url || item.image} alt={item.name} emoji={item.emoji} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 11, fontWeight: 700, color: t.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.name}</div>
