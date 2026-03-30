@@ -9,6 +9,7 @@ import { fmt, ts, genId, isBannerActive, getTier } from '@/lib/utils'
 import dayjs from 'dayjs'
 import { POSProductGrid } from './POSProductGrid'
 import { POSCartPanel } from './POSCartPanel'
+import { POSFlowView } from './POSFlowView'
 import { CashierReturns } from '@/pages/cashier/CashierReturns'
 import { inventoryService, productsService, ordersService, parkedBillsService, paymentsService, sitePricesService, promotionsService, returnsService } from '@/services'
 import { isSupabaseConfigured } from '@/lib/supabase'
@@ -33,7 +34,7 @@ export const POSTerminal = ({ products, setProducts, orders, setOrders, returns 
     if (!isSupabaseConfigured() || !effectiveSiteId || !session) return
     parkedBillsService.fetchParkedBills(effectiveSiteId, user?.id).then((data) => {
       if (data?.length) setParked(data)
-    }).catch(() => {})
+    }).catch(() => { })
   }, [effectiveSiteId, session, user?.id])
 
   useEffect(() => {
@@ -41,11 +42,11 @@ export const POSTerminal = ({ products, setProducts, orders, setOrders, returns 
     Promise.all([sitePricesService.fetchSitePrices(effectiveSiteId), promotionsService.fetchActivePromotions()])
       .then(([sitePrices, promos]) => {
         const map = {}
-        ;(sitePrices || []).forEach(sp => { map[sp.product_id] = sp.price })
+          ; (sitePrices || []).forEach(sp => { map[sp.product_id] = sp.price })
         setSitePricesMap(map)
         setPromotionsMap(promos || [])
       })
-      .catch(() => {})
+      .catch(() => { })
   }, [effectiveSiteId])
 
   const [cart, setCart] = useState([])
@@ -98,6 +99,11 @@ export const POSTerminal = ({ products, setProducts, orders, setOrders, returns 
   const [returnProcessMode, setReturnProcessMode] = useState('return')
   const [returnRefundMethod, setReturnRefundMethod] = useState('original')
 
+  // ── Step-based POS flow ──
+  const [posStep, setPosStep] = useState('scan') // 'scan' | 'payment' | 'processing' | 'success'
+  const [completedOrder, setCompletedOrder] = useState(null)
+  const [cardTapStep, setCardTapStep] = useState('waiting') // 'waiting' | 'processing' | 'approved'
+
   const [variantProduct, setVariantProduct] = useState(null)
   const [selectedVariant, setSelectedVariant] = useState({})
 
@@ -146,7 +152,7 @@ export const POSTerminal = ({ products, setProducts, orders, setOrders, returns 
       }
       if (e.key.length === 1) barcodeBuffer.current += e.key
     }
-    const handler = (e) => { handleKeyDown(e).catch(() => {}) }
+    const handler = (e) => { handleKeyDown(e).catch(() => { }) }
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
   }, [products, removeMode, resolveProductFromCode])
@@ -191,7 +197,7 @@ export const POSTerminal = ({ products, setProducts, orders, setOrders, returns 
   const handleProductClick = (p) => {
     const attrs = p.dynamic_attributes || {}
     const keys = Object.keys(attrs).filter(k => attrs[k] && attrs[k].length > 0)
-    
+
     if (keys.length > 0) {
       setVariantProduct(p)
       const initial = {}
@@ -315,7 +321,7 @@ export const POSTerminal = ({ products, setProducts, orders, setOrders, returns 
     setCart(pb.cart)
     setSelCust(pb.customerId ? users?.find(u => u.id === pb.customerId) || null : null)
     if (isSupabaseConfigured() && pb.id) {
-      try { await parkedBillsService.deleteParkedBill(pb.id) } catch (_) {}
+      try { await parkedBillsService.deleteParkedBill(pb.id) } catch (_) { }
     }
     setParked(p => p.filter(x => x.id !== pb.id))
     setShowParkedDropdown(false)
@@ -610,9 +616,9 @@ export const POSTerminal = ({ products, setProducts, orders, setOrders, returns 
         try {
           const paymentRows = payMethod === 'Split'
             ? [
-                { amount: parseFloat(splitCash) || 0, method: 'split_cash', details: {} },
-                { amount: parseFloat(splitCard) || 0, method: 'split_card', details: {} },
-              ]
+              { amount: parseFloat(splitCash) || 0, method: 'split_cash', details: {} },
+              { amount: parseFloat(splitCard) || 0, method: 'split_card', details: {} },
+            ]
             : [{ amount: cartTotal, method: payMethod.toLowerCase(), details: { card_last4: payMethod === 'Card' ? cardNum.slice(-4) : null } }]
           await paymentsService.createPayments(createdOrder.id, paymentRows)
         } catch (_) { /* payments table may not exist yet */ }
@@ -660,7 +666,7 @@ export const POSTerminal = ({ products, setProducts, orders, setOrders, returns 
       setUsers(us => us.map(u => u.id === selCust.id ? { ...u, loyaltyPoints: newPts, totalSpent: newSpent, tier: getTier(newSpent) } : u))
     }
     addAudit(user, 'Payment Completed', 'POS', `${orderId} — ${fmt(cartTotal, settings?.sym)} via ${payMethod}`)
-    
+
     // Record Cash Movement if applicable
     if (payMethod === 'Cash') {
       useCashStore.getState().addMovement('sale', cartTotal, `Sale: ${orderId}`, user)
@@ -673,6 +679,8 @@ export const POSTerminal = ({ products, setProducts, orders, setOrders, returns 
 
     notify(`Order ${orderId} complete! 🎉`, 'success')
     setShowReceipt(newOrder)
+    setCompletedOrder(newOrder)
+    setPosStep('success')
     setCart([]); setCashGiven(''); setCardNum(''); setCardExp(''); setCardCvv(''); setQrPaid(false); setAppliedCoupon(null); setCouponCode(''); setLoyaltyRedeem(false); setShowQrModal(false); setSplitCash(''); setSplitCard(''); setManualDiscountPct(0)
     setCheckoutProcessing(false)
   }
@@ -691,6 +699,27 @@ export const POSTerminal = ({ products, setProducts, orders, setOrders, returns 
     processOrder()
   }
 
+  // ── Step-flow handlers ──
+  const goToPayment = () => { if (cart.length > 0) setPosStep('payment') }
+  const backToScan = () => setPosStep('scan')
+  const startNewSale = () => { setPosStep('scan'); setCompletedOrder(null); setSelCust(null) }
+  const confirmPayment = () => {
+    if (cart.length === 0) return
+    if (payMethod === 'Cash' && (cashGiven === '' || cashGivenNum < cartTotal)) { notify('Enter sufficient cash amount', 'error'); return }
+    if (payMethod === 'Split') {
+      const sc = parseFloat(splitCash) || 0; const cc = parseFloat(splitCard) || 0
+      if (Math.abs(sc + cc - cartTotal) > 0.01) { notify('Split amounts must equal the total', 'error'); return }
+      if (sc <= 0 || cc <= 0) { notify('Both amounts must be > 0', 'error'); return }
+    }
+    if (payMethod === 'Card') { setPosStep('processing'); setCardTapStep('waiting'); return }
+    setPosStep('processing')
+    processOrder()
+  }
+  const simulateCardTap = () => {
+    setCardTapStep('processing')
+    setTimeout(() => { setCardTapStep('approved'); setTimeout(() => processOrder(), 800) }, 1800)
+  }
+
   if (isLoading) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: 16 }}>
@@ -707,7 +736,7 @@ export const POSTerminal = ({ products, setProducts, orders, setOrders, returns 
         <div style={{ textAlign: 'center' }}>
           <div style={{ fontSize: 32, fontWeight: 900, color: t.text, marginBottom: 8 }}>Till is Currently Closed</div>
           <div style={{ fontSize: 16, color: t.text3, maxWidth: 400, margin: '0 auto' }}>
-            You cannot process any sales until a cash session is opened. 
+            You cannot process any sales until a cash session is opened.
             Please open the till in Cash Management first.
           </div>
         </div>
@@ -719,10 +748,34 @@ export const POSTerminal = ({ products, setProducts, orders, setOrders, returns 
   }
 
   return (
-    <div style={{ display: 'flex', gap: 20, height: 'calc(100vh - 120px)' }} className="pos-layout">
-      <POSProductGrid search={search} setSearch={setSearch} cat={cat} setCat={setCat} filteredProds={filteredProds} favProds={favProds} getItemDiscount={getItemDiscount} addToCart={(loadedOrderForReturn && returnProcessMode !== 'exchange') ? () => {} : handleProductClick} scanMsg={scanMsg} parkBill={parkBill} parked={parked} recallBill={recallBill} showParkedDropdown={showParkedDropdown} setShowParkedDropdown={setShowParkedDropdown} setShowBarcodeInput={setShowBarcodeInput} setShowReprint={setShowReprint} setShowReturnModal={setShowReturnModal} loadOrderInput={loadOrderInput} setLoadOrderInput={setLoadOrderInput} loadOrderForReturn={loadOrderForReturn} loadOrderLoading={loadOrderLoading} loadedOrderForReturn={loadedOrderForReturn} returnProcessMode={returnProcessMode} settings={settings} t={t} />
-
-      <POSCartPanel cart={cart} updateQty={updateQty} setCart={setCart} removeFromCart={removeFromCart} removeMode={removeMode} setRemoveMode={setRemoveMode} cartSearch={cartSearch} setCartSearch={setCartSearch} selCust={selCust} setSelCust={setSelCust} custSearch={custSearch} setCustSearch={setCustSearch} lookupCustomer={lookupCustomer} setShowNewCust={setShowNewCust} loyaltyRedeem={loyaltyRedeem} setLoyaltyRedeem={setLoyaltyRedeem} appliedCoupon={appliedCoupon} setAppliedCoupon={setAppliedCoupon} couponCode={couponCode} setCouponCode={setCouponCode} applyCoupon={applyCoupon} cartSubtotal={cartSubtotal} cartTax={cartTax} couponDiscount={couponDiscount} loyaltyDiscount={loyaltyDiscount} manualDiscountPct={manualDiscountPct} setManualDiscountPct={setManualDiscountPct} manualDiscountAmount={manualDiscountAmount} cartTotal={cartTotal} pointsEarned={pointsEarned} payMethod={payMethod} setPayMethod={setPayMethod} cashGiven={cashGiven} setCashGiven={setCashGiven} cashGivenNum={cashGivenNum} cashChange={cashChange} cardNum={cardNum} setCardNum={setCardNum} setCardExp={setCardExp} setCardCvv={setCardCvv} splitCash={splitCash} setSplitCash={setSplitCash} splitCard={splitCard} setSplitCard={setSplitCard} checkout={checkout} setShowCustDisplay={setShowCustDisplay} updateCartItemPrice={updateCartItemPrice} user={user} checkoutProcessing={checkoutProcessing} settings={settings} t={t} loadedOrderForReturn={loadedOrderForReturn} processReturnFromCart={processReturnFromCart} clearReturnMode={clearReturnMode} returnReasonCode={returnReasonCode} setReturnReasonCode={setReturnReasonCode} returnProcessMode={returnProcessMode} setReturnProcessMode={setReturnProcessMode} returnRefundMethod={returnRefundMethod} setReturnRefundMethod={setReturnRefundMethod} />
+    <div style={{ position: 'relative', margin: '-20px', overflow: 'hidden' }} className="pos-layout">
+      <POSFlowView
+        posStep={posStep} setPosStep={setPosStep}
+        completedOrder={completedOrder} cardTapStep={cardTapStep}
+        goToPayment={goToPayment} backToScan={backToScan}
+        startNewSale={startNewSale} confirmPayment={confirmPayment}
+        simulateCardTap={simulateCardTap}
+        cart={cart} updateQty={updateQty} setCart={setCart}
+        search={search} setSearch={setSearch} scanMsg={scanMsg}
+        filteredProds={filteredProds} getItemDiscount={getItemDiscount}
+        handleProductClick={(loadedOrderForReturn && returnProcessMode !== 'exchange') ? () => {} : handleProductClick}
+        cartSubtotal={cartSubtotal} cartTax={cartTax}
+        couponDiscount={couponDiscount} loyaltyDiscount={loyaltyDiscount}
+        manualDiscountAmount={manualDiscountAmount} cartTotal={cartTotal}
+        payMethod={payMethod} setPayMethod={setPayMethod}
+        cashGiven={cashGiven} setCashGiven={setCashGiven}
+        cashGivenNum={cashGivenNum} cashChange={cashChange}
+        splitCash={splitCash} setSplitCash={setSplitCash}
+        splitCard={splitCard} setSplitCard={setSplitCard}
+        selCust={selCust} setSelCust={setSelCust}
+        setShowNewCust={setShowNewCust} setLoyaltyRedeem={setLoyaltyRedeem}
+        parkBill={parkBill} parked={parked} recallBill={recallBill}
+        setShowReprint={setShowReprint} setShowBarcodeInput={setShowBarcodeInput}
+        showParkedDropdown={showParkedDropdown} setShowParkedDropdown={setShowParkedDropdown}
+        showReceipt={showReceipt} setShowReceipt={setShowReceipt}
+        checkoutProcessing={checkoutProcessing}
+        settings={settings} t={t}
+      />
 
       {variantProduct && (
         <Modal t={t} title="Select Variant" subtitle={variantProduct.name} onClose={() => setVariantProduct(null)}>
@@ -733,16 +786,16 @@ export const POSTerminal = ({ products, setProducts, orders, setOrders, returns 
                   <div style={{ fontSize: 12, fontWeight: 700, color: t.text3, marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 }}>{key}</div>
                   <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                     {values.map(val => (
-                      <button 
-                        key={val} 
-                        onClick={() => setSelectedVariant(v => ({ ...v, [key]: val }))} 
-                        style={{ 
-                          padding: '8px 16px', 
-                          borderRadius: 10, 
-                          border: `2px solid ${selectedVariant[key] === val ? t.accent : t.border}`, 
-                          background: selectedVariant[key] === val ? t.accent + '15' : t.bg3, 
-                          color: selectedVariant[key] === val ? t.accent : t.text, 
-                          fontWeight: 700, 
+                      <button
+                        key={val}
+                        onClick={() => setSelectedVariant(v => ({ ...v, [key]: val }))}
+                        style={{
+                          padding: '8px 16px',
+                          borderRadius: 10,
+                          border: `2px solid ${selectedVariant[key] === val ? t.accent : t.border}`,
+                          background: selectedVariant[key] === val ? t.accent + '15' : t.bg3,
+                          color: selectedVariant[key] === val ? t.accent : t.text,
+                          fontWeight: 700,
                           cursor: 'pointer',
                           fontSize: 13,
                           transition: 'all 0.2s ease'

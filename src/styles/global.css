@@ -18,6 +18,8 @@ body{margin:0;font-family:'Plus Jakarta Sans',system-ui,sans-serif;}
 .is-pos .sidebar-wrap { display: none !important; }
 .is-pos .main-content { margin-left: 0 !important; }
 .pos-main-content .pos-layout { height: 100vh !important; border-radius: 0; }
+.pos-layout { height: calc(100vh - 48px); }
+.pos-layout .pos-flow { height: 100%; }
 
 
 @media(min-width:769px) and (max-width:1024px){
