@@ -90,6 +90,7 @@ export const POSTerminal = ({ products, setProducts, orders, setOrders, returns 
   const [promotionsMap, setPromotionsMap] = useState([])
   const [checkoutProcessing, setCheckoutProcessing] = useState(false)
   const [showReturnModal, setShowReturnModal] = useState(false)
+  const [cardFlowState, setCardFlowState] = useState(null)
   const [loadOrderInput, setLoadOrderInput] = useState('')
   const [loadOrderLoading, setLoadOrderLoading] = useState(false)
   const [loadedOrderForReturn, setLoadedOrderForReturn] = useState(null)
@@ -198,6 +199,7 @@ export const POSTerminal = ({ products, setProducts, orders, setOrders, returns 
       setSelectedVariant(initial)
     } else {
       addToCart(p)
+      setSearch('')
     }
   }
 
@@ -231,6 +233,7 @@ export const POSTerminal = ({ products, setProducts, orders, setOrders, returns 
       .map(([key, val]) => `${key}: ${val}`)
     addToCart(variantProduct, parts.join(', '))
     setVariantProduct(null)
+    setSearch('')
   }
 
   const updateQty = (id, d) => {
@@ -677,7 +680,7 @@ export const POSTerminal = ({ products, setProducts, orders, setOrders, returns 
   const checkout = () => {
     if (cart.length === 0) return
     if (payMethod === 'Cash' && (cashGiven === '' || cashGivenNum < cartTotal)) { notify('Enter sufficient cash amount', 'error'); return }
-    if (payMethod === 'Card' && cardNum.length < 4) { notify('Please tap/insert card on terminal first', 'error'); return }
+    if (payMethod === 'Card') { setCardFlowState('waiting'); return }
     if (payMethod === 'QR' && !qrPaid) { setShowQrModal(true); return }
     if (payMethod === 'Split') {
       const sc = parseFloat(splitCash) || 0
@@ -781,6 +784,49 @@ export const POSTerminal = ({ products, setProducts, orders, setOrders, returns 
               </div>
             </div>
           )}
+        </Modal>
+      )}
+
+      {cardFlowState && (
+        <Modal t={t} title="Card Terminal Simulated" onClose={() => setCardFlowState(null)}>
+          <div style={{ textAlign: 'center', padding: '30px 20px', display: 'flex', flexDirection: 'column', gap: 24, alignItems: 'center' }}>
+            {cardFlowState === 'waiting' && (
+              <>
+                <div style={{ fontSize: 80, animation: 'pulse 1.5s infinite' }}>💳</div>
+                <div>
+                  <div style={{ fontSize: 28, fontWeight: 900, color: t.text, marginBottom: 8 }}>Tap or Insert Card</div>
+                  <div style={{ fontSize: 18, color: t.text3, fontWeight: 600 }}>Total Due: {fmt(cartTotal, settings?.sym)}</div>
+                </div>
+                <Btn t={t} variant="primary" size="lg" style={{ width: '100%', marginTop: 20 }} onClick={() => {
+                  setCardFlowState('processing')
+                  setTimeout(() => setCardFlowState('done'), 2000)
+                }}>Simulate Customer Tap</Btn>
+              </>
+            )}
+            {cardFlowState === 'processing' && (
+              <>
+                <div style={{ fontSize: 80, animation: 'spin 1.5s linear infinite' }}>⏳</div>
+                <div>
+                  <div style={{ fontSize: 28, fontWeight: 900, color: t.text, marginBottom: 8 }}>Processing...</div>
+                  <div style={{ fontSize: 16, color: t.text3 }}>Communicating with bank</div>
+                </div>
+              </>
+            )}
+            {cardFlowState === 'done' && (
+              <>
+                <div style={{ fontSize: 80, color: '#34C759' }}>✅</div>
+                <div>
+                  <div style={{ fontSize: 28, fontWeight: 900, color: '#34C759', marginBottom: 8 }}>Approved</div>
+                  <div style={{ fontSize: 16, color: t.text3 }}>Payment Successful</div>
+                </div>
+                <Btn t={t} variant="success" size="lg" style={{ width: '100%', marginTop: 20 }} onClick={() => {
+                  setCardFlowState(null)
+                  setCardNum('4242424242424242') // simulate card data
+                  processOrder()
+                }}>Complete Sale</Btn>
+              </>
+            )}
+          </div>
         </Modal>
       )}
 

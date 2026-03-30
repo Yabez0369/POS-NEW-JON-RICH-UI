@@ -1,6 +1,7 @@
 import { CATEGORIES } from '@/lib/constants'
 import { ImgWithFallback } from '@/components/shared'
 import { fmt } from '@/lib/utils'
+import { useNavigate } from 'react-router-dom'
 
 export function POSProductGrid({
   search, setSearch, cat, setCat, filteredProds, favProds,
@@ -11,9 +12,13 @@ export function POSProductGrid({
   returnProcessMode,
   settings, t,
 }) {
+  const navigate = useNavigate()
   return (
-    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', background: t.posLeft, borderRight: `1px solid ${t.border}` }} className="pos-left">
-      <div style={{ padding: '8px 10px', borderBottom: `1px solid ${t.border}`, display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', background: t.bg || '#F5F5F7', borderRight: 'none' }} className="pos-left">
+      <div style={{ padding: '16px 20px', background: t.card || '#FFFFFF', borderBottom: `1px solid ${t.border}`, display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center', boxShadow: '0 2px 10px rgba(0,0,0,0.02)' }}>
+        <button onClick={() => navigate('/app')} style={{ padding: '12px 16px', background: t.bg3, border: 'none', borderRadius: 12, color: t.text, fontSize: 16, fontWeight: 800, cursor: 'pointer', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: 6 }}>
+          🏠 Home
+        </button>
         {loadedOrderForReturn ? (
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, flex: 1, minWidth: 200, flexWrap: 'wrap' }}>
             <span style={{ fontSize: 12, fontWeight: 800, color: t.yellow, background: t.yellowBg, padding: '6px 10px', borderRadius: 8, border: `1px solid ${t.yellowBorder}` }}>
@@ -22,24 +27,18 @@ export function POSProductGrid({
           </div>
         ) : (
           <>
-            <div style={{ position: 'relative', flex: 1, minWidth: 160 }}>
-              <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search / SKU..." style={{ width: '100%', background: t.input, border: `1px solid ${t.border}`, borderRadius: 9, padding: '8px 14px 8px 34px', color: t.text, fontSize: 13, outline: 'none', boxSizing: 'border-box' }} />
-              <span style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)' }}>🔍</span>
-            </div>
-            <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
-              <input value={loadOrderInput} onChange={e => setLoadOrderInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && loadOrderForReturn()} placeholder="Order #" style={{ width: 90, background: t.input, border: `1px solid ${t.border}`, borderRadius: 9, padding: '8px 10px', color: t.text, fontSize: 12, outline: 'none' }} />
-              <button onClick={() => loadOrderForReturn()} disabled={loadOrderLoading || !loadOrderInput?.trim()} style={{ padding: '8px 12px', background: t.yellowBg, border: `1px solid ${t.yellowBorder}`, borderRadius: 9, color: t.yellow, fontSize: 12, fontWeight: 800, cursor: loadOrderLoading || !loadOrderInput?.trim() ? 'not-allowed' : 'pointer', whiteSpace: 'nowrap' }}>{loadOrderLoading ? '...' : '↩️ Load'}</button>
+            <div style={{ position: 'relative', flex: 1.5, minWidth: 200 }}>
+              <span style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', fontSize: 16, color: t.text3 }}>🔍</span>
+              <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Find product by name or SKU..." style={{ width: '100%', background: t.bg3, border: 'none', borderRadius: 12, padding: '12px 14px 12px 42px', color: t.text, fontSize: 15, fontWeight: 500, outline: 'none', boxSizing: 'border-box' }} />
             </div>
           </>
         )}
-        <button onClick={() => setShowBarcodeInput(true)} style={{ padding: '8px 12px', background: t.blueBg, border: `1px solid ${t.blueBorder}`, borderRadius: 9, color: t.blue, fontSize: 12, fontWeight: 800, cursor: 'pointer', whiteSpace: 'nowrap' }}>📷 Scan</button>
-        {setShowReturnModal ? <button onClick={() => setShowReturnModal(true)} style={{ padding: '8px 12px', background: t.bg3, border: `1px solid ${t.border}`, borderRadius: 9, color: t.text2, fontSize: 12, fontWeight: 800, cursor: 'pointer', whiteSpace: 'nowrap' }}>↩️ Return</button> : null}
-        {setShowReprint ? <button onClick={() => setShowReprint(true)} style={{ padding: '8px 12px', background: t.bg3, border: `1px solid ${t.border}`, borderRadius: 9, color: t.text2, fontSize: 12, fontWeight: 800, cursor: 'pointer', whiteSpace: 'nowrap' }}>🖨️ Reprint</button> : null}
-        {scanMsg && <span style={{ fontSize: 12, color: t.green, fontWeight: 700 }}>{scanMsg}</span>}
-        <button onClick={parkBill} style={{ padding: '8px 12px', background: t.yellowBg, border: `1px solid ${t.yellowBorder}`, borderRadius: 9, color: t.yellow, fontSize: 12, fontWeight: 800, cursor: 'pointer' }}>⏸ Park</button>
+        {setShowReprint ? <button onClick={() => setShowReprint(true)} style={{ padding: '12px 16px', background: t.bg3, border: 'none', borderRadius: 12, color: t.text2, fontSize: 14, fontWeight: 800, cursor: 'pointer', whiteSpace: 'nowrap' }}>🖨️ Reprint</button> : null}
+        {scanMsg && <span style={{ fontSize: 14, color: t.green, fontWeight: 800 }}>{scanMsg}</span>}
+        <button onClick={parkBill} style={{ padding: '12px 16px', background: '#FF950015', border: 'none', borderRadius: 12, color: '#FF9500', fontSize: 14, fontWeight: 800, cursor: 'pointer' }}>⏸ Park</button>
         {parked.length > 0 && (
           <div style={{ position: 'relative' }}>
-            <button onClick={() => setShowParkedDropdown(v => !v)} style={{ padding: '8px 12px', background: t.purpleBg, border: `1px solid ${t.purpleBorder}`, borderRadius: 9, color: t.purple, fontSize: 12, fontWeight: 800, cursor: 'pointer' }}>📋 Recall ({parked.length})</button>
+            <button onClick={() => setShowParkedDropdown(v => !v)} style={{ padding: '12px 16px', background: '#AF52DE15', border: 'none', borderRadius: 12, color: '#AF52DE', fontSize: 14, fontWeight: 800, cursor: 'pointer' }}>📋 Recall ({parked.length})</button>
             {showParkedDropdown && (
               <div style={{ position: 'absolute', top: '110%', left: 0, background: t.bg2, border: `1px solid ${t.border}`, borderRadius: 10, padding: 8, zIndex: 100, minWidth: 200, boxShadow: t.shadowMd }}>
                 {parked.map(pb => <button key={pb.id} onClick={() => recallBill(pb)} style={{ display: 'block', width: '100%', padding: '8px 12px', background: 'none', border: 'none', color: t.text, cursor: 'pointer', textAlign: 'left', fontSize: 12, borderRadius: 6 }}>📋 {pb.id} — {pb.cart.length} items · {pb.ts}</button>)}
@@ -49,58 +48,54 @@ export function POSProductGrid({
         )}
       </div>
 
-      {favProds.length > 0 && (
-        <div style={{ padding: '8px 12px', borderBottom: `1px solid ${t.border}`, background: t.bg3 }}>
-          <div style={{ fontSize: 10, color: t.text3, fontWeight: 800, textTransform: 'uppercase', letterSpacing: 0.7, marginBottom: 6 }}>⭐ Favourites</div>
-          <div style={{ display: 'flex', gap: 6, overflowX: 'auto' }}>
-            {favProds.map(p => {
-              const disc = getItemDiscount(p)
-              return (
-                <button key={p.id} onClick={() => addToCart(p)} disabled={p.stock === 0} style={{ flexShrink: 0, background: t.card, border: `1px solid ${disc > 0 ? t.accent : t.border}`, borderRadius: 9, padding: '6px 12px', cursor: p.stock === 0 ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: 6, opacity: p.stock === 0 ? 0.4 : 1 }}>
-                  <span style={{ fontSize: 16 }}>{p.emoji}</span>
-                  <div style={{ textAlign: 'left' }}>
-                    <div style={{ fontSize: 11, fontWeight: 700, color: t.text, whiteSpace: 'nowrap' }}>{p.name}</div>
-                    <div style={{ fontSize: 10, color: t.green, fontWeight: 800 }}>{disc > 0 ? <><s style={{ color: t.text3 }}>{fmt(p.price, settings?.sym)}</s> {fmt(p.price * (1 - disc / 100), settings?.sym)}</> : fmt(p.price, settings?.sym)}</div>
-                  </div>
-                  {disc > 0 && <span style={{ fontSize: 9, background: t.accent, color: '#fff', borderRadius: 5, padding: '1px 5px', fontWeight: 900 }}>-{disc}%</span>}
-                </button>
-              )
-            })}
+      {search.trim() === '' ? (
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: t.bg || '#F5F5F7', padding: 40, textAlign: 'center' }}>
+          <style>{`
+            @keyframes breathe {
+              0% { opacity: 0.3; transform: scale(0.95); }
+              50% { opacity: 1; transform: scale(1.05); }
+              100% { opacity: 0.3; transform: scale(0.95); }
+            }
+          `}</style>
+          <div style={{ width: 140, height: 140, marginBottom: 40, position: 'relative', animation: 'breathe 2.5s infinite ease-in-out' }}>
+            {/* Top Left Corner */}
+            <div style={{ position: 'absolute', top: 0, left: 0, width: 36, height: 36, borderTop: '5px solid #007AFF', borderLeft: '5px solid #007AFF', borderRadius: '16px 0 0 0' }} />
+            {/* Top Right Corner */}
+            <div style={{ position: 'absolute', top: 0, right: 0, width: 36, height: 36, borderTop: '5px solid #007AFF', borderRight: '5px solid #007AFF', borderRadius: '0 16px 0 0' }} />
+            {/* Bottom Left Corner */}
+            <div style={{ position: 'absolute', bottom: 0, left: 0, width: 36, height: 36, borderBottom: '5px solid #007AFF', borderLeft: '5px solid #007AFF', borderRadius: '0 0 0 16px' }} />
+            {/* Bottom Right Corner */}
+            <div style={{ position: 'absolute', bottom: 0, right: 0, width: 36, height: 36, borderBottom: '5px solid #007AFF', borderRight: '5px solid #007AFF', borderRadius: '0 0 16px 0' }} />
           </div>
+          <div style={{ fontSize: 28, fontWeight: 900, color: t.text, marginBottom: 12, letterSpacing: -0.5 }}>Ready to Scan</div>
+          <div style={{ fontSize: 16, color: t.text3, fontWeight: 500, maxWidth: 400, lineHeight: 1.6 }}>Point scanner at a barcode, or manually type a product name into the search bar above.</div>
         </div>
-      )}
-
-      <div style={{ padding: '6px 10px', borderBottom: `1px solid ${t.border}`, display: 'flex', flexDirection: 'column', gap: 6 }}>
-        <div style={{ fontSize: 10, color: t.text3, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5 }}>Product selection: Categories · Search · Favourites · Barcode Scan</div>
-        <div style={{ display: 'flex', gap: 4, overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
-          {CATEGORIES.map(c => <button key={c} onClick={() => setCat(c)} style={{ padding: '5px 13px', borderRadius: 20, border: 'none', background: cat === c ? t.accent : t.bg4, color: cat === c ? '#fff' : t.text3, fontSize: 11, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' }}>{c}</button>)}
-        </div>
-      </div>
-
-      <div className="pos-products-grid" style={{ flex: 1, overflowY: 'auto', padding: 8, display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, alignContent: 'start' }}>
-        {filteredProds.map(p => {
-          const disc = getItemDiscount(p)
-          return (
-            <div key={p.id} onClick={() => addToCart(p)} style={{ background: t.card, border: `1px solid ${disc > 0 ? t.accent : t.border}`, borderRadius: 11, overflow: 'hidden', cursor: p.stock === 0 ? 'not-allowed' : 'pointer', opacity: p.stock === 0 ? 0.45 : 1, transition: 'all 0.12s', boxShadow: t.shadow, position: 'relative', display: 'flex', flexDirection: 'column', minHeight: 140 }}
-              onMouseEnter={e => { if (p.stock > 0) e.currentTarget.style.boxShadow = t.shadowMd }}
-              onMouseLeave={e => e.currentTarget.style.boxShadow = t.shadow}>
-              {disc > 0 && <div style={{ position: 'absolute', top: 6, left: 6, zIndex: 1, background: t.accent, color: '#fff', borderRadius: 6, padding: '2px 6px', fontSize: 9, fontWeight: 900 }}>-{disc}% OFF</div>}
-              <div style={{ height: 90, background: '#f8f9fa', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
-                <ImgWithFallback src={p.image_url || p.image} alt={p.name} emoji={p.emoji} style={{ width: '100%', height: '100%', objectFit: 'contain', padding: 4 }} />
-              </div>
-              <div style={{ padding: '7px 9px', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-                <div style={{ fontSize: 11, fontWeight: 700, color: t.text, lineHeight: 1.3, marginBottom: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'auto' }}>
-                  <div>
-                    {disc > 0 ? <><div style={{ fontSize: 9, color: t.text4, textDecoration: 'line-through' }}>{fmt(p.price, settings?.sym)}</div><div style={{ fontSize: 13, fontWeight: 900, color: t.accent }}>{fmt(p.price * (1 - disc / 100), settings?.sym)}</div></> : <div style={{ fontSize: 13, fontWeight: 900, color: t.green }}>{fmt(p.price, settings?.sym)}</div>}
+      ) : (
+        <div className="pos-products-grid" style={{ flex: 1, overflowY: 'auto', padding: '24px 20px', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 16, alignContent: 'start', background: t.bg || '#F5F5F7' }}>
+          {filteredProds.map(p => {
+            const disc = getItemDiscount(p)
+            return (
+              <div key={p.id} onClick={() => addToCart(p)} style={{ background: '#FFFFFF', border: 'none', borderRadius: 20, overflow: 'hidden', cursor: p.stock === 0 ? 'not-allowed' : 'pointer', opacity: p.stock === 0 ? 0.45 : 1, transition: 'all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1)', boxShadow: '0 4px 12px rgba(0,0,0,0.03), 0 1px 2px rgba(0,0,0,0.02)', position: 'relative', display: 'flex', flexDirection: 'column', minHeight: 200 }}
+                onMouseEnter={e => { if (p.stock > 0) { e.currentTarget.style.transform = 'translateY(-4px) scale(1.02)'; e.currentTarget.style.boxShadow = '0 12px 24px rgba(0,0,0,0.08)'; } }}
+                onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.03), 0 1px 2px rgba(0,0,0,0.02)'; }}>
+                {disc > 0 && <div style={{ position: 'absolute', top: 10, left: 10, zIndex: 1, background: '#FF3B30', color: '#fff', borderRadius: 10, padding: '4px 8px', fontSize: 11, fontWeight: 900, boxShadow: '0 2px 8px rgba(255,59,48,0.3)' }}>-{disc}% OFF</div>}
+                <div style={{ height: 130, background: '#FAFAFA', borderBottom: '1px solid #F0F0F0', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', padding: 12 }}>
+                  <ImgWithFallback src={p.image_url || p.image} alt={p.name} emoji={p.emoji} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                </div>
+                <div style={{ padding: '14px 16px', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: 6 }}>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: t.text, lineHeight: 1.3, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', wordBreak: 'break-word' }}>{p.name}</div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: 'auto' }}>
+                    <div>
+                      {disc > 0 ? <><div style={{ fontSize: 12, color: t.text4, textDecoration: 'line-through' }}>{fmt(p.price, settings?.sym)}</div><div style={{ fontSize: 18, fontWeight: 900, color: '#34C759', letterSpacing: -0.5 }}>{fmt(p.price * (1 - disc / 100), settings?.sym)}</div></> : <div style={{ fontSize: 18, fontWeight: 900, color: t.text, letterSpacing: -0.5 }}>{fmt(p.price, settings?.sym)}</div>}
+                    </div>
+                    <div style={{ fontSize: 11, fontWeight: 600, color: p.stock <= 5 ? '#FF3B30' : t.text4, background: p.stock <= 5 ? '#FF3B3015' : t.bg3, padding: '4px 8px', borderRadius: 8 }}>{p.stock} left</div>
                   </div>
-                  <div style={{ fontSize: 9, color: p.stock <= 5 ? t.red : t.text4, flexShrink: 0 }}>Stk:{p.stock}</div>
                 </div>
               </div>
-            </div>
-          )
-        })}
-      </div>
+            )
+          })}
+        </div>
+      )}
     </div>
   )
 }

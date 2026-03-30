@@ -11,8 +11,14 @@ body{margin:0;font-family:'Plus Jakarta Sans',system-ui,sans-serif;}
 .fade-in{animation:fadeIn .3s ease;}
 .spin{animation:spin 1s linear infinite;}
 
-.sidebar-wrap{width:220px;position:fixed;left:0;top:0;height:100vh;z-index:200;transition:transform .25s ease;}
-.main-content{margin-left:220px;}
+.sidebar-wrap{width:220px;position:fixed;left:0;top:0;height:100vh;z-index:200;transition:width .25s ease, transform .25s ease;}
+.main-content{margin-left:220px; transition: margin-left .25s ease;}
+
+/* iPad Pro POS App Overrides */
+.is-pos .sidebar-wrap { display: none !important; }
+.is-pos .main-content { margin-left: 0 !important; }
+.pos-main-content .pos-layout { height: 100vh !important; border-radius: 0; }
+
 
 @media(min-width:769px) and (max-width:1024px){
   .sidebar-wrap{width:60px!important;overflow:hidden;}

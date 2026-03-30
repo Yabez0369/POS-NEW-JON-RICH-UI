@@ -53,63 +53,55 @@ export function POSCartPanel({
   const returnTotal = returnItems.reduce((s, i) => s + (i.price ?? 0) * (1 - (i.discount || 0) / 100) * (i.qty ?? 1), 0)
   const replacementTotal = replacementItems.reduce((s, i) => s + (i.price ?? 0) * (1 - (i.discount || 0) / 100) * (i.qty ?? 1), 0)
   return (
-    <div style={{ width: 'clamp(260px,28vw,340px)', display: 'flex', flexDirection: 'column', background: t.posRight, flexShrink: 0, borderLeft: `1px solid ${t.border}` }} className="pos-right">
-      <div style={{ padding: '10px 14px', borderBottom: `1px solid ${t.border}`, background: t.bg3 }}>
-        <div style={{ fontSize: 10, fontWeight: 800, color: t.text3, textTransform: 'uppercase', letterSpacing: 0.7, marginBottom: 7 }}>Customer</div>
+    <div style={{ flex: 1, width: '50%', display: 'flex', flexDirection: 'column', background: '#FFFFFF', flexShrink: 0, borderLeft: '1px solid #E5E5EA', boxShadow: '-4px 0 16px rgba(0,0,0,0.03)' }} className="pos-right">
+      <div style={{ padding: '16px 20px', borderBottom: `1px solid #E5E5EA`, background: '#FFFFFF', display: 'flex', flexDirection: 'column', gap: 12 }}>
         {selCust ? (
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <div>
-              <div style={{ fontSize: 13, fontWeight: 800, color: t.text }}>👤 {selCust.name}</div>
-              <div style={{ fontSize: 11, color: t.yellow }}>⭐ {selCust.loyaltyPoints} pts · {selCust.tier}</div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#F2F2F7', padding: '12px 16px', borderRadius: 16 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <div style={{ width: 40, height: 40, borderRadius: '50%', background: '#007AFF', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, fontWeight: 800 }}>{selCust.name.charAt(0)}</div>
+              <div>
+                <div style={{ fontSize: 15, fontWeight: 800, color: t.text }}>{selCust.name}</div>
+                <div style={{ fontSize: 13, color: '#FF9500', fontWeight: 700 }}>⭐ {selCust.loyaltyPoints} pts · {selCust.tier}</div>
+              </div>
             </div>
-            <button onClick={() => { setSelCust(null); setLoyaltyRedeem(false) }} style={{ background: t.redBg, border: `1px solid ${t.redBorder}`, color: t.red, borderRadius: 7, padding: '3px 8px', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>✕</button>
+            <button onClick={() => { setSelCust(null); setLoyaltyRedeem(false) }} style={{ background: '#FF3B3020', color: '#FF3B30', border: 'none', borderRadius: 20, width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, fontWeight: 700, cursor: 'pointer' }}>✕</button>
           </div>
         ) : (
-          <div style={{ display: 'flex', gap: 6 }}>
-            <input value={custSearch} onChange={e => setCustSearch(e.target.value)} onKeyDown={e => e.key === 'Enter' && lookupCustomer()} placeholder="Phone / Name / Email..." style={{ flex: 1, background: t.input, border: `1px solid ${t.border}`, borderRadius: 8, padding: '7px 10px', color: t.text, fontSize: 12, outline: 'none' }} />
-            <button onClick={lookupCustomer} style={{ background: t.accent, color: '#fff', border: 'none', borderRadius: 8, padding: '7px 12px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>Find</button>
-            <button onClick={() => setShowNewCust(true)} style={{ background: t.blue, color: '#fff', border: 'none', borderRadius: 8, padding: '7px 10px', fontSize: 12, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' }}>+ New</button>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <input value={custSearch} onChange={e => setCustSearch(e.target.value)} onKeyDown={e => e.key === 'Enter' && lookupCustomer()} placeholder="Add Customer..." style={{ flex: 1, background: '#F2F2F7', border: 'none', borderRadius: 12, padding: '14px 16px', color: t.text, fontSize: 15, outline: 'none', fontWeight: 500 }} />
+            <button onClick={lookupCustomer} style={{ background: t.text, color: t.bg, border: 'none', borderRadius: 12, padding: '0 20px', fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>Find</button>
+            <button onClick={() => setShowNewCust(true)} style={{ background: '#007AFF15', color: '#007AFF', border: 'none', borderRadius: 12, padding: '0 16px', fontSize: 20, fontWeight: 800, cursor: 'pointer', whiteSpace: 'nowrap' }}>+</button>
           </div>
         )}
       </div>
 
-      {/* In-Store Transaction bar + cart search + remove toggle */}
-      <div style={{ padding: '6px 10px 6px 14px', borderBottom: `1px solid ${t.border}`, display: 'flex', alignItems: 'center', gap: 6 }}>
-        <span style={{ fontSize: 13, flexShrink: 0 }}>🏪</span>
-        <span style={{ fontSize: 11, fontWeight: 800, color: t.green, flexShrink: 0, marginRight: 4 }}>In-Store</span>
-        {/* Cart search bar */}
+      <div style={{ padding: '12px 20px', borderBottom: `1px solid #E5E5EA`, display: 'flex', alignItems: 'center', gap: 10, background: '#FFFFFF' }}>
+        <button
+          onClick={() => setRemoveMode(!removeMode)}
+          style={{ background: removeMode ? '#FF3B30' : '#FF3B3020', color: removeMode ? '#FFFFFF' : '#FF3B30', border: 'none', padding: '8px 16px', borderRadius: 20, fontSize: 14, fontWeight: 800, display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', transition: 'all 0.2s' }}
+        >
+          {removeMode ? '✓ Done' : '✕ Remove'}
+        </button>
         <input
           value={cartSearch}
           onChange={e => setCartSearch(e.target.value)}
-          placeholder="Search cart…"
+          placeholder="Search cart"
           style={{
-            flex: 1, minWidth: 0, background: t.input, border: `1px solid ${t.border}`,
-            borderRadius: 7, padding: '4px 8px', color: t.text, fontSize: 11, outline: 'none',
+            flex: 1, minWidth: 0, background: '#F2F2F7', border: 'none',
+            borderRadius: 20, padding: '8px 14px', color: t.text, fontSize: 14, outline: 'none', fontWeight: 500
           }}
         />
-        {/* Remove mode toggle */}
         <button
-          onClick={() => setRemoveMode(r => !r)}
-          title={removeMode ? 'Remove mode ON — click to disable' : 'Enable remove mode'}
+          onClick={() => setCart([])} disabled={cart.length === 0}
+          title="Cancel/Clear Cart"
           style={{
-            flexShrink: 0,
-            display: 'flex', alignItems: 'center', gap: 4,
-            padding: '4px 8px', borderRadius: 7, cursor: 'pointer', fontSize: 11, fontWeight: 800,
-            border: `1.5px solid ${removeMode ? '#ef4444' : t.border}`,
-            background: removeMode ? '#ef444418' : t.bg3,
-            color: removeMode ? '#ef4444' : t.text3,
-            transition: 'all 0.18s ease',
-            boxShadow: removeMode ? '0 0 8px #ef444440' : 'none',
+            flexShrink: 0, padding: '8px 16px', borderRadius: 20, cursor: cart.length === 0 ? 'default' : 'pointer', fontSize: 14, fontWeight: 800,
+            background: cart.length === 0 ? '#F2F2F7' : '#FF3B3015',
+            color: cart.length === 0 ? '#C7C7CC' : '#FF3B30',
+            border: 'none', transition: 'all 0.2s ease',
           }}
         >
-          {/* Radio dot */}
-          <span style={{
-            width: 9, height: 9, borderRadius: '50%', display: 'inline-block', flexShrink: 0,
-            border: `2px solid ${removeMode ? '#ef4444' : t.text4}`,
-            background: removeMode ? '#ef4444' : 'transparent',
-            transition: 'all 0.18s ease',
-          }} />
-          Remove
+          Cancel
         </button>
       </div>
 
@@ -174,68 +166,56 @@ export function POSCartPanel({
           ) : filteredCart.length === 0
             ? <div style={{ textAlign: 'center', padding: '24px 16px', color: t.text3 }}><div style={{ fontSize: 28, marginBottom: 6 }}>🔍</div><div style={{ fontSize: 12, fontWeight: 700 }}>No match in cart</div></div>
             : filteredCart.map(item => (
-            <div
-              key={item.id}
-              onClick={() => removeMode && removeFromCart(item.originalId || item.id)}
-              style={{
-                display: 'flex', gap: 6, alignItems: 'center', padding: '6px 0',
-                borderBottom: `1px solid ${t.border}`,
-                cursor: removeMode ? 'pointer' : 'default',
-                borderRadius: removeMode ? 6 : 0,
-                background: removeMode ? '#ef444408' : 'transparent',
-                transition: 'background 0.15s',
-              }}
-            >
-              <div style={{ width: 36, height: 36, borderRadius: 8, overflow: 'hidden', flexShrink: 0, background: t.bg3 }}>
-                <ImgWithFallback src={item.image_url || item.image} alt={item.name} emoji={item.emoji} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-              </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 11, fontWeight: 700, color: t.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.name}</div>
-                {editingPriceId === item.id ? (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                    <input
-                      type="number"
-                      step={0.01}
-                      min={0}
-                      value={editPriceVal}
-                      onChange={e => setEditPriceVal(e.target.value)}
-                      onBlur={() => {
-                        const v = parseFloat(editPriceVal)
-                        if (!isNaN(v) && v >= 0 && updateCartItemPrice) updateCartItemPrice(item.id, v)
-                        setEditingPriceId(null)
-                      }}
-                      onKeyDown={e => { if (e.key === 'Enter') e.target.blur() }}
-                      autoFocus
-                      style={{ width: 70, background: t.input, border: `1px solid ${t.accent}`, borderRadius: 6, padding: '2px 6px', color: t.text, fontSize: 11, fontWeight: 700 }}
-                    />
-                  </div>
-                ) : (
-                  <div
-                    style={{ fontSize: 10, color: item.discount > 0 ? t.accent : t.green, fontWeight: 800, cursor: isManager ? 'pointer' : 'default' }}
-                    onClick={() => isManager && updateCartItemPrice && (setEditingPriceId(item.id), setEditPriceVal(String(item.price ?? 0)))}
-                    title={isManager ? 'Click to override price' : ''}
-                  >
-                    {item.discount > 0 ? `${fmt(item.price * (1 - item.discount / 100), settings?.sym)} (-${item.discount}%)` : fmt(item.price, settings?.sym)}
-                  </div>
-                )}
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                <button onClick={e => { e.stopPropagation(); updateQty(item.id, -1) }} style={{ width: 22, height: 22, borderRadius: 6, border: `1px solid ${t.border}`, background: t.bg3, color: t.text, cursor: 'pointer', fontSize: 13, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>−</button>
-                <span style={{ fontSize: 13, fontWeight: 900, color: t.text, minWidth: 18, textAlign: 'center' }}>{item.qty}</span>
-                <button onClick={e => { e.stopPropagation(); updateQty(item.id, 1) }} style={{ width: 22, height: 22, borderRadius: 6, border: `1px solid ${t.border}`, background: t.bg3, color: t.text, cursor: 'pointer', fontSize: 13, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>+</button>
-              </div>
-              <div style={{ fontSize: 12, fontWeight: 900, color: t.text, minWidth: 50, textAlign: 'right' }}>{fmt(item.price * (1 - (item.discount || 0) / 100) * item.qty)}</div>
-              <button
-                onClick={e => { e.stopPropagation(); setCart(c => c.filter(i => i.id !== item.id)) }}
+              <div
+                key={item.id}
+                onClick={() => removeMode && removeFromCart(item.originalId || item.id)}
                 style={{
-                  background: 'none', border: 'none', padding: '0 2px', cursor: 'pointer',
-                  fontSize: 14, flexShrink: 0,
-                  color: removeMode ? '#ef4444' : t.text4,
-                  transition: 'color 0.18s',
+                  display: 'flex', gap: 12, alignItems: 'center', padding: '14px 10px',
+                  borderBottom: `1px solid #F0F0F0`,
+                  background: removeMode ? '#FF3B3008' : '#FFFFFF',
+                  cursor: removeMode ? 'pointer' : 'default',
+                  transition: 'background 0.2s'
                 }}
-              >✕</button>
-            </div>
-          ))}
+              >
+                <div style={{ width: 50, height: 50, borderRadius: 12, overflow: 'hidden', flexShrink: 0, background: '#FAFAFA', border: '1px solid #F0F0F0', padding: 4 }}>
+                  <ImgWithFallback src={item.image_url || item.image} alt={item.name} emoji={item.emoji} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                </div>
+                <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                  <div style={{ fontSize: 15, fontWeight: 800, color: t.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.name}</div>
+                  {editingPriceId === item.id ? (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                      <input
+                        type="number" step={0.01} min={0} value={editPriceVal}
+                        onChange={e => setEditPriceVal(e.target.value)}
+                        onBlur={() => {
+                          const v = parseFloat(editPriceVal)
+                          if (!isNaN(v) && v >= 0 && updateCartItemPrice) updateCartItemPrice(item.id, v)
+                          setEditingPriceId(null)
+                        }}
+                        onKeyDown={e => { if (e.key === 'Enter') e.target.blur() }}
+                        autoFocus
+                        style={{ width: 80, background: '#F2F2F7', border: 'none', borderRadius: 8, padding: '4px 8px', color: t.text, fontSize: 14, fontWeight: 700 }}
+                      />
+                    </div>
+                  ) : (
+                    <div
+                      style={{ fontSize: 13, color: item.discount > 0 ? '#FF3B30' : '#8E8E93', fontWeight: 700, cursor: isManager ? 'pointer' : 'default' }}
+                      onClick={() => isManager && updateCartItemPrice && (setEditingPriceId(item.id), setEditPriceVal(String(item.price ?? 0)))}
+                    >
+                      {item.discount > 0 ? `${fmt(item.price * (1 - item.discount / 100), settings?.sym)} (-${item.discount}%)` : fmt(item.price, settings?.sym)}
+                    </div>
+                  )}
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8 }}>
+                  <div style={{ fontSize: 17, fontWeight: 900, color: t.text }}>{fmt(item.price * (1 - (item.discount || 0) / 100) * item.qty)}</div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 4, background: '#F2F2F7', borderRadius: 20, padding: 2 }}>
+                    <button onClick={e => { e.stopPropagation(); updateQty(item.id, -1) }} style={{ width: 32, height: 32, borderRadius: 16, border: 'none', background: '#FFFFFF', color: t.text, cursor: 'pointer', fontSize: 20, fontWeight: 500, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>−</button>
+                    <span style={{ fontSize: 16, fontWeight: 900, color: t.text, minWidth: 24, textAlign: 'center' }}>{item.qty}</span>
+                    <button onClick={e => { e.stopPropagation(); updateQty(item.id, 1) }} style={{ width: 32, height: 32, borderRadius: 16, border: 'none', background: '#FFFFFF', color: t.text, cursor: 'pointer', fontSize: 18, fontWeight: 500, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>+</button>
+                  </div>
+                </div>
+              </div>
+            ))}
       </div>
 
       <div style={{ padding: '8px 14px', borderTop: `1px solid ${t.border}` }}>
@@ -271,14 +251,14 @@ export function POSCartPanel({
           </div>
         )}
 
-        <div style={{ marginTop: 10 }}>
-          {[['Subtotal', fmt(cartSubtotal, settings?.sym)], ['Tax', fmt(cartTax, settings?.sym)], couponDiscount > 0 && [`Coupon (${appliedCoupon?.code})`, `-${fmt(couponDiscount, settings?.sym)}`], loyaltyDiscount > 0 && ['Loyalty Discount', `-${fmt(loyaltyDiscount, settings?.sym)}`], manualDiscountAmount > 0 && [`Manual (${manualDiscountPct ?? 0}%)`, `-${fmt(manualDiscountAmount, settings?.sym)}`]].filter(Boolean).map(([k, v]) => (
-            <div key={k} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: v.startsWith?.('-') ? t.green : t.text3, marginBottom: 4 }}><span>{k}</span><span style={{ fontWeight: 700 }}>{v}</span></div>
+        <div style={{ marginTop: 16, background: '#FAFAFA', borderRadius: 16, padding: '16px 20px' }}>
+          {[['Subtotal', fmt(cartSubtotal, settings?.sym)], ['Tax', fmt(cartTax, settings?.sym)], couponDiscount > 0 && [`Coupon (${appliedCoupon?.code})`, `-${fmt(couponDiscount, settings?.sym)}`], loyaltyDiscount > 0 && ['Loyalty', `-${fmt(loyaltyDiscount, settings?.sym)}`], manualDiscountAmount > 0 && [`Manual`, `-${fmt(manualDiscountAmount, settings?.sym)}`]].filter(Boolean).map(([k, v]) => (
+            <div key={k} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14, color: v.startsWith?.('-') ? '#34C759' : '#8E8E93', marginBottom: 8, fontWeight: 600 }}><span>{k}</span><span style={{ fontWeight: 800 }}>{v}</span></div>
           ))}
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 20, fontWeight: 900, color: t.text, paddingTop: 10, borderTop: `2px solid ${t.border}`, marginTop: 4 }}>
-            <span>Total</span><span style={{ color: t.accent }}>{fmt(cartTotal, settings?.sym)}</span>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 28, fontWeight: 900, color: t.text, paddingTop: 12, borderTop: `2px dashed #E5E5EA`, marginTop: 8, letterSpacing: -0.5 }}>
+            <span>Total</span><span style={{ color: '#007AFF' }}>{fmt(cartTotal, settings?.sym)}</span>
           </div>
-          {selCust && pointsEarned > 0 && <div style={{ fontSize: 11, color: t.yellow, textAlign: 'right', marginTop: 3 }}>+{pointsEarned} loyalty pts will be earned</div>}
+          {selCust && pointsEarned > 0 && <div style={{ fontSize: 12, color: '#FF9500', textAlign: 'right', marginTop: 4, fontWeight: 700 }}>+{pointsEarned} loyalty pts</div>}
         </div>
 
         {loadedOrderForReturn ? (
@@ -315,64 +295,65 @@ export function POSCartPanel({
           </>
         ) : (
           <>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 6, marginTop: 10 }}>
-          {[['Card', '💳'], ['Cash', '💵'], ['QR', '📱'], ['Split', '✂️']].map(([m, ic]) => (
-            <button key={m} onClick={() => setPayMethod(m)} style={{ padding: '7px 4px', borderRadius: 8, border: `2px solid ${payMethod === m ? t.accent : t.border}`, background: payMethod === m ? t.accent + '15' : t.bg3, color: payMethod === m ? t.accent : t.text3, fontSize: 12, fontWeight: 800, cursor: 'pointer' }}>{ic} {m}</button>
-          ))}
-        </div>
-
-        {payMethod === 'Card' && <CardTerminal total={cartTotal} onApproved={() => { setCardNum('4242424242424242'); setCardExp('12/26'); setCardCvv('123') }} settings={settings} t={t} />}
-
-        {payMethod === 'Cash' && (
-          <div style={{ marginTop: 8 }}>
-            <input value={cashGiven} onChange={e => setCashGiven(e.target.value)} placeholder={`Cash received (${settings?.sym || '£'})`} type="number" style={{ width: '100%', background: t.input, border: `1px solid ${cashGiven && cashGivenNum >= cartTotal ? t.greenBorder : t.border}`, borderRadius: 8, padding: '9px 12px', color: t.text, fontSize: 14, fontWeight: 800, outline: 'none', boxSizing: 'border-box' }} />
-            {cashGiven !== '' && (
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, marginTop: 6 }}>
-                {[['Cash Given', fmt(cashGivenNum, settings?.sym), t.text], ['Change Due', cashChange >= 0 ? fmt(cashChange, settings?.sym) : 'Insufficient', cashChange >= 0 ? t.green : t.red]].map(([k, v, c]) => (
-                  <div key={k} style={{ background: t.bg3, borderRadius: 8, padding: '8px 10px', textAlign: 'center' }}>
-                    <div style={{ fontSize: 10, color: t.text4 }}>{k}</div>
-                    <div style={{ fontSize: 15, fontWeight: 900, color: c }}>{v}</div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
-        {payMethod === 'Split' && (
-          <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 6 }}>
-            <div style={{ fontSize: 11, fontWeight: 800, color: t.text3, textTransform: 'uppercase' }}>Split Payment (Cash + Card)</div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
-              <div>
-                <div style={{ fontSize: 10, color: t.text4, marginBottom: 3 }}>💵 Cash Amount</div>
-                <input value={splitCash} onChange={e => { setSplitCash(e.target.value); const c = parseFloat(e.target.value) || 0; setSplitCard(String(Math.max(0, Math.round((cartTotal - c) * 100) / 100))) }}
-                  placeholder="0.00" type="number" style={{ width: '100%', background: t.input, border: `1px solid ${t.border}`, borderRadius: 8, padding: '9px 10px', color: t.text, fontSize: 13, fontWeight: 800, outline: 'none', boxSizing: 'border-box' }} />
-              </div>
-              <div>
-                <div style={{ fontSize: 10, color: t.text4, marginBottom: 3 }}>💳 Card Amount</div>
-                <input value={splitCard} onChange={e => { setSplitCard(e.target.value); const c = parseFloat(e.target.value) || 0; setSplitCash(String(Math.max(0, Math.round((cartTotal - c) * 100) / 100))) }}
-                  placeholder="0.00" type="number" style={{ width: '100%', background: t.input, border: `1px solid ${t.border}`, borderRadius: 8, padding: '9px 10px', color: t.text, fontSize: 13, fontWeight: 800, outline: 'none', boxSizing: 'border-box' }} />
-              </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginTop: 16 }}>
+              {[['Card', '💳'], ['Cash', '💵'], ['Split', '✂️']].map(([m, ic]) => (
+                <button key={m} onClick={() => setPayMethod(m)} style={{ padding: '12px 6px', borderRadius: 12, border: 'none', background: payMethod === m ? '#007AFF' : '#F2F2F7', color: payMethod === m ? '#FFFFFF' : '#8E8E93', fontSize: 13, fontWeight: 800, cursor: 'pointer', transition: 'all 0.2s', boxShadow: payMethod === m ? '0 4px 12px rgba(0,122,255,0.3)' : 'none' }}>
+                  <div style={{ fontSize: 20, marginBottom: 4 }}>{ic}</div>
+                  {m}
+                </button>
+              ))}
             </div>
-            {(parseFloat(splitCash) || 0) + (parseFloat(splitCard) || 0) > 0 && (
-              <div style={{ background: t.bg3, borderRadius: 8, padding: '6px 10px', display: 'flex', justifyContent: 'space-between', fontSize: 12 }}>
-                <span style={{ color: t.text3 }}>Total: {fmt((parseFloat(splitCash) || 0) + (parseFloat(splitCard) || 0), settings?.sym)}</span>
-                <span style={{ color: Math.abs((parseFloat(splitCash) || 0) + (parseFloat(splitCard) || 0) - cartTotal) < 0.01 ? t.green : t.red, fontWeight: 800 }}>
-                  {Math.abs((parseFloat(splitCash) || 0) + (parseFloat(splitCard) || 0) - cartTotal) < 0.01 ? '✓ Balanced' : 'Amounts must equal total'}
-                </span>
+
+            {payMethod === 'Cash' && (
+              <div style={{ marginTop: 8 }}>
+                <input value={cashGiven} onChange={e => setCashGiven(e.target.value)} placeholder={`Cash received (${settings?.sym || '£'})`} type="number" style={{ width: '100%', background: t.input, border: `1px solid ${cashGiven && cashGivenNum >= cartTotal ? t.greenBorder : t.border}`, borderRadius: 8, padding: '9px 12px', color: t.text, fontSize: 14, fontWeight: 800, outline: 'none', boxSizing: 'border-box' }} />
+                {cashGiven !== '' && (
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, marginTop: 6 }}>
+                    {[['Cash Given', fmt(cashGivenNum, settings?.sym), t.text], ['Change Due', cashChange >= 0 ? fmt(cashChange, settings?.sym) : 'Insufficient', cashChange >= 0 ? t.green : t.red]].map(([k, v, c]) => (
+                      <div key={k} style={{ background: t.bg3, borderRadius: 8, padding: '8px 10px', textAlign: 'center' }}>
+                        <div style={{ fontSize: 10, color: t.text4 }}>{k}</div>
+                        <div style={{ fontSize: 15, fontWeight: 900, color: c }}>{v}</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
-          </div>
-        )}
 
-        <div style={{ display: 'flex', gap: 6, marginTop: 10 }}>
-          <button onClick={checkout} disabled={cart.length === 0 || checkoutProcessing}
-            style={{ flex: 1, padding: '13px', background: (cart.length === 0 || checkoutProcessing) ? t.bg4 : `linear-gradient(135deg,${t.accent},${t.accent2})`, color: (cart.length === 0 || checkoutProcessing) ? t.text3 : '#fff', border: 'none', borderRadius: 10, fontSize: 13, fontWeight: 900, cursor: (cart.length === 0 || checkoutProcessing) ? 'not-allowed' : 'pointer', boxShadow: (cart.length > 0 && !checkoutProcessing) ? `0 4px 14px ${t.accent}40` : 'none' }}>
-            {cart.length === 0 ? 'Add items to cart' : checkoutProcessing ? 'Processing...' : `${payMethod === 'Card' ? '💳' : payMethod === 'Cash' ? '💵' : payMethod === 'Split' ? '✂️' : '📱'} Pay ${fmt(cartTotal, settings?.sym)}`}
-          </button>
-          <button onClick={() => setShowCustDisplay(true)} title="Customer Display" style={{ padding: '13px 12px', background: t.tealBg, border: `1px solid ${t.tealBorder}`, borderRadius: 10, color: t.teal, cursor: 'pointer', fontSize: 16 }}>🖥️</button>
-        </div>
-        {cart.length > 0 && !loadedOrderForReturn && <button onClick={() => { setCart([]); setManualDiscountPct?.(0) }} style={{ width: '100%', padding: '6px', marginTop: 5, background: 'transparent', color: t.text4, border: `1px solid ${t.border}`, borderRadius: 8, fontSize: 11, cursor: 'pointer' }}>🗑️ Clear Cart</button>}
+            {payMethod === 'Split' && (
+              <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <div style={{ fontSize: 11, fontWeight: 800, color: t.text3, textTransform: 'uppercase' }}>Split Payment (Cash + Card)</div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
+                  <div>
+                    <div style={{ fontSize: 10, color: t.text4, marginBottom: 3 }}>💵 Cash Amount</div>
+                    <input value={splitCash} onChange={e => { setSplitCash(e.target.value); const c = parseFloat(e.target.value) || 0; setSplitCard(String(Math.max(0, Math.round((cartTotal - c) * 100) / 100))) }}
+                      placeholder="0.00" type="number" style={{ width: '100%', background: t.input, border: `1px solid ${t.border}`, borderRadius: 8, padding: '9px 10px', color: t.text, fontSize: 13, fontWeight: 800, outline: 'none', boxSizing: 'border-box' }} />
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 10, color: t.text4, marginBottom: 3 }}>💳 Card Amount</div>
+                    <input value={splitCard} onChange={e => { setSplitCard(e.target.value); const c = parseFloat(e.target.value) || 0; setSplitCash(String(Math.max(0, Math.round((cartTotal - c) * 100) / 100))) }}
+                      placeholder="0.00" type="number" style={{ width: '100%', background: t.input, border: `1px solid ${t.border}`, borderRadius: 8, padding: '9px 10px', color: t.text, fontSize: 13, fontWeight: 800, outline: 'none', boxSizing: 'border-box' }} />
+                  </div>
+                </div>
+                {(parseFloat(splitCash) || 0) + (parseFloat(splitCard) || 0) > 0 && (
+                  <div style={{ background: t.bg3, borderRadius: 8, padding: '6px 10px', display: 'flex', justifyContent: 'space-between', fontSize: 12 }}>
+                    <span style={{ color: t.text3 }}>Total: {fmt((parseFloat(splitCash) || 0) + (parseFloat(splitCard) || 0), settings?.sym)}</span>
+                    <span style={{ color: Math.abs((parseFloat(splitCash) || 0) + (parseFloat(splitCard) || 0) - cartTotal) < 0.01 ? t.green : t.red, fontWeight: 800 }}>
+                      {Math.abs((parseFloat(splitCash) || 0) + (parseFloat(splitCard) || 0) - cartTotal) < 0.01 ? '✓ Balanced' : 'Amounts must equal total'}
+                    </span>
+                  </div>
+                )}
+              </div>
+            )}
+
+            <div style={{ display: 'flex', gap: 10, marginTop: 16 }}>
+              <button onClick={checkout} disabled={cart.length === 0 || checkoutProcessing}
+                style={{ flex: 1, padding: '18px', background: (cart.length === 0 || checkoutProcessing) ? '#E5E5EA' : `#007AFF`, color: (cart.length === 0 || checkoutProcessing) ? '#8E8E93' : '#fff', border: 'none', borderRadius: 16, fontSize: 18, fontWeight: 900, cursor: (cart.length === 0 || checkoutProcessing) ? 'not-allowed' : 'pointer', boxShadow: (cart.length > 0 && !checkoutProcessing) ? `0 8px 20px rgba(0,122,255,0.3)` : 'none', display: 'flex', flexDirection: 'column', alignItems: 'center', transition: 'all 0.2s', transform: (cart.length > 0 && !checkoutProcessing) ? 'scale(1)' : 'scale(0.98)' }}>
+                <span>{cart.length === 0 ? 'Empty Cart' : checkoutProcessing ? 'Processing' : `Pay ${fmt(cartTotal, settings?.sym)}`}</span>
+                {cart.length > 0 && !checkoutProcessing && <span style={{ fontSize: 12, fontWeight: 700, opacity: 0.8, marginTop: 2 }}>via {payMethod}</span>}
+              </button>
+              <button onClick={() => setShowCustDisplay(true)} title="Customer Display" style={{ padding: '0 20px', background: '#34C75915', border: 'none', borderRadius: 16, color: '#34C759', cursor: 'pointer', fontSize: 24, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>🖥️</button>
+            </div>
           </>
         )}
       </div>

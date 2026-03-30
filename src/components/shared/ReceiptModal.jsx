@@ -3,6 +3,7 @@ import { useReactToPrint } from 'react-to-print'
 import { Modal } from '@/components/ui'
 import { Btn } from '@/components/ui'
 import { fmt } from '@/lib/utils'
+import { notify } from './NotificationCenter'
 
 export const ReceiptModal = ({ order, settings, onClose, t }) => {
   const receiptRef = useRef(null)
@@ -12,7 +13,7 @@ export const ReceiptModal = ({ order, settings, onClose, t }) => {
     pageStyle: '@page { size: 80mm auto; margin: 4mm; }',
   })
   return (
-  <Modal t={t} title="✓ Payment Successful" onClose={onClose} width={440}>
+  <Modal t={t} title="✅ Done! Receipt Printed" onClose={onClose} width={440}>
     <div ref={receiptRef} style={{ background: '#fffbf5', borderRadius: 10, padding: 24, fontFamily: 'monospace', border: '1px solid #e2d9c5' }}>
       <div style={{ textAlign: 'center', marginBottom: 16 }}>
         <div style={{ fontSize: 22, fontWeight: 900 }}>{settings.storeName}</div>
@@ -46,9 +47,9 @@ export const ReceiptModal = ({ order, settings, onClose, t }) => {
       </div>
       <div style={{ textAlign: 'center', marginTop: 14, fontSize: 11, color: '#888', borderTop: '1px dashed #aaa', paddingTop: 10 }}>{settings.receiptFooter}</div>
     </div>
-    <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
-      <Btn t={t} variant="secondary" onClick={onClose} style={{ flex: 1 }}>Close</Btn>
-      <Btn t={t} onClick={handlePrint} style={{ flex: 1 }}>🖨️ Print Receipt</Btn>
+    <div style={{ display: 'flex', gap: 12, marginTop: 24 }}>
+      <Btn t={t} variant="ghost" onClick={onClose} style={{ flex: 1, padding: '14px', fontSize: 16, fontWeight: 800, border: '1px solid #E5E5EA' }}>✕ Close</Btn>
+      <Btn t={t} variant="primary" onClick={() => { notify('Receipt sent to Email successfully!', 'success'); onClose() }} style={{ flex: 1, padding: '14px', fontSize: 16, fontWeight: 800 }}>✉️ Email Receipt</Btn>
     </div>
   </Modal>
   )

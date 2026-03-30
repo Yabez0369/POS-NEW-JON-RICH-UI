@@ -38,6 +38,8 @@ const navByRole = {
     { key: 'pickup', l: 'Pickup Orders', i: '📦' },
   ],
   cashier: [
+    { type: 'group', l: 'Overview' },
+    { key: 'home', l: 'Home', i: '🏠' },
     { type: 'group', l: 'Selling' },
     { key: 'pos', l: 'POS Terminal', i: '🛒' },
     { key: 'cash', l: 'Cash Management', i: '💰' },

@@ -48,6 +48,7 @@ const StockTransferManagement = lazyRetry(() => import('@/pages/manager/StockTra
 const StocktakeManagement = lazyRetry(() => import('@/pages/manager/StocktakeManagement'))
 
 const POSTerminal = lazyRetry(() => import('@/pages/pos/POSTerminal'), 'POSTerminal')
+const CashierDashboard = lazyRetry(() => import('@/pages/cashier/CashierDashboard'), 'CashierDashboard')
 const CashierOrders = lazyRetry(() => import('@/pages/cashier/CashierOrders'), 'CashierOrders')
 const CashierReturns = lazyRetry(() => import('@/pages/cashier/CashierReturns'), 'CashierReturns')
 const HardwarePanel = lazyRetry(() => import('@/pages/cashier/HardwarePanel'), 'HardwarePanel')
@@ -160,7 +161,7 @@ function RoleRedirect() {
   const map = {
     admin: '/app/dashboard',
     manager: '/app/dashboard',
-    cashier: '/app/pos',
+    cashier: '/app/home',
     staff: '/app/staff-dashboard',
     customer: '/app/shop',
   }
@@ -293,6 +294,13 @@ function AppContent() {
                 : currentUser?.role === 'manager'
                   ? <ManagerDashboard orders={orders} products={products} users={users} counters={counters} settings={settings} t={t} />
                   : <Navigate to="/app" replace />
+            } />
+
+            {/* Cashier Home */}
+            <Route path="home" element={
+              <ProtectedRoute allowedRoles={['cashier', 'admin', 'manager']}>
+                <CashierDashboard />
+              </ProtectedRoute>
             } />
 
             {/* POS */}

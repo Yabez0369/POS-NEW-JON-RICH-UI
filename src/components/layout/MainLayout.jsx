@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Outlet } from 'react-router-dom'
+import { Outlet, useLocation } from 'react-router-dom'
 import { Sidebar } from './Sidebar'
 import { Topbar } from './Topbar'
 import { useTheme } from '@/context/ThemeContext'
@@ -10,6 +10,8 @@ export function MainLayout() {
   const { t } = useTheme()
   const { sidebarOpen, closeSidebar } = useAppStore()
   const [venues, setVenues] = useState([])
+  const location = useLocation()
+  const isPos = location.pathname.includes('/app/pos') || location.pathname.includes('/app/home')
 
   useEffect(() => {
     venuesService.fetchVenuesWithSites().then(setVenues)
@@ -17,6 +19,7 @@ export function MainLayout() {
 
   return (
     <div
+      className={isPos ? 'is-pos' : ''}
       style={{
         fontFamily: "'Plus Jakarta Sans',system-ui,sans-serif",
         background: t.bg,
@@ -39,20 +42,23 @@ export function MainLayout() {
         />
       )}
       <div
-        className="main-content"
+        className={`main-content ${isPos ? 'pos-main-content' : ''}`}
         style={{
-          marginLeft: 220,
+          marginLeft: isPos ? 0 : 220,
           minHeight: '100vh',
           display: 'flex',
           flexDirection: 'column',
+          transition: 'margin-left .25s ease'
         }}
       >
-        <Topbar venues={venues} />
+        {!isPos && <Topbar venues={venues} />}
         <div
           style={{
-            padding: 'clamp(10px,2vw,24px)',
+            padding: isPos ? 0 : 'clamp(10px,2vw,24px)',
             flex: 1,
             minWidth: 0,
+            display: 'flex',
+            flexDirection: 'column'
           }}
         >
           <Outlet />
