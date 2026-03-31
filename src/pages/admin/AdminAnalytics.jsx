@@ -11,19 +11,40 @@ export const AdminAnalytics = ({ orders, products, t, settings }) => {
 
   const totalRev = (shopOrders || []).reduce((s, o) => s + (o.total || 0), 0)
   const byPayment = { Card: 0, Cash: 0, QR: 0, Online: 0 }
-  ;(shopOrders || []).forEach(o => { if (o && o.payment) byPayment[o.payment] = (byPayment[o.payment] || 0) + (o.total || 0) })
+  ;(shopOrders || []).forEach(o => { 
+    const pmt = o?.payment_method || o?.payment
+    if (pmt) byPayment[pmt] = (byPayment[pmt] || 0) + (o.total || 0) 
+  })
   const byType = { 'in-store': 0, pickup: 0, delivery: 0 }
-  ;(shopOrders || []).forEach(o => { if (o) byType[o.orderType || 'in-store'] = (byType[o.orderType || 'in-store'] || 0) + 1 })
+  ;(shopOrders || []).forEach(o => { 
+    if (o) {
+      const oType = o.order_type || o.orderType || 'in-store'
+      byType[oType] = (byType[oType] || 0) + 1 
+    }
+  })
   const topP = {}
-  ;(shopOrders || []).forEach(o => (o?.items || []).forEach(i => { if (i?.name) topP[i.name] = (topP[i.name] || 0) + (i.qty || 0) }))
+  ;(shopOrders || []).forEach(o => {
+    const items = o?.items || o?.order_items || []
+    items.forEach(i => {
+      const name = i?.name || i?.product_name || 'Unknown'
+      const qty = i?.qty || i?.quantity || 0
+      if (name !== 'Unknown') topP[name] = (topP[name] || 0) + qty
+    })
+  })
   const topProducts = Object.entries(topP).sort((a, b) => b[1] - a[1]).slice(0, 6)
   const catRev = {}
-  ;(shopOrders || []).forEach(o => (o?.items || []).forEach(i => {
-    if (!i) return
-    const p = (products || []).find(x => x.name === i.name)
-    const cat = p?.category || 'Other'
-    catRev[cat] = (catRev[cat] || 0) + (i.price || 0) * (i.qty || 0)
-  }))
+  ;(shopOrders || []).forEach(o => {
+    const items = o?.items || o?.order_items || []
+    items.forEach(i => {
+      if (!i) return
+      const name = i.name || i.product_name
+      const qty = i.qty || i.quantity || 0
+      const price = i.price || i.unit_price || 0
+      const p = (products || []).find(x => x.name === name)
+      const cat = p?.category || 'Other'
+      catRev[cat] = (catRev[cat] || 0) + (price * qty)
+    })
+  })
   const maxRev = Math.max(...Object.values(catRev), 1)
   const colors = ['#dc2626', '#2563eb', '#16a34a', '#d97706', '#7c3aed', '#0d9488']
 
@@ -38,7 +59,7 @@ export const AdminAnalytics = ({ orders, products, t, settings }) => {
         <StatCard t={t} title="Total Revenue" value={fmt(totalRev, settings?.sym)} color={t.accent} icon="💰" trend={12} />
         <StatCard t={t} title="Orders" value={shopOrders.length} color={t.blue} icon="🧾" trend={8} />
         <StatCard t={t} title="Avg Order" value={fmt(shopOrders.length ? totalRev / shopOrders.length : 0, settings?.sym)} color={t.green} icon="📊" />
-        <StatCard t={t} title="Online Orders" value={shopOrders.filter(o => o.payment === 'Online').length} color={t.teal} icon="🌐" />
+        <StatCard t={t} title="Online Orders" value={shopOrders.filter(o => (o.payment_method || o.payment) === 'Online').length} color={t.teal} icon="🌐" />
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }} className="grid-2">

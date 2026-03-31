@@ -11,16 +11,23 @@ const SHOPS = [
 export const AdminDashboard = ({ orders, users, products, t, settings }) => {
   const [activeShop, setActiveShop] = useState('all')
 
-  const total = (orders || []).reduce((s, o) => s + (o.total || 0), 0)
-  const topP = {}
-  ;(orders || []).forEach(o => (o.items || []).forEach(i => { topP[i.name] = (topP[i.name] || 0) + i.qty }))
-  const top = Object.entries(topP).sort((a, b) => b[1] - a[1]).slice(0, 5)
-
   const shopOrders = SHOPS.map((_, si) => (orders || []).filter((__, idx) => idx % 3 === si))
   const activeShopOrders = activeShop === 'all'
     ? (orders || [])
     : shopOrders[SHOPS.findIndex(s => s.id === activeShop)] || []
   const shopTotal = activeShopOrders.reduce((s, o) => s + (o.total || 0), 0)
+  const total = (orders || []).reduce((s, o) => s + (o.total || 0), 0)
+
+  const topP = {}
+  ;(activeShopOrders || []).forEach(o => {
+    const items = o.items || o.order_items || []
+    items.forEach(i => {
+      const name = i.name || i.product_name || 'Unknown'
+      const qty = i.qty || i.quantity || 1
+      topP[name] = (topP[name] || 0) + qty
+    })
+  })
+  const top = Object.entries(topP).sort((a, b) => b[1] - a[1]).slice(0, 5)
 
   const lowStock = (products || []).filter(p => p.stock < 10 && p.stock > 0)
 
@@ -61,6 +68,34 @@ export const AdminDashboard = ({ orders, users, products, t, settings }) => {
         <StatCard t={t} title="Users" value={(users || []).length} color={t.green} icon="👥" />
         <StatCard t={t} title="Products" value={(products || []).length} color={t.yellow} icon="📦" />
       </div>
+
+      {lowStock.length > 0 && (
+        <Card t={t}>
+          <div style={{ fontSize: 14, fontWeight: 800, color: t.text, marginBottom: 14 }}>⚠️ Stock Alerts</div>
+          {lowStock.slice(0, 8).map(p => (
+            <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '7px 0', borderBottom: `1px solid ${t.border}` }}>
+              <span style={{ fontSize: 13, color: t.text }}>{p.emoji} {p.name}</span>
+              <span style={{ fontSize: 12, fontWeight: 800, color: p.stock < 5 ? t.red : t.yellow }}>{p.stock} left</span>
+            </div>
+          ))}
+        </Card>
+      )}
+
+      <Card t={t} style={{ padding: 0, overflow: 'hidden' }}>
+        <div style={{ padding: '16px 20px', borderBottom: `1px solid ${t.border}`, fontSize: 14, fontWeight: 800, color: t.text }}>Recent Orders</div>
+        <Table
+          t={t}
+          cols={['Order', 'Customer', 'Cashier', 'Total', 'Payment', 'Status']}
+          rows={activeShopOrders.slice(0, 8).map(o => [
+            o.id,
+            o.customerName || 'Walk-in',
+            o.cashierName || 'System',
+            fmt(o.total || 0, settings?.sym),
+            o.payment || '-',
+            <Badge t={t} text={o.status || 'pending'} color={o.status === 'completed' ? 'green' : 'red'} />,
+          ])}
+        />
+      </Card>
 
       {activeShop === 'all' && (
         <Card t={t}>
@@ -121,34 +156,6 @@ export const AdminDashboard = ({ orders, users, products, t, settings }) => {
           })}
         </Card>
       </div>
-
-      {lowStock.length > 0 && (
-        <Card t={t}>
-          <div style={{ fontSize: 14, fontWeight: 800, color: t.text, marginBottom: 14 }}>⚠️ Stock Alerts</div>
-          {lowStock.slice(0, 8).map(p => (
-            <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '7px 0', borderBottom: `1px solid ${t.border}` }}>
-              <span style={{ fontSize: 13, color: t.text }}>{p.emoji} {p.name}</span>
-              <span style={{ fontSize: 12, fontWeight: 800, color: p.stock < 5 ? t.red : t.yellow }}>{p.stock} left</span>
-            </div>
-          ))}
-        </Card>
-      )}
-
-      <Card t={t} style={{ padding: 0, overflow: 'hidden' }}>
-        <div style={{ padding: '16px 20px', borderBottom: `1px solid ${t.border}`, fontSize: 14, fontWeight: 800, color: t.text }}>Recent Orders</div>
-        <Table
-          t={t}
-          cols={['Order', 'Customer', 'Cashier', 'Total', 'Payment', 'Status']}
-          rows={activeShopOrders.slice(0, 8).map(o => [
-            o.id,
-            o.customerName || 'Walk-in',
-            o.cashierName || 'System',
-            fmt(o.total || 0, settings?.sym),
-            o.payment || '-',
-            <Badge t={t} text={o.status || 'pending'} color={o.status === 'completed' ? 'green' : 'red'} />,
-          ])}
-        />
-      </Card>
     </div>
   )
 }

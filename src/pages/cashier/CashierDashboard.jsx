@@ -159,7 +159,7 @@ export function CashierDashboard() {
             <h2 style={{ fontSize: 'clamp(48px, 6vw, 72px)', fontWeight: 800, margin: 0, letterSpacing: '-2px', textTransform: 'uppercase' }}>
               Start Sale
             </h2>
-            <p style={{ fontSize: 20, fontWeight: 500, opacity: 0.7, margin: '12px 0 0 0' }}>Tap anywhere to begin</p>
+            <p style={{ fontSize: 20, fontWeight: 500, opacity: 0.7, margin: '12px 0 0 0' }}>This is the standard used in most self-service checkouts</p>
           </button>
         </div>
 

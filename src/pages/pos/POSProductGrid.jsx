@@ -1,14 +1,11 @@
-import { useState } from 'react'
 import { ImgWithFallback } from '@/components/shared'
 import { fmt } from '@/lib/utils'
 import { useNavigate } from 'react-router-dom'
 
 export function POSProductGrid({
-  search, setSearch, cat, setCat, filteredProds, favProds,
+  search, setSearch, filteredProds,
   getItemDiscount, addToCart, scanMsg,
-  parkBill, parked, recallBill, showParkedDropdown, setShowParkedDropdown,
-  setShowBarcodeInput, setShowReprint, setShowReturnModal,
-  loadOrderInput, setLoadOrderInput, loadOrderForReturn, loadOrderLoading, loadedOrderForReturn,
+  loadedOrderForReturn,
   returnProcessMode,
   settings, t,
 }) {
@@ -19,152 +16,17 @@ export function POSProductGrid({
   const displayProds = filteredProds
 
   return (
-    <div style={{
-      flex: '0 0 60%',
-      display: 'flex',
-      flexDirection: 'column',
-      overflow: 'hidden',
-      background: '#F2F3F8',
-      position: 'relative',
-    }} className="pos-left">
-
-      {/* ─── TOP BAR: Home + More ─── */}
-      <div style={{
-        padding: '14px 20px',
-        background: '#FFFFFF',
-        borderBottom: '1px solid #E8E9EF',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        boxShadow: '0 1px 8px rgba(0,0,0,0.04)',
-        flexShrink: 0,
-      }}>
-        {/* Home button */}
-        <button
-          onClick={() => navigate('/app')}
-          style={{
-            padding: '10px 20px',
-            background: '#F2F3F8',
-            border: 'none',
-            borderRadius: 12,
-            color: '#1A1A2E',
-            fontSize: 15,
-            fontWeight: 800,
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
-            transition: 'background 0.15s',
-          }}
-        >
-          🏠 <span>Home</span>
-        </button>
-
-        {/* Scan feedback pill (center) */}
-        <div style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
-          {scanMsg && (
-            <div style={{
-              padding: '10px 24px',
-              borderRadius: 100,
-              background: scanMsg.includes('❌') ? '#FEE2E2' : '#DCFCE7',
-              color: scanMsg.includes('❌') ? '#B91C1C' : '#15803D',
-              fontSize: 15,
-              fontWeight: 800,
-              animation: 'fadeIn 0.2s ease',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 8,
-              boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
-            }}>
-              {scanMsg}
-            </div>
-          )}
-          {loadedOrderForReturn && !scanMsg && (
-            <div style={{
-              padding: '10px 24px',
-              borderRadius: 100,
-              background: '#FEF9C3',
-              color: '#92400E',
-              fontSize: 14,
-              fontWeight: 800,
-            }}>
-              {returnProcessMode === 'exchange'
-                ? '↔ Exchange Mode — Add replacement items'
-                : `↩️ Return: ${loadedOrderForReturn.order_number || loadedOrderForReturn.id}`}
-            </div>
-          )}
-        </div>
-
-        {/* ⋯ More menu */}
-        <div style={{ position: 'relative' }}>
-          <button
-            onClick={() => setShowMenu(v => !v)}
-            style={{
-              padding: '10px 20px',
-              background: showMenu ? '#1A1A2E' : '#F2F3F8',
-              border: 'none',
-              borderRadius: 12,
-              color: showMenu ? '#FFFFFF' : '#6B7280',
-              fontSize: 20,
-              fontWeight: 900,
-              cursor: 'pointer',
-              letterSpacing: 2,
-              transition: 'all 0.15s',
-              lineHeight: 1,
-            }}
-          >
-            ···
-          </button>
-
-          {showMenu && (
-            <>
-              {/* Backdrop */}
-              <div
-                onClick={() => setShowMenu(false)}
-                style={{ position: 'fixed', inset: 0, zIndex: 40 }}
-              />
-              <div style={{
-                position: 'absolute',
-                top: 'calc(100% + 10px)',
-                right: 0,
-                background: '#FFFFFF',
-                borderRadius: 20,
-                padding: '10px',
-                boxShadow: '0 20px 60px rgba(0,0,0,0.15)',
-                minWidth: 240,
-                zIndex: 50,
-                border: '1px solid #F0F0F0',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 6,
-              }}>
-                <div style={{ fontSize: 11, fontWeight: 800, color: '#9CA3AF', padding: '4px 12px', textTransform: 'uppercase', letterSpacing: 1 }}>Actions</div>
-                <button
-                  onClick={() => { parkBill(); setShowMenu(false) }}
-                  style={{ width: '100%', padding: '14px 16px', textAlign: 'left', background: '#F9FAFB', border: 'none', fontSize: 15, fontWeight: 700, borderRadius: 12, cursor: 'pointer', color: '#374151', display: 'flex', alignItems: 'center', gap: 10 }}
-                >
-                  ⏸ Park Sale
-                </button>
-                {parked.length > 0 && (
-                  <button
-                    onClick={() => { setShowParkedDropdown(true); setShowMenu(false) }}
-                    style={{ width: '100%', padding: '14px 16px', textAlign: 'left', background: '#EEF2FF', border: 'none', fontSize: 15, fontWeight: 700, borderRadius: 12, cursor: 'pointer', color: '#4338CA', display: 'flex', alignItems: 'center', gap: 10 }}
-                  >
-                    📋 Recall Sale ({parked.length})
-                  </button>
-                )}
-                {setShowReprint && (
-                  <button
-                    onClick={() => { setShowReprint(true); setShowMenu(false) }}
-                    style={{ width: '100%', padding: '14px 16px', textAlign: 'left', background: '#F9FAFB', border: 'none', fontSize: 15, fontWeight: 700, borderRadius: 12, cursor: 'pointer', color: '#374151', display: 'flex', alignItems: 'center', gap: 10 }}
-                  >
-                    🖨️ Reprint Receipt
-                  </button>
-                )}
-              </div>
-            </>
-          )}
-        </div>
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', background: t.bg || '#F5F5F7', borderRight: 'none' }} className="pos-left">
+      <div style={{ padding: '16px 20px', background: t.card || '#FFFFFF', borderBottom: `1px solid ${t.border}`, display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center', boxShadow: '0 2px 10px rgba(0,0,0,0.02)' }}>
+        {loadedOrderForReturn ? (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flex: 1, minWidth: 200, flexWrap: 'wrap' }}>
+            <span style={{ fontSize: 12, fontWeight: 800, color: t.yellow, background: t.yellowBg, padding: '6px 10px', borderRadius: 8, border: `1px solid ${t.yellowBorder}` }}>
+              {returnProcessMode === 'exchange' ? '↔ Exchange: Add replacement items below' : `↩️ Return: ${loadedOrderForReturn.order_number || loadedOrderForReturn.id}`}
+            </span>
+          </div>
+        ) : (
+          <div style={{ flex: 1 }} />
+        )}
       </div>
 
       {/* ─── SEARCH BAR (top, below header) ─── */}
