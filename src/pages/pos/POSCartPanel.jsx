@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { ImgWithFallback } from '@/components/shared'
 import { Toggle, Select } from '@/components/ui'
 import { fmt } from '@/lib/utils'
@@ -41,6 +41,15 @@ export function POSCartPanel({
   const [editingPriceId, setEditingPriceId] = useState(null)
   const [editPriceVal, setEditPriceVal] = useState('')
   const [showCancelConfirm, setShowCancelConfirm] = useState(false)
+  const [showDoubleTapHint, setShowDoubleTapHint] = useState(true)
+  const [deleteToast, setDeleteToast] = useState(null) // { name, id }
+
+  const handleDoubleTapDelete = (item) => {
+    setCart(c => c.filter(i => i.id !== item.id))
+    setDeleteToast({ name: item.name, id: item.id })
+    clearTimeout(window.__deleteToastTimer)
+    window.__deleteToastTimer = setTimeout(() => setDeleteToast(null), 2800)
+  }
 
   const isManager = user?.role === 'admin' || user?.role === 'manager'
   const showExchangeSections = loadedOrderForReturn && returnProcessMode === 'exchange'
@@ -62,7 +71,98 @@ export function POSCartPanel({
       background: '#FFFFFF',
       borderLeft: '1px solid #E8E9EF',
       boxShadow: '-8px 0 32px rgba(0,0,0,0.04)',
+      position: 'relative',
     }} className="pos-right">
+
+      {/* ─── DELETE SNACKBAR ─── */}
+      <div style={{
+        position: 'absolute',
+        top: 12,
+        left: '50%',
+        transform: deleteToast ? 'translateX(-50%) translateY(0) scale(1)' : 'translateX(-50%) translateY(-60px) scale(0.92)',
+        zIndex: 9999,
+        transition: 'all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)',
+        opacity: deleteToast ? 1 : 0,
+        pointerEvents: deleteToast ? 'auto' : 'none',
+        width: 'calc(100% - 24px)',
+        maxWidth: 360,
+      }}>
+        <div style={{
+          background: 'rgba(255,255,255,0.97)',
+          backdropFilter: 'blur(20px) saturate(180%)',
+          WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+          borderRadius: 14,
+          padding: '12px 14px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 10,
+          boxShadow: '0 2px 4px rgba(0,0,0,0.03), 0 8px 24px rgba(99,102,241,0.12), 0 1px 0 inset rgba(255,255,255,0.8)',
+          border: '1px solid rgba(99,102,241,0.12)',
+          position: 'relative',
+          overflow: 'hidden',
+        }}>
+          {/* Left accent */}
+          <div style={{
+            position: 'absolute', left: 0, top: 0, bottom: 0, width: 3,
+            background: 'linear-gradient(180deg, #EF4444, #EF444488)',
+            borderRadius: '14px 0 0 14px',
+          }} />
+
+          {/* Icon */}
+          <div style={{
+            width: 32, height: 32, borderRadius: 9,
+            background: '#FEF2F2',
+            border: '1px solid #FECACA',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            flexShrink: 0,
+          }}>
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <path d="M5 3V2.5C5 1.67 5.67 1 6.5 1h3C10.33 1 11 1.67 11 2.5V3M2 4h12M3.5 4l.7 9.2c.08.99.9 1.8 1.9 1.8h3.8c1 0 1.82-.81 1.9-1.8L12.5 4" stroke="#EF4444" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </div>
+
+          {/* Text */}
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{
+              fontSize: 13, fontWeight: 700, color: '#1E293B',
+              overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+            }}>
+              {deleteToast?.name}
+            </div>
+            <div style={{ fontSize: 11, fontWeight: 600, color: '#94A3B8', marginTop: 1 }}>
+              Removed from cart
+            </div>
+          </div>
+
+          {/* Done badge */}
+          <div style={{
+            fontSize: 11, fontWeight: 700, color: '#059669',
+            background: '#F0FDF4',
+            border: '1px solid #BBF7D0',
+            borderRadius: 8,
+            padding: '4px 10px',
+            whiteSpace: 'nowrap',
+            display: 'flex', alignItems: 'center', gap: 4,
+          }}>
+            <svg width="10" height="10" viewBox="0 0 12 12" fill="none">
+              <path d="M2.5 6.5L5 9L9.5 3.5" stroke="#059669" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+            Done
+          </div>
+
+          {/* Progress bar */}
+          <div style={{
+            position: 'absolute', bottom: 0, left: 0, right: 0, height: 2,
+            background: '#FEE2E2', overflow: 'hidden',
+          }}>
+            <div style={{
+              height: '100%', background: 'linear-gradient(90deg, #EF4444, #EF444440)',
+              transformOrigin: 'left',
+              animation: deleteToast ? 'notif-progress 2800ms linear forwards' : 'none',
+            }} />
+          </div>
+        </div>
+      </div>
 
       {/* ─── CUSTOMER STRIP ─── */}
       <div style={{ padding: '14px 18px', borderBottom: '1px solid #F0F0F5', background: '#FAFBFF' }}>
@@ -161,6 +261,44 @@ export function POSCartPanel({
           )
         )}
       </div>
+  
+      {/* ─── DOUBLE TAP HINT ─── */}
+      {showDoubleTapHint && cart.length > 0 && !loadedOrderForReturn && (
+        <div style={{
+          margin: '8px 14px 4px 14px',
+          padding: '8px 12px',
+          background: 'linear-gradient(135deg, rgba(99,102,241,0.04), rgba(99,102,241,0.08))',
+          border: '1px solid rgba(99,102,241,0.1)',
+          borderRadius: 10,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          animation: 'fadeIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div style={{ 
+              width: 24, height: 24, borderRadius: 7, 
+              background: '#EEF2FF', display: 'flex', alignItems: 'center', 
+              justifyContent: 'center', fontSize: 13,
+              border: '1px solid #E0E7FF',
+            }}>👆</div>
+            <span style={{ fontSize: 12, fontWeight: 600, color: '#6366F1' }}>
+              Double tap a product to remove it instantly
+            </span>
+          </div>
+          <button
+            onClick={() => setShowDoubleTapHint(false)}
+            style={{
+              background: 'none', color: '#A5B4FC', border: 'none',
+              borderRadius: 6, padding: '2px 6px',
+              fontSize: 14, fontWeight: 600, cursor: 'pointer',
+              transition: 'all 0.15s', lineHeight: 1,
+            }}
+            onMouseEnter={e => { e.currentTarget.style.color = '#6366F1'; e.currentTarget.style.background = '#EEF2FF' }}
+            onMouseLeave={e => { e.currentTarget.style.color = '#A5B4FC'; e.currentTarget.style.background = 'none' }}
+          >✕</button>
+        </div>
+      )}
 
       {/* ─── CART ITEMS ─── */}
       <div style={{ flex: 1, overflowY: 'auto', padding: '8px 10px', WebkitOverflowScrolling: 'touch' }}>
@@ -181,7 +319,8 @@ export function POSCartPanel({
                     editingPriceId={editingPriceId} setEditingPriceId={setEditingPriceId}
                     editPriceVal={editPriceVal} setEditPriceVal={setEditPriceVal}
                     updateCartItemPrice={updateCartItemPrice} isManager={isManager}
-                    settings={settings} t={t} />
+                    settings={settings} t={t}
+                    onDoubleTapDelete={handleDoubleTapDelete} />
                 ))}
               </div>
             )}
@@ -195,7 +334,8 @@ export function POSCartPanel({
                     editingPriceId={editingPriceId} setEditingPriceId={setEditingPriceId}
                     editPriceVal={editPriceVal} setEditPriceVal={setEditPriceVal}
                     updateCartItemPrice={updateCartItemPrice} isManager={isManager}
-                    settings={settings} t={t} />
+                    settings={settings} t={t}
+                    onDoubleTapDelete={handleDoubleTapDelete} />
                 ))}
               </div>
             )}
@@ -208,7 +348,8 @@ export function POSCartPanel({
                 editPriceVal={editPriceVal} setEditPriceVal={setEditPriceVal}
                 updateCartItemPrice={updateCartItemPrice} isManager={isManager}
                 isNew={i === cart.length - 1}
-                settings={settings} t={t} />
+                settings={settings} t={t}
+                onDoubleTapDelete={handleDoubleTapDelete} />
             ))}
           </>
         )}
@@ -438,18 +579,50 @@ export function POSCartPanel({
 function CartItem({
   item, updateQty, setCart, removeFromCart,
   editingPriceId, setEditingPriceId, editPriceVal, setEditPriceVal,
-  updateCartItemPrice, isManager, isNew, settings, t,
+  updateCartItemPrice, isManager, isNew, settings, t, onDoubleTapDelete,
 }) {
+  const [flashing, setFlashing] = useState(false)
+  const lastTapRef = useRef(0)
+
+  const triggerDelete = () => {
+    setFlashing(true)
+    setTimeout(() => {
+      if (onDoubleTapDelete) onDoubleTapDelete(item)
+      else setCart(c => c.filter(i => i.id !== item.id))
+    }, 200)
+  }
+
+  const handleDoubleClick = () => {
+    triggerDelete()
+  }
+
+  const handleTouchEnd = (e) => {
+    // Ignore taps on the qty +/- buttons
+    if (e.target.closest('button')) return
+    const now = Date.now()
+    const gap = now - lastTapRef.current
+    if (gap < 300 && gap > 0) {
+      e.preventDefault()
+      triggerDelete()
+    }
+    lastTapRef.current = now
+  }
+
   return (
     <div style={{
       display: 'flex', gap: 10, alignItems: 'center',
       padding: '13px 10px',
       borderRadius: 14,
-      background: isNew ? '#F0F4FF' : '#FFFFFF',
-      border: `2px solid ${isNew ? '#C7D2FE' : 'transparent'}`,
+      background: flashing ? '#FEE2E2' : isNew ? '#F0F4FF' : '#FFFFFF',
+      border: `2px solid ${flashing ? '#FCA5A5' : isNew ? '#C7D2FE' : 'transparent'}`,
       marginBottom: 6,
-      transition: 'all 0.25s ease',
-    }}>
+      transition: 'background 0.15s ease, border 0.15s ease, all 0.25s ease',
+      cursor: 'pointer',
+      userSelect: 'none',
+    }}
+    onDoubleClick={handleDoubleClick}
+    onTouchEnd={handleTouchEnd}
+    >
       <div style={{ width: 48, height: 48, borderRadius: 12, overflow: 'hidden', flexShrink: 0, background: '#F8FAFF', border: '1px solid #E8E9EF' }}>
         <ImgWithFallback src={item.image_url || item.image} alt={item.name} emoji={item.emoji} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
       </div>

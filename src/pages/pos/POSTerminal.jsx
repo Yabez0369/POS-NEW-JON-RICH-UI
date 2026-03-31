@@ -10,6 +10,7 @@ import dayjs from 'dayjs'
 import { POSProductGrid } from './POSProductGrid'
 import { POSCartPanel } from './POSCartPanel'
 import { POSFlowView } from './POSFlowView'
+import { POSCustomerModal } from './POSCustomerModal'
 import { CashierReturns } from '@/pages/cashier/CashierReturns'
 import { inventoryService, productsService, ordersService, parkedBillsService, paymentsService, sitePricesService, promotionsService, returnsService } from '@/services'
 import { isSupabaseConfigured } from '@/lib/supabase'
@@ -56,13 +57,8 @@ export const POSTerminal = ({ products, setProducts, orders, setOrders, returns 
   const [splitCash, setSplitCash] = useState('')
   const [splitCard, setSplitCard] = useState('')
   const [showReceipt, setShowReceipt] = useState(null)
-  const [custSearch, setCustSearch] = useState('')
   const [selCust, setSelCust] = useState(null)
   const [showNewCust, setShowNewCust] = useState(false)
-  const [otpStep, setOtpStep] = useState(1)
-  const [newCustForm, setNewCustForm] = useState({ name: '', phone: '' })
-  const [generatedOtp, setGeneratedOtp] = useState('')
-  const [otpInput, setOtpInput] = useState('')
   const [cashGiven, setCashGiven] = useState('')
   const [cardNum, setCardNum] = useState('')
   const [cardExp, setCardExp] = useState('')
@@ -103,6 +99,8 @@ export const POSTerminal = ({ products, setProducts, orders, setOrders, returns 
   const [posStep, setPosStep] = useState('scan') // 'scan' | 'payment' | 'processing' | 'success'
   const [completedOrder, setCompletedOrder] = useState(null)
   const [cardTapStep, setCardTapStep] = useState('waiting') // 'waiting' | 'processing' | 'approved'
+  const [showCardPopup, setShowCardPopup] = useState(false)
+  const [cardPopupStep, setCardPopupStep] = useState('waiting') // 'waiting' | 'processing' | 'approved'
 
   const [variantProduct, setVariantProduct] = useState(null)
   const [selectedVariant, setSelectedVariant] = useState({})
@@ -220,8 +218,12 @@ export const POSTerminal = ({ products, setProducts, orders, setOrders, returns 
     const effectivePrice = overridePrice != null ? Number(overridePrice) : getEffectiveBasePrice(p)
     setCart(c => {
       const ex = c.find(i => i.id === cartId)
-      if (ex) return c.map(i => i.id === cartId ? { ...i, qty: i.qty + 1 } : i)
-      return [...c, { ...p, id: cartId, originalId: p.id, name: displayName, qty: 1, discount: disc, price: effectivePrice, taxPct: p.taxPct ?? 20, overridePrice: overridePrice != null ? Number(overridePrice) : null }]
+      if (ex) {
+        const updated = { ...ex, qty: ex.qty + 1 }
+        return [updated, ...c.filter(i => i.id !== cartId)]
+      }
+      const newItem = { ...p, id: cartId, originalId: p.id, name: displayName, qty: 1, discount: disc, price: effectivePrice, taxPct: p.taxPct ?? 20, overridePrice: overridePrice != null ? Number(overridePrice) : null }
+      return [newItem, ...c]
     })
     if (disc > 0) notify(`🎉 ${disc}% offer applied on ${p.name}!`, 'success')
   }
@@ -303,12 +305,18 @@ export const POSTerminal = ({ products, setProducts, orders, setOrders, returns 
   const parkBill = async () => {
     if (cart.length === 0) return
     const cartForStore = cart.map(i => ({ id: i.id, originalId: i.originalId, name: i.name, qty: i.qty, price: i.price, discount: i.discount || 0, overridePrice: i.overridePrice ?? null }))
+    
+    // Strict UUID check to avoid foreign key violations with mock/simulated IDs
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+    const isRealUuid = selCust?.id && uuidRegex.test(String(selCust.id))
+    const validCustId = isRealUuid ? selCust.id : null
+    
     try {
       if (isSupabaseConfigured()) {
-        const pb = await parkedBillsService.parkBill(effectiveSiteId, user?.counter_id, user?.id, selCust?.id, cartForStore)
-        setParked(p => [...p, { id: pb.id, cart, customerId: selCust?.id, ts: new Date().toLocaleString() }])
+        const pb = await parkedBillsService.parkBill(effectiveSiteId, user?.counter_id, user?.id, validCustId, cartForStore)
+        setParked(p => [...p, { id: pb.id, cart, customerId: validCustId, customerData: selCust, ts: new Date().toLocaleString() }])
       } else {
-        setParked(p => [...p, { id: genId('PARKED'), cart, customerId: selCust?.id, ts: ts() }])
+        setParked(p => [...p, { id: genId('PARKED'), cart, customerId: selCust?.id, customerData: selCust, ts: ts() }])
       }
       setCart([]); setSelCust(null)
       notify('Bill parked', 'info')
@@ -319,7 +327,13 @@ export const POSTerminal = ({ products, setProducts, orders, setOrders, returns 
 
   const recallBill = async (pb) => {
     setCart(pb.cart)
-    setSelCust(pb.customerId ? users?.find(u => u.id === pb.customerId) || null : null)
+    // If we have customerData stored in the parked record (from parkBill above), use it. 
+    // Otherwise fallback to searching the local users array.
+    if (pb.customerData) {
+      setSelCust(pb.customerData)
+    } else {
+      setSelCust(pb.customerId ? (users?.find(u => u.id === pb.customerId) || null) : null)
+    }
     if (isSupabaseConfigured() && pb.id) {
       try { await parkedBillsService.deleteParkedBill(pb.id) } catch (_) { }
     }
@@ -545,32 +559,6 @@ export const POSTerminal = ({ products, setProducts, orders, setOrders, returns 
     setShowBarcodeInput(false)
   }
 
-  const lookupCustomer = () => {
-    const c = users.find(u => u.role === 'customer' && (u.phone === custSearch || u.name.toLowerCase().includes(custSearch.toLowerCase()) || u.email.toLowerCase().includes(custSearch.toLowerCase())))
-    if (c) { setSelCust(c); notify(`✓ ${c.name} — ⭐${c.loyaltyPoints} pts`, 'success') }
-    else notify('Customer not found. Add as new?', 'warning')
-  }
-
-  const sendNewCustOtp = () => {
-    if (!newCustForm.name || !newCustForm.phone) return
-    const code = String(Math.floor(100000 + Math.random() * 900000))
-    setGeneratedOtp(code)
-    setOtpStep(2)
-    notify(`OTP for ${newCustForm.phone}: ${code}`, 'info', 8000)
-  }
-
-  const verifyNewCust = () => {
-    if (otpInput !== generatedOtp) { notify('Wrong OTP', 'error'); return }
-    // TODO: Replace with Supabase Auth invite flow — no password stored client-side
-    const nc = { id: Date.now(), name: newCustForm.name, phone: newCustForm.phone, email: `${newCustForm.phone.replace(/\s/g, '')}@customer.com`, role: 'customer', avatar: newCustForm.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2), active: true, joinDate: ts(), loyaltyPoints: 0, tier: 'Bronze', totalSpent: 0 }
-    setUsers(us => [...us, nc])
-    setSelCust(nc)
-    setShowNewCust(false)
-    setOtpStep(1); setNewCustForm({ name: '', phone: '' }); setOtpInput('')
-    addAudit(user, 'Customer Registered', 'POS', `New customer ${nc.name} registered`)
-    notify(`${nc.name} registered & attached!`, 'success')
-  }
-
   const processOrder = async () => {
     if (checkoutProcessing) return
     setCheckoutProcessing(true)
@@ -590,7 +578,8 @@ export const POSTerminal = ({ products, setProducts, orders, setOrders, returns 
           siteId: effectiveSiteId,
           counterId: user?.counter_id || null,
           cashierId: user?.id,
-          customerId: selCust?.id || null,
+          // FIX: Don't send mock customer IDs to Supabase foreign key field
+          customerId: (selCust?.id && !String(selCust.id).startsWith('00000000')) ? selCust.id : null,
           items: orderItems,
           subtotal: cartSubtotal,
           taxAmount: cartTax,
@@ -680,8 +669,8 @@ export const POSTerminal = ({ products, setProducts, orders, setOrders, returns 
     notify(`Order ${orderId} complete! 🎉`, 'success')
     setShowReceipt(newOrder)
     setCompletedOrder(newOrder)
-    setPosStep('success')
-    setCart([]); setCashGiven(''); setCardNum(''); setCardExp(''); setCardCvv(''); setQrPaid(false); setAppliedCoupon(null); setCouponCode(''); setLoyaltyRedeem(false); setShowQrModal(false); setSplitCash(''); setSplitCard(''); setManualDiscountPct(0)
+    setPosStep('scan')
+    setCart([]); setSelCust(null); setCashGiven(''); setCardNum(''); setCardExp(''); setCardCvv(''); setQrPaid(false); setAppliedCoupon(null); setCouponCode(''); setLoyaltyRedeem(false); setShowQrModal(false); setSplitCash(''); setSplitCard(''); setManualDiscountPct(0)
     setCheckoutProcessing(false)
   }
 
@@ -711,13 +700,25 @@ export const POSTerminal = ({ products, setProducts, orders, setOrders, returns 
       if (Math.abs(sc + cc - cartTotal) > 0.01) { notify('Split amounts must equal the total', 'error'); return }
       if (sc <= 0 || cc <= 0) { notify('Both amounts must be > 0', 'error'); return }
     }
-    if (payMethod === 'Card') { setPosStep('processing'); setCardTapStep('waiting'); return }
+    if (payMethod === 'Card') {
+      // Show card popup overlay on top of payment step
+      setShowCardPopup(true)
+      setCardPopupStep('waiting')
+      return
+    }
     setPosStep('processing')
     processOrder()
   }
   const simulateCardTap = () => {
-    setCardTapStep('processing')
-    setTimeout(() => { setCardTapStep('approved'); setTimeout(() => processOrder(), 800) }, 1800)
+    setCardPopupStep('processing')
+    setTimeout(() => {
+      setCardPopupStep('approved')
+      setTimeout(() => {
+        setShowCardPopup(false)
+        setCardPopupStep('waiting')
+        processOrder()
+      }, 800)
+    }, 1800)
   }
 
   if (isLoading) {
@@ -755,6 +756,7 @@ export const POSTerminal = ({ products, setProducts, orders, setOrders, returns 
         goToPayment={goToPayment} backToScan={backToScan}
         startNewSale={startNewSale} confirmPayment={confirmPayment}
         simulateCardTap={simulateCardTap}
+        showCardPopup={showCardPopup} setShowCardPopup={setShowCardPopup} cardPopupStep={cardPopupStep}
         cart={cart} updateQty={updateQty} setCart={setCart}
         search={search} setSearch={setSearch} scanMsg={scanMsg}
         filteredProds={filteredProds} getItemDiscount={getItemDiscount}
@@ -772,9 +774,8 @@ export const POSTerminal = ({ products, setProducts, orders, setOrders, returns 
         parkBill={parkBill} parked={parked} recallBill={recallBill}
         setShowReprint={setShowReprint} setShowBarcodeInput={setShowBarcodeInput}
         showParkedDropdown={showParkedDropdown} setShowParkedDropdown={setShowParkedDropdown}
-        showReceipt={showReceipt} setShowReceipt={setShowReceipt}
-        checkoutProcessing={checkoutProcessing}
         settings={settings} t={t}
+        products={products}
       />
 
       {variantProduct && (
@@ -816,29 +817,17 @@ export const POSTerminal = ({ products, setProducts, orders, setOrders, returns 
         </Modal>
       )}
 
-      {showNewCust && (
-        <Modal t={t} title="Register New Customer" subtitle="Verify phone number via OTP" onClose={() => { setShowNewCust(false); setOtpStep(1) }}>
-          {otpStep === 1 ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-              <Input t={t} label="Customer Full Name" value={newCustForm.name} onChange={v => setNewCustForm(f => ({ ...f, name: v }))} required />
-              <Input t={t} label="Mobile Number" value={newCustForm.phone} onChange={v => setNewCustForm(f => ({ ...f, phone: v }))} placeholder="+44 7700 900000" required note="OTP will be sent to verify this number" />
-              <Btn t={t} onClick={sendNewCustOtp} disabled={!newCustForm.name || !newCustForm.phone} fullWidth>Send OTP →</Btn>
-            </div>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-              <div style={{ background: t.yellowBg, border: `1px solid ${t.yellowBorder}`, borderRadius: 10, padding: '14px 16px' }}>
-                <div style={{ fontSize: 13, color: t.yellow, fontWeight: 700, marginBottom: 4 }}>📱 Demo OTP sent to {newCustForm.phone}</div>
-                <div style={{ fontSize: 28, fontWeight: 900, color: t.yellow, letterSpacing: 8, fontFamily: 'monospace' }}>{generatedOtp}</div>
-              </div>
-              <Input t={t} label="Enter 6-Digit OTP" value={otpInput} onChange={setOtpInput} placeholder="______" />
-              <div style={{ display: 'flex', gap: 10 }}>
-                <Btn t={t} variant="ghost" onClick={() => setOtpStep(1)}>← Back</Btn>
-                <Btn t={t} variant="success" onClick={verifyNewCust} disabled={otpInput.length < 6} style={{ flex: 1 }}>✓ Verify & Register</Btn>
-              </div>
-            </div>
-          )}
-        </Modal>
-      )}
+      <POSCustomerModal
+        isOpen={showNewCust}
+        onClose={() => setShowNewCust(false)}
+        users={users}
+        setUsers={setUsers}
+        setSelCust={setSelCust}
+        t={t}
+        addAudit={addAudit}
+        user={user}
+        settings={settings}
+      />
 
       {cardFlowState && (
         <Modal t={t} title="Card Terminal Simulated" onClose={() => setCardFlowState(null)}>
@@ -956,7 +945,134 @@ export const POSTerminal = ({ products, setProducts, orders, setOrders, returns 
         </div>
       )}
 
-      {showReceipt && <ReceiptModal order={showReceipt} settings={settings} onClose={() => setShowReceipt(null)} t={t} />}
+      {showParkedDropdown && (
+        <Modal 
+          t={t} 
+          title="Recall Parked Sale" 
+          subtitle={`${parked.length} transactions waiting for attention`}
+          onClose={() => setShowParkedDropdown(false)}
+        >
+          <div style={{ 
+            display: 'flex', 
+            flexDirection: 'column', 
+            gap: 16, 
+            maxHeight: '65vh', 
+            overflowY: 'auto',
+            padding: '4px 12px 24px 4px',
+          }} className="recall-modal-list">
+            {parked.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '60px 20px', color: t.text4 }}>
+                <div style={{ fontSize: 60, marginBottom: 16, filter: 'grayscale(1)' }}>📂</div>
+                <div style={{ fontSize: 18, fontWeight: 800 }}>No parked sales at the moment</div>
+              </div>
+            ) : parked.map((pb, idx) => {
+              const totalItems = pb.cart?.reduce((acc, curr) => acc + curr.qty, 0) || 0
+              const totalPrice = pb.cart?.reduce((acc, curr) => acc + (curr.price * (1 - (curr.discount || 0) / 100) * curr.qty), 0) || 0
+              const previewEmojis = pb.cart?.slice(0, 5).map(i => i.emoji).join(' ')
+              
+              return (
+                <div key={pb.id || idx} style={{
+                  background: '#FFFFFF',
+                  border: `1px solid #E8EAF0`,
+                  borderRadius: 24,
+                  padding: '20px 24px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 18,
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.03)',
+                  transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                  position: 'relative',
+                  cursor: 'default'
+                }} className="recall-card">
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                      <div style={{ 
+                        width: 48, height: 48, borderRadius: 14, 
+                        background: 'linear-gradient(135deg, #F0F4FF, #E0E7FF)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontSize: 20
+                      }}>👤</div>
+                      <div>
+                        <div style={{ fontSize: 16, fontWeight: 900, color: '#111827' }}>
+                          {pb.customerData?.name || 'Walk-in Customer'}
+                        </div>
+                        <div style={{ fontSize: 13, fontWeight: 600, color: '#9CA3AF', marginTop: 1 }}>
+                          {pb.ts}
+                        </div>
+                      </div>
+                    </div>
+                    <div style={{ textAlign: 'right' }}>
+                      <div style={{ fontSize: 22, fontWeight: 900, color: '#111827', letterSpacing: '-0.5px' }}>
+                        {fmt(totalPrice, settings?.sym)}
+                      </div>
+                      <div style={{ fontSize: 12, fontWeight: 800, color: '#6366F1', textTransform: 'uppercase', letterSpacing: '0.8px' }}>
+                        {totalItems} Items
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'space-between',
+                    padding: '14px 20px',
+                    background: '#F9FAFB',
+                    borderRadius: 16,
+                    border: '1px solid #F3F4F6'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                      <span style={{ fontSize: 18 }}>{previewEmojis}</span>
+                      {pb.cart?.length > 5 && <span style={{ fontSize: 11, fontWeight: 800, color: '#9CA3AF', paddingLeft: 4 }}>+{pb.cart.length - 5} more</span>}
+                    </div>
+                    <div style={{ display: 'flex', gap: 10 }}>
+                      <button 
+                        onClick={async (e) => {
+                          e.stopPropagation();
+                          if (isSupabaseConfigured() && pb.id) {
+                            try { await parkedBillsService.deleteParkedBill(pb.id) } catch (_) { }
+                          }
+                          setParked(p => p.filter(x => (x.id || x.ts) !== (pb.id || pb.ts)))
+                        }}
+                        style={{
+                          padding: '10px 16px',
+                          background: 'transparent',
+                          color: '#9CA3AF',
+                          border: '1px solid #E5E7EB',
+                          borderRadius: 12,
+                          fontSize: 13,
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                          transition: 'all 0.2s'
+                        }}
+                        onMouseOver={(e) => { e.target.style.color = '#EF4444'; e.target.style.borderColor = '#FCA5A5' }}
+                        onMouseOut={(e) => { e.target.style.color = '#9CA3AF'; e.target.style.borderColor = '#E5E7EB' }}
+                      >Discard</button>
+                      <button 
+                        onClick={() => recallBill(pb)}
+                        style={{
+                          padding: '12px 28px',
+                          background: 'linear-gradient(135deg, #4F46E5, #6366F1)',
+                          color: '#fff',
+                          border: 'none',
+                          borderRadius: 14,
+                          fontSize: 14,
+                          fontWeight: 900,
+                          cursor: 'pointer',
+                          boxShadow: '0 8px 16px rgba(79,70,229,0.25)',
+                          transition: 'all 0.2s cubic-bezier(1, 0, 0, 1)'
+                        }}
+                        className="recall-btn"
+                      >Recall Sale</button>
+                    </div>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </Modal>
+      )}
+
+      {showReceipt && <ReceiptModal order={showReceipt} settings={settings} onClose={() => setShowReceipt(null)} onNewSale={startNewSale} t={t} />}
 
       {showReprint && (
         <Modal t={t} title="Reprint Receipt" onClose={() => { setShowReprint(false); setReprintOrder(null); setReprintOrderNum('') }}>

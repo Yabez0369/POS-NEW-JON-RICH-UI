@@ -1,6 +1,7 @@
 // ═══════════════════════════════════════════════════════════════
 // POS FLOW VIEW — Step-Based Guided Cashier Terminal
 // Steps: Scan → Payment → Processing → Success
+// Card payment uses popup overlay instead of full-page step
 // ═══════════════════════════════════════════════════════════════
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -15,6 +16,8 @@ export function POSFlowView({
   // Step state
   posStep, setPosStep, completedOrder, cardTapStep,
   goToPayment, backToScan, startNewSale, confirmPayment, simulateCardTap,
+  // Card popup
+  showCardPopup, setShowCardPopup, cardPopupStep,
   // Cart
   cart, updateQty, setCart, search, setSearch, scanMsg,
   filteredProds, getItemDiscount, handleProductClick,
@@ -36,19 +39,37 @@ export function POSFlowView({
   checkoutProcessing,
   // Settings
   settings, t,
+  products,
 }) {
   const navigate = useNavigate()
   const [showMenu, setShowMenu] = useState(false)
   const [animDir, setAnimDir] = useState('right')
   const searchRef = useRef(null)
   const [lastAddedId, setLastAddedId] = useState(null)
+  const [itemAddedAnim, setItemAddedAnim] = useState(false)
+  const lastTapMap = useRef({})
+
+  // Handle immediate barcode scan matching
+  useEffect(() => {
+    if (!search.trim() || !products) return
+    const s = search.trim().toLowerCase()
+    const match = products.find(p => 
+      (p.barcode && p.barcode.toLowerCase() === s) || 
+      (p.sku && p.sku.toLowerCase() === s)
+    )
+    if (match) {
+      handleProductClick(match)
+      setSearch('')
+    }
+  }, [search, products, handleProductClick])
 
   // Track last added item for highlight
   useEffect(() => {
     if (cart.length > 0) {
       const last = cart[cart.length - 1]
       setLastAddedId(last.id)
-      const tm = setTimeout(() => setLastAddedId(null), 1500)
+      setItemAddedAnim(true)
+      const tm = setTimeout(() => { setLastAddedId(null); setItemAddedAnim(false) }, 1500)
       return () => clearTimeout(tm)
     }
   }, [cart.length])
@@ -71,24 +92,48 @@ export function POSFlowView({
     backToScan()
   }
 
+  // Inline delete handler with animation
+  const handleInlineDelete = (itemId) => {
+    setCart(prev => prev.filter(i => i.id !== itemId))
+  }
+
   // ── STEP 1: SCAN & CART ──
   const renderScanStep = () => (
     <div className="pos-scan-step" key="scan">
-      {/* LEFT: Product Grid */}
+      {/* LEFT: Product Grid / Scan Zone */}
       <div className="pos-scan-left">
         <div className="pos-scan-search-wrap">
-          <div className="pos-scan-search">
-            <span className="pos-scan-search-icon">🔍</span>
-            <input
-              ref={searchRef}
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              placeholder="Scan barcode or search products..."
-              autoFocus
-            />
-            {search && (
-              <button className="pos-scan-search-clear" onClick={() => setSearch('')}>×</button>
-            )}
+          <div className="pos-scan-search-container">
+            <div className="pos-scan-status-badge">
+              <span className="pos-scan-pulse-dot"></span>
+              <span className="pos-scan-status-text">READY TO SCAN</span>
+            </div>
+            
+            <div className="pos-scan-search">
+              <span className="pos-scan-search-icon">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M3 7V5C3 3.89543 3.89543 3 5 3H7M17 3H19C20.1046 3 21 3.89543 21 5V7M21 17V19C21 20.1046 20.1046 21 19 21H17M7 21H5C3.89543 21 3 20.1046 3 19V17" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M7 12H17" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M12 7V17" stroke="currentColor" strokeWidth="0.5" strokeLinecap="round" strokeLinejoin="round" opacity="0.3"/>
+                </svg>
+              </span>
+              <input
+                ref={searchRef}
+                className="pos-scan-search-input"
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault()
+                  }
+                }}
+                placeholder="Scan barcode or search product..."
+                autoFocus
+              />
+              {search && (
+                <button className="pos-scan-search-clear" onClick={() => setSearch('')}>✕</button>
+              )}
+            </div>
           </div>
         </div>
 
@@ -134,9 +179,9 @@ export function POSFlowView({
         </div>
       </div>
 
-      {/* RIGHT: Cart */}
+      {/* RIGHT: Cart + Payment Combined */}
       <div className="pos-scan-right">
-        {/* Customer strip */}
+        {/* Customer strip — compact */}
         <div className="pos-customer-strip">
           {selCust ? (
             <div className="pos-customer-badge">
@@ -158,7 +203,7 @@ export function POSFlowView({
 
         <div className="pos-cart-header">
           <div className="pos-cart-title">
-            Cart {cart.length > 0 && <span className="pos-cart-count">{cart.length}</span>}
+            Cart {cart.length > 0 && <span className="pos-cart-count">{cart.reduce((s, i) => s + i.qty, 0)}</span>}
           </div>
         </div>
 
@@ -166,13 +211,33 @@ export function POSFlowView({
         <div className="pos-cart-items">
           {cart.length === 0 ? (
             <div className="pos-cart-empty">
-              <div className="pos-cart-empty-icon">🛒</div>
-              <div className="pos-cart-empty-text">Cart is empty</div>
-              <div className="pos-cart-empty-sub">Scan a barcode or tap a product</div>
+              <div className="pos-cart-empty-icon">
+                <svg width="56" height="56" viewBox="0 0 24 24" fill="none" className="pos-scan-zone-icon">
+                  <path d="M3 7V5C3 3.89543 3.89543 3 5 3H7M17 3H19C20.1046 3 21 3.89543 21 5V7M21 17V19C21 20.1046 20.1046 21 19 21H17M7 21H5C3.89543 21 3 20.1046 3 19V17" stroke="#C7D2FE" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M7 12H17" stroke="#A5B4FC" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </div>
+              <div className="pos-cart-empty-text">Scan items to begin</div>
+              <div className="pos-cart-empty-sub">Point your scanner at a barcode</div>
             </div>
           ) : (
             cart.map(item => (
-              <div key={item.id} className={`pos-cart-item${lastAddedId === item.id ? ' highlighted' : ''}`}>
+              <div 
+                key={item.id} 
+                className={`pos-cart-item${lastAddedId === item.id ? ' highlighted' : ''}`}
+                onDoubleClick={() => handleInlineDelete(item.id)}
+                onTouchEnd={(e) => {
+                  if (e.target.closest('button')) return
+                  const now = Date.now()
+                  const last = lastTapMap.current[item.id] || 0
+                  const gap = now - last
+                  if (gap < 300 && gap > 0) {
+                    e.preventDefault()
+                    handleInlineDelete(item.id)
+                  }
+                  lastTapMap.current[item.id] = now
+                }}
+              >
                 <div className="pos-cart-item-img">
                   <ImgWithFallback src={item.image_url || item.image} alt={item.name} emoji={item.emoji} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
                 </div>
@@ -184,23 +249,33 @@ export function POSFlowView({
                       : fmt(item.price, settings?.sym)}
                   </div>
                 </div>
+
+                <div className="pos-qty-controls">
+                  <button className="pos-qty-btn" onClick={e => { e.stopPropagation(); updateQty(item.id, -1) }}>−</button>
+                  <span className="pos-qty-value">{item.qty}</span>
+                  <button className="pos-qty-btn" onClick={e => { e.stopPropagation(); updateQty(item.id, 1) }}>+</button>
+                </div>
+
                 <div className="pos-cart-item-right">
                   <div className="pos-cart-item-total">
                     {fmt(item.price * (1 - (item.discount || 0) / 100) * item.qty, settings?.sym)}
                   </div>
-                  <div className="pos-qty-controls">
-                    <button className="pos-qty-btn" onClick={e => { e.stopPropagation(); updateQty(item.id, -1) }}>−</button>
-                    <span className="pos-qty-value">{item.qty}</span>
-                    <button className="pos-qty-btn" onClick={e => { e.stopPropagation(); updateQty(item.id, 1) }}>+</button>
-                    <button className="pos-qty-remove" onClick={e => { e.stopPropagation(); setCart(c => c.filter(i => i.id !== item.id)) }}>✕</button>
-                  </div>
+                  <button 
+                    className="pos-cart-item-delete"
+                    onClick={e => { e.stopPropagation(); handleInlineDelete(item.id) }}
+                    title="Remove item"
+                  >
+                    <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                      <path d="M5 3V2.5C5 1.67 5.67 1 6.5 1h3C10.33 1 11 1.67 11 2.5V3M2 4h12M3.5 4l.7 9.2c.08.99.9 1.8 1.9 1.8h3.8c1 0 1.82-.81 1.9-1.8L12.5 4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  </button>
                 </div>
               </div>
             ))
           )}
         </div>
 
-        {/* Footer with total + CTA */}
+        {/* Footer: Total + Pay CTA — STRONG visual weight */}
         <div className="pos-cart-footer">
           {cart.length > 0 && (
             <div className="pos-cart-total-preview">
@@ -216,7 +291,14 @@ export function POSFlowView({
             disabled={cart.length === 0}
             onClick={handleGoPayment}
           >
-            Continue to Payment →
+            {cart.length === 0 ? (
+              <span className="pos-continue-btn-text">Waiting for items…</span>
+            ) : (
+              <>
+                <span className="pos-continue-btn-text">Pay {fmt(cartTotal, settings?.sym)}</span>
+                <span className="pos-continue-btn-arrow">→</span>
+              </>
+            )}
           </button>
         </div>
       </div>
@@ -349,52 +431,69 @@ export function POSFlowView({
           <div className="pos-payment-actions">
             <button className="pos-back-btn" onClick={handleBackToScan}>← Back</button>
             <button className="pos-confirm-btn" onClick={confirmPayment} disabled={checkoutProcessing}>
-              Confirm Payment
+              {checkoutProcessing ? 'Processing…' : `Pay ${fmt(cartTotal, settings?.sym)}`}
             </button>
           </div>
         </div>
       </div>
+
+      {/* ── Card Terminal Popup Overlay ── */}
+      {showCardPopup && (
+        <div className="pos-card-popup-overlay">
+          <div className="pos-card-popup-backdrop" />
+          <div className="pos-card-popup-container">
+            <div className="pos-card-popup">
+              {/* Terminal screen */}
+              <div className="pos-card-popup-screen">
+                <div className="pos-card-popup-logo">💳</div>
+                <div className="pos-card-popup-amount">{fmt(cartTotal, settings?.sym)}</div>
+
+                {cardPopupStep === 'waiting' && (
+                  <div className="pos-card-popup-waiting">
+                    <div className="pos-card-popup-pulse-ring" />
+                    <div className="pos-card-popup-instruction">Tap / Insert / Swipe</div>
+                    <button className="pos-card-popup-tap-btn" onClick={simulateCardTap}>
+                      Simulate Customer Tap
+                    </button>
+                    <button 
+                      className="pos-card-popup-back-btn" 
+                      onClick={() => setShowCardPopup(false)}
+                    >
+                      ← Cancel Transaction
+                    </button>
+                  </div>
+                )}
+
+                {cardPopupStep === 'processing' && (
+                  <div className="pos-card-popup-processing">
+                    <div className="pos-card-popup-spinner" />
+                    <div className="pos-card-popup-status">Communicating with bank...</div>
+                  </div>
+                )}
+
+                {cardPopupStep === 'approved' && (
+                  <div className="pos-card-popup-approved">
+                    <div className="pos-card-popup-check">✓</div>
+                    <div className="pos-card-popup-approved-text">Approved</div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 
-  // ── STEP 3: PROCESSING ──
+  // ── STEP 3: PROCESSING (for non-card payments only) ──
   const renderProcessingStep = () => (
     <div className="pos-processing-step" key="processing">
       <div className="pos-processing-inner">
-        {payMethod === 'Card' ? (
-          <div className="pos-card-terminal">
-            <div style={{ fontSize: 48 }}>💳</div>
-            <div className="pos-card-terminal-amount">{fmt(cartTotal, settings?.sym)}</div>
-            {cardTapStep === 'waiting' && (
-              <>
-                <div className="pos-card-terminal-status waiting">Tap / Insert / Swipe</div>
-                <button className="pos-card-terminal-tap-btn" onClick={simulateCardTap}>
-                  Simulate Customer Tap
-                </button>
-              </>
-            )}
-            {cardTapStep === 'processing' && (
-              <>
-                <div className="pos-card-terminal-spinner" />
-                <div className="pos-card-terminal-status processing">Communicating with bank...</div>
-              </>
-            )}
-            {cardTapStep === 'approved' && (
-              <>
-                <div className="pos-card-terminal-checkmark">✅</div>
-                <div className="pos-card-terminal-status approved">Approved</div>
-              </>
-            )}
-          </div>
-        ) : (
-          <>
-            <div className="pos-processing-icon">
-              <div className="pos-processing-spinner" />
-            </div>
-            <div className="pos-processing-title">Processing Payment…</div>
-            <div className="pos-processing-sub">Please wait</div>
-          </>
-        )}
+        <div className="pos-processing-icon">
+          <div className="pos-processing-spinner" />
+        </div>
+        <div className="pos-processing-title">Processing Payment…</div>
+        <div className="pos-processing-sub">Please wait</div>
       </div>
     </div>
   )
@@ -429,7 +528,7 @@ export function POSFlowView({
         )}
         <div className="pos-success-actions">
           <button className="pos-print-btn" onClick={() => setShowReceipt(completedOrder)}>
-            🖨️ Print Receipt
+            🖨️ Receipt
           </button>
           <button className="pos-new-sale-btn" onClick={startNewSale}>
             New Sale →
@@ -451,10 +550,14 @@ export function POSFlowView({
 
   return (
     <div className="pos-flow">
-      {/* ── Header ── */}
+      {/* ── Header — Minimal ── */}
       <div className="pos-flow-header">
         <div className="pos-flow-header-left">
-          <button className="pos-flow-home-btn" onClick={() => navigate('/app')}>🏠 Home</button>
+          <button className="pos-flow-home-btn" onClick={() => navigate('/app')}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M3 12L12 3l9 9"/><path d="M5 10v10a1 1 0 001 1h3v-6h6v6h3a1 1 0 001-1V10"/>
+            </svg>
+          </button>
           <div className="pos-step-indicator">
             {STEP_ORDER.map((s, i) => (
               <div key={s} className={`pos-step-dot${i === stepIdx ? ' active' : i < stepIdx ? ' done' : ''}`} />
@@ -463,12 +566,12 @@ export function POSFlowView({
           </div>
         </div>
 
-        {/* Scan message */}
+        {/* Scan message — floating notification */}
         {scanMsg && (
           <div className={`pos-scan-msg ${scanMsg.includes('❌') ? 'error' : 'success'}`}>{scanMsg}</div>
         )}
 
-        {/* More menu */}
+        {/* More menu — Park, Recall, Reprint hidden here */}
         <div style={{ position: 'relative' }}>
           <button
             className={`pos-more-menu-btn${showMenu ? ' open' : ''}`}
@@ -486,10 +589,9 @@ export function POSFlowView({
                   </button>
                 )}
                 {setShowReprint && (
-                  <button className="pos-more-menu-item" onClick={() => { setShowReprint(true); setShowMenu(false) }}>🖨️ Reprint Receipt</button>
-                )}
-                {setShowBarcodeInput && (
-                  <button className="pos-more-menu-item" onClick={() => { setShowBarcodeInput(true); setShowMenu(false) }}>📷 Scan Barcode</button>
+                  <button className="pos-more-menu-item" onClick={() => { setShowReprint(true); setShowMenu(false) }}>
+                    🖨️ Reprint Receipt
+                  </button>
                 )}
               </div>
             </>
@@ -503,13 +605,6 @@ export function POSFlowView({
           {renderStep()}
         </div>
       </div>
-
-      {/* Keyboard hint */}
-      {posStep === 'scan' && (
-        <div className="pos-keyboard-hint">
-          <kbd>Scan</kbd> to add items · <kbd>Enter</kbd> confirms
-        </div>
-      )}
     </div>
   )
 }
