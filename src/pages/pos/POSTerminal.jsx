@@ -79,6 +79,13 @@ export const POSTerminal = ({ products, setProducts, orders, setOrders, returns 
   const [showBarcodeInput, setShowBarcodeInput] = useState(false)
   const [barcodeScanMode, setBarcodeScanMode] = useState('camera') // 'camera' | 'manual'
   const [showParkedDropdown, setShowParkedDropdown] = useState(false)
+
+  useEffect(() => {
+    if (showBarcodeInput) {
+      setBarcodeScanMode('camera')
+      setManualBarcode('')
+    }
+  }, [showBarcodeInput])
   const [removeMode, setRemoveMode] = useState(false)
   const [cartSearch, setCartSearch] = useState('')
   const [showReprint, setShowReprint] = useState(false)
@@ -846,31 +853,12 @@ export const POSTerminal = ({ products, setProducts, orders, setOrders, returns 
       )}
 
       {showBarcodeInput && (
-        <Modal t={t} title="Scan Barcode" subtitle="Camera scan or manual entry" onClose={() => setShowBarcodeInput(false)}>
+        <Modal t={t} title="Scan Barcode" subtitle="Camera scan only" onClose={() => setShowBarcodeInput(false)}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-            <div style={{ display: 'flex', gap: 6, marginBottom: 4 }}>
-              <button onClick={() => setBarcodeScanMode('camera')} style={{ flex: 1, padding: '8px 12px', borderRadius: 9, border: `2px solid ${barcodeScanMode === 'camera' ? t.accent : t.border}`, background: barcodeScanMode === 'camera' ? t.accent + '20' : t.bg3, color: barcodeScanMode === 'camera' ? t.accent : t.text3, fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>📷 Camera</button>
-              <button onClick={() => setBarcodeScanMode('manual')} style={{ flex: 1, padding: '8px 12px', borderRadius: 9, border: `2px solid ${barcodeScanMode === 'manual' ? t.accent : t.border}`, background: barcodeScanMode === 'manual' ? t.accent + '20' : t.bg3, color: barcodeScanMode === 'manual' ? t.accent : t.text3, fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>⌨️ Manual</button>
-            </div>
-            {barcodeScanMode === 'camera' ? (
-              <>
-                <BarcodeScanner t={t} active={showBarcodeInput && barcodeScanMode === 'camera'} onDetected={(code) => handleBarcodeScan(code)} onError={() => notify('Camera access denied', 'error')} />
-                <div style={{ fontSize: 11, color: t.text4 }}>Keyboard wedge scanners also work — just scan when focused</div>
-              </>
-            ) : (
-              <>
-                <div style={{ textAlign: 'center', padding: 16, background: t.bg3, borderRadius: 10 }}>
-                  <div style={{ fontSize: 36, marginBottom: 8 }}>⌨️</div>
-                  <div style={{ fontSize: 13, color: t.text3 }}>Type or paste barcode/SKU</div>
-                </div>
-                <div onKeyDown={e => e.key === 'Enter' && manualBarcode.trim() && handleBarcodeScan(manualBarcode)}>
-                  <Input t={t} label="Barcode/SKU" value={manualBarcode} onChange={setManualBarcode} placeholder="Scan or type barcode..." />
-                </div>
-              </>
-            )}
+            <BarcodeScanner t={t} active={showBarcodeInput} onDetected={(code) => handleBarcodeScan(code)} onError={() => notify('Camera access denied', 'error')} />
+            <div style={{ fontSize: 11, color: t.text4 }}>Keyboard wedge scanners also work — just scan when focused</div>
             <div style={{ display: 'flex', gap: 10 }}>
               <Btn t={t} variant="ghost" onClick={() => setShowBarcodeInput(false)} style={{ flex: 1 }}>Cancel</Btn>
-              {barcodeScanMode === 'manual' && <Btn t={t} variant="success" onClick={() => handleBarcodeScan(manualBarcode)} disabled={!manualBarcode.trim()} style={{ flex: 1 }}>✓ Lookup</Btn>}
             </div>
           </div>
         </Modal>

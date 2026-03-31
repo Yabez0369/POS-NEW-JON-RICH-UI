@@ -1,14 +1,11 @@
-import { CATEGORIES } from '@/lib/constants'
 import { ImgWithFallback } from '@/components/shared'
 import { fmt } from '@/lib/utils'
 import { useNavigate } from 'react-router-dom'
 
 export function POSProductGrid({
-  search, setSearch, cat, setCat, filteredProds, favProds,
+  search, setSearch, filteredProds,
   getItemDiscount, addToCart, scanMsg,
-  parkBill, parked, recallBill, showParkedDropdown, setShowParkedDropdown,
-  setShowBarcodeInput, setShowReprint, setShowReturnModal,
-  loadOrderInput, setLoadOrderInput, loadOrderForReturn, loadOrderLoading, loadedOrderForReturn,
+  loadedOrderForReturn,
   returnProcessMode,
   settings, t,
 }) {
@@ -16,9 +13,6 @@ export function POSProductGrid({
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', background: t.bg || '#F5F5F7', borderRight: 'none' }} className="pos-left">
       <div style={{ padding: '16px 20px', background: t.card || '#FFFFFF', borderBottom: `1px solid ${t.border}`, display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center', boxShadow: '0 2px 10px rgba(0,0,0,0.02)' }}>
-        <button onClick={() => navigate('/app')} style={{ padding: '12px 16px', background: t.bg3, border: 'none', borderRadius: 12, color: t.text, fontSize: 16, fontWeight: 800, cursor: 'pointer', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: 6 }}>
-          🏠 Home
-        </button>
         {loadedOrderForReturn ? (
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, flex: 1, minWidth: 200, flexWrap: 'wrap' }}>
             <span style={{ fontSize: 12, fontWeight: 800, color: t.yellow, background: t.yellowBg, padding: '6px 10px', borderRadius: 8, border: `1px solid ${t.yellowBorder}` }}>
@@ -26,25 +20,7 @@ export function POSProductGrid({
             </span>
           </div>
         ) : (
-          <>
-            <div style={{ position: 'relative', flex: 1.5, minWidth: 200 }}>
-              <span style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', fontSize: 16, color: t.text3 }}>🔍</span>
-              <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Find product by name or SKU..." style={{ width: '100%', background: t.bg3, border: 'none', borderRadius: 12, padding: '12px 14px 12px 42px', color: t.text, fontSize: 15, fontWeight: 500, outline: 'none', boxSizing: 'border-box' }} />
-            </div>
-          </>
-        )}
-        {setShowReprint ? <button onClick={() => setShowReprint(true)} style={{ padding: '12px 16px', background: t.bg3, border: 'none', borderRadius: 12, color: t.text2, fontSize: 14, fontWeight: 800, cursor: 'pointer', whiteSpace: 'nowrap' }}>🖨️ Reprint</button> : null}
-        {scanMsg && <span style={{ fontSize: 14, color: t.green, fontWeight: 800 }}>{scanMsg}</span>}
-        <button onClick={parkBill} style={{ padding: '12px 16px', background: '#FF950015', border: 'none', borderRadius: 12, color: '#FF9500', fontSize: 14, fontWeight: 800, cursor: 'pointer' }}>⏸ Park</button>
-        {parked.length > 0 && (
-          <div style={{ position: 'relative' }}>
-            <button onClick={() => setShowParkedDropdown(v => !v)} style={{ padding: '12px 16px', background: '#AF52DE15', border: 'none', borderRadius: 12, color: '#AF52DE', fontSize: 14, fontWeight: 800, cursor: 'pointer' }}>📋 Recall ({parked.length})</button>
-            {showParkedDropdown && (
-              <div style={{ position: 'absolute', top: '110%', left: 0, background: t.bg2, border: `1px solid ${t.border}`, borderRadius: 10, padding: 8, zIndex: 100, minWidth: 200, boxShadow: t.shadowMd }}>
-                {parked.map(pb => <button key={pb.id} onClick={() => recallBill(pb)} style={{ display: 'block', width: '100%', padding: '8px 12px', background: 'none', border: 'none', color: t.text, cursor: 'pointer', textAlign: 'left', fontSize: 12, borderRadius: 6 }}>📋 {pb.id} — {pb.cart.length} items · {pb.ts}</button>)}
-              </div>
-            )}
-          </div>
+          <div style={{ flex: 1 }} />
         )}
       </div>
 

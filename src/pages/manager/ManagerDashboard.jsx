@@ -17,7 +17,7 @@ function toItemQty(i) {
 export const ManagerDashboard = ({ orders = [], products = [], users = [], counters = [], t, settings }) => {
   const storeOrders = Array.isArray(orders) ? orders : []
   const todayRevenue = storeOrders.reduce((s, o) => s + (o.total ?? 0), 0)
-  const pendingOrders = storeOrders.filter(o => o.status === 'preparing').length
+  const pendingOrders = storeOrders.filter(o => o.status === 'preparing' || o.status === 'pending').length
   const staffCount = (users || []).filter(u => u.role === 'cashier').length
   const lowStock = (products || []).filter(p => (p.stock ?? 0) < 10).length
 
@@ -43,7 +43,7 @@ export const ManagerDashboard = ({ orders = [], products = [], users = [], count
         <StatCard t={t} title="Pending Orders" value={pendingOrders} color={t.yellow} icon="⏳" />
         <StatCard t={t} title="Staff Active" value={staffCount} color={t.green} icon="👥" />
         <StatCard t={t} title="Low Stock Items" value={lowStock} color={t.red} icon="⚠️" />
-        <StatCard t={t} title="Active Counters" value={(counters || []).filter(c => c.active).length} color={t.teal} icon="🏪" />
+        <StatCard t={t} title="Active Counters" value={(counters || []).filter(c => c.active === true || c.status === 'active').length} color={t.teal} icon="🏪" />
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }} className="grid-2">
@@ -62,14 +62,15 @@ export const ManagerDashboard = ({ orders = [], products = [], users = [], count
         <Card t={t}>
           <div style={{ fontSize: 14, fontWeight: 800, color: t.text, marginBottom: 14 }}>🏪 Counter Performance</div>
           {(counters || []).map(c => {
-            const rev = storeOrders.filter(o => o.counter === c.name).reduce((s, o) => s + o.total, 0)
-            const cnt = storeOrders.filter(o => o.counter === c.name).length
+            const counterOrders = storeOrders.filter(o => o.counter === c.name || o.counter_id === c.id)
+            const rev = counterOrders.reduce((s, o) => s + (o.total || 0), 0)
+            const cnt = counterOrders.length
             const pct = todayRevenue > 0 ? Math.round(rev / todayRevenue * 100) : 0
             return (
               <div key={c.id} style={{ marginBottom: 14 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, marginBottom: 5 }}>
                   <span style={{ color: t.text2, fontWeight: 600 }}>
-                    {c.name} <span style={{ fontSize: 10, color: c.active ? t.green : t.text4 }}>({c.active ? 'active' : 'inactive'})</span>
+                    {c.name} <span style={{ fontSize: 10, color: (c.active === true || c.status === 'active') ? t.green : t.text4 }}>({(c.active === true || c.status === 'active') ? 'active' : 'inactive'})</span>
                   </span>
                   <span style={{ fontWeight: 800, color: t.text }}>{fmt(rev, settings?.sym)}</span>
                 </div>
