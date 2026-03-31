@@ -27,12 +27,23 @@ export async function createOrder(order) {
 
 /** Create order + order_items in Supabase. Returns created order with items. */
 export async function createOrderWithItems({ siteId, counterId, cashierId, customerId, items, subtotal, taxAmount, discountAmount, loyaltyDiscount, total, paymentMethod, paymentDetails, loyaltyEarned, loyaltyUsed, manualDiscountPct }) {
-  if (!isSupabaseConfigured()) return null
+  // Sanitizing IDs: if they look like our mock patterns, don't send to Supabase foreign keys
+  const isMock = (id) => {
+    if (!id) return true;
+    const s = String(id).toLowerCase();
+    // Match common mock prefixes (0000, 1111, aaaa, BBBB, etc.) or temp IDs
+    return s.startsWith('0000') || s.startsWith('1111') || s.startsWith('2222') ||
+           s.startsWith('c0000') || s.startsWith('b0000') || s.startsWith('a0000') ||
+           s.startsWith('aaaa') || s.startsWith('bbbb') || s.startsWith('cccc') ||
+           s.startsWith('dddd') || s.startsWith('eeee') || s.startsWith('ffff') ||
+           s.startsWith('temp-');
+  };
+
   const orderPayload = {
-    site_id: siteId || null,
-    counter_id: counterId || null,
-    customer_id: customerId || null,
-    cashier_id: cashierId || null,
+    site_id: isMock(siteId) ? null : siteId,
+    counter_id: isMock(counterId) ? null : counterId,
+    customer_id: isMock(customerId) ? null : customerId,
+    cashier_id: isMock(cashierId) ? null : cashierId,
     order_type: 'in-store',
     status: 'completed',
     subtotal: Number(subtotal),
@@ -53,7 +64,7 @@ export async function createOrderWithItems({ siteId, counterId, cashierId, custo
 
   const orderItems = items.map((i) => ({
     order_id: order.id,
-    product_id: i.productId || i.product_id,
+    product_id: isMock(i.productId || i.product_id) ? null : (i.productId || i.product_id),
     variant_id: i.variantId || null,
     product_name: i.name,
     quantity: i.qty,

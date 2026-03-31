@@ -10,6 +10,11 @@ export function POSProductGrid({
   settings, t,
 }) {
   const navigate = useNavigate()
+  const [showMenu, setShowMenu] = useState(false)
+
+  // Use all products when search is empty, filtered when searching
+  const displayProds = filteredProds
+
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', background: t.bg || '#F5F5F7', borderRight: 'none' }} className="pos-left">
       <div style={{ padding: '16px 20px', background: t.card || '#FFFFFF', borderBottom: `1px solid ${t.border}`, display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center', boxShadow: '0 2px 10px rgba(0,0,0,0.02)' }}>
@@ -24,54 +29,207 @@ export function POSProductGrid({
         )}
       </div>
 
-      {search.trim() === '' ? (
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: t.bg || '#F5F5F7', padding: 40, textAlign: 'center' }}>
-          <style>{`
-            @keyframes breathe {
-              0% { opacity: 0.3; transform: scale(0.95); }
-              50% { opacity: 1; transform: scale(1.05); }
-              100% { opacity: 0.3; transform: scale(0.95); }
-            }
-          `}</style>
-          <div style={{ width: 140, height: 140, marginBottom: 40, position: 'relative', animation: 'breathe 2.5s infinite ease-in-out' }}>
-            {/* Top Left Corner */}
-            <div style={{ position: 'absolute', top: 0, left: 0, width: 36, height: 36, borderTop: '5px solid #007AFF', borderLeft: '5px solid #007AFF', borderRadius: '16px 0 0 0' }} />
-            {/* Top Right Corner */}
-            <div style={{ position: 'absolute', top: 0, right: 0, width: 36, height: 36, borderTop: '5px solid #007AFF', borderRight: '5px solid #007AFF', borderRadius: '0 16px 0 0' }} />
-            {/* Bottom Left Corner */}
-            <div style={{ position: 'absolute', bottom: 0, left: 0, width: 36, height: 36, borderBottom: '5px solid #007AFF', borderLeft: '5px solid #007AFF', borderRadius: '0 0 0 16px' }} />
-            {/* Bottom Right Corner */}
-            <div style={{ position: 'absolute', bottom: 0, right: 0, width: 36, height: 36, borderBottom: '5px solid #007AFF', borderRight: '5px solid #007AFF', borderRadius: '0 0 16px 0' }} />
-          </div>
-          <div style={{ fontSize: 28, fontWeight: 900, color: t.text, marginBottom: 12, letterSpacing: -0.5 }}>Ready to Scan</div>
-          <div style={{ fontSize: 16, color: t.text3, fontWeight: 500, maxWidth: 400, lineHeight: 1.6 }}>Point scanner at a barcode, or manually type a product name into the search bar above.</div>
+      {/* ─── SEARCH BAR (top, below header) ─── */}
+      <div style={{
+        padding: '12px 20px',
+        background: '#FFFFFF',
+        borderBottom: '1px solid #E8E9EF',
+        flexShrink: 0,
+        boxShadow: '0 2px 10px rgba(0,0,0,0.03)',
+      }}>
+        <div style={{ position: 'relative' }}>
+          <span style={{
+            position: 'absolute', left: 18, top: '50%',
+            transform: 'translateY(-50%)',
+            fontSize: 18, color: '#9CA3AF', pointerEvents: 'none',
+          }}>🔍</span>
+          <input
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="Search product name or SKU..."
+            autoFocus
+            style={{
+              width: '100%',
+              background: '#F2F3F8',
+              border: '2px solid transparent',
+              borderRadius: 14,
+              padding: '16px 44px 16px 48px',
+              color: '#1A1A2E',
+              fontSize: 17,
+              fontWeight: 600,
+              outline: 'none',
+              boxSizing: 'border-box',
+              transition: 'border-color 0.2s',
+            }}
+            onFocus={e => e.target.style.borderColor = '#6366F1'}
+            onBlur={e => e.target.style.borderColor = 'transparent'}
+          />
+          {search && (
+            <button
+              onClick={() => setSearch('')}
+              style={{
+                position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)',
+                background: '#9CA3AF', color: '#fff', border: 'none',
+                borderRadius: '50%', width: 26, height: 26, cursor: 'pointer',
+                fontSize: 15, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontWeight: 900,
+              }}
+            >
+              ×
+            </button>
+          )}
         </div>
-      ) : (
-        <div className="pos-products-grid" style={{ flex: 1, overflowY: 'auto', padding: '24px 20px', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 16, alignContent: 'start', background: t.bg || '#F5F5F7' }}>
-          {filteredProds.map(p => {
-            const disc = getItemDiscount(p)
-            return (
-              <div key={p.id} onClick={() => addToCart(p)} style={{ background: '#FFFFFF', border: 'none', borderRadius: 20, overflow: 'hidden', cursor: p.stock === 0 ? 'not-allowed' : 'pointer', opacity: p.stock === 0 ? 0.45 : 1, transition: 'all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1)', boxShadow: '0 4px 12px rgba(0,0,0,0.03), 0 1px 2px rgba(0,0,0,0.02)', position: 'relative', display: 'flex', flexDirection: 'column', minHeight: 200 }}
-                onMouseEnter={e => { if (p.stock > 0) { e.currentTarget.style.transform = 'translateY(-4px) scale(1.02)'; e.currentTarget.style.boxShadow = '0 12px 24px rgba(0,0,0,0.08)'; } }}
-                onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.03), 0 1px 2px rgba(0,0,0,0.02)'; }}>
-                {disc > 0 && <div style={{ position: 'absolute', top: 10, left: 10, zIndex: 1, background: '#FF3B30', color: '#fff', borderRadius: 10, padding: '4px 8px', fontSize: 11, fontWeight: 900, boxShadow: '0 2px 8px rgba(255,59,48,0.3)' }}>-{disc}% OFF</div>}
-                <div style={{ height: 130, background: '#FAFAFA', borderBottom: '1px solid #F0F0F0', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', padding: 12 }}>
-                  <ImgWithFallback src={p.image_url || p.image} alt={p.name} emoji={p.emoji} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+      </div>
+
+      {/* Parked bills dropdown */}
+      {showParkedDropdown && parked.length > 0 && (
+        <>
+          <div onClick={() => setShowParkedDropdown(false)} style={{ position: 'fixed', inset: 0, zIndex: 30 }} />
+          <div style={{ position: 'absolute', top: 62, right: 20, background: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: 16, padding: 10, zIndex: 40, minWidth: 260, boxShadow: '0 16px 48px rgba(0,0,0,0.12)' }}>
+            {parked.map(pb => (
+              <button
+                key={pb.id}
+                onClick={() => { recallBill(pb); setShowParkedDropdown(false) }}
+                style={{ display: 'block', width: '100%', padding: '12px 14px', background: 'none', border: 'none', color: '#111827', cursor: 'pointer', textAlign: 'left', fontSize: 14, fontWeight: 700, borderRadius: 10, marginBottom: 4 }}
+              >
+                📋 {pb.id} — {pb.cart.length} items · {pb.ts}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+
+      {/* ─── PRODUCT GRID (always visible) ─── */}
+      <div style={{
+        flex: 1,
+        overflowY: 'auto',
+        padding: '20px',
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fill, minmax(170px, 1fr))',
+        gap: 14,
+        alignContent: 'start',
+      }} className="pos-products-grid">
+        {displayProds.length === 0 ? (
+          <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '80px 20px', color: '#9CA3AF' }}>
+            <div style={{ fontSize: 48, marginBottom: 16 }}>🔍</div>
+            <div style={{ fontSize: 20, fontWeight: 800 }}>No products found</div>
+          </div>
+        ) : displayProds.map(p => {
+          const disc = getItemDiscount(p)
+          const isOOS = p.stock === 0
+          return (
+            <div
+              key={p.id}
+              onClick={() => !isOOS && addToCart(p)}
+              style={{
+                background: '#FFFFFF',
+                borderRadius: 20,
+                overflow: 'hidden',
+                cursor: isOOS ? 'not-allowed' : 'pointer',
+                opacity: isOOS ? 0.45 : 1,
+                transition: 'all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1)',
+                boxShadow: '0 2px 10px rgba(0,0,0,0.05)',
+                position: 'relative',
+                display: 'flex',
+                flexDirection: 'column',
+                border: '2px solid transparent',
+                minHeight: 210,
+              }}
+              onMouseEnter={e => {
+                if (!isOOS) {
+                  e.currentTarget.style.transform = 'translateY(-4px)'
+                  e.currentTarget.style.boxShadow = '0 16px 32px rgba(0,0,0,0.1)'
+                  e.currentTarget.style.borderColor = '#6366F1'
+                }
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.transform = 'none'
+                e.currentTarget.style.boxShadow = '0 2px 10px rgba(0,0,0,0.05)'
+                e.currentTarget.style.borderColor = 'transparent'
+              }}
+            >
+              {/* Discount badge */}
+              {disc > 0 && (
+                <div style={{
+                  position: 'absolute', top: 10, left: 10, zIndex: 1,
+                  background: 'linear-gradient(135deg, #EF4444, #DC2626)',
+                  color: '#fff', borderRadius: 8, padding: '3px 8px',
+                  fontSize: 11, fontWeight: 900,
+                  boxShadow: '0 2px 8px rgba(239,68,68,0.4)',
+                }}>
+                  -{disc}%
                 </div>
-                <div style={{ padding: '14px 16px', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: 6 }}>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: t.text, lineHeight: 1.3, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', wordBreak: 'break-word' }}>{p.name}</div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: 'auto' }}>
-                    <div>
-                      {disc > 0 ? <><div style={{ fontSize: 12, color: t.text4, textDecoration: 'line-through' }}>{fmt(p.price, settings?.sym)}</div><div style={{ fontSize: 18, fontWeight: 900, color: '#34C759', letterSpacing: -0.5 }}>{fmt(p.price * (1 - disc / 100), settings?.sym)}</div></> : <div style={{ fontSize: 18, fontWeight: 900, color: t.text, letterSpacing: -0.5 }}>{fmt(p.price, settings?.sym)}</div>}
-                    </div>
-                    <div style={{ fontSize: 11, fontWeight: 600, color: p.stock <= 5 ? '#FF3B30' : t.text4, background: p.stock <= 5 ? '#FF3B3015' : t.bg3, padding: '4px 8px', borderRadius: 8 }}>{p.stock} left</div>
+              )}
+
+              {/* Out of stock badge */}
+              {isOOS && (
+                <div style={{
+                  position: 'absolute', top: 10, right: 10, zIndex: 1,
+                  background: '#374151', color: '#fff', borderRadius: 8,
+                  padding: '3px 8px', fontSize: 10, fontWeight: 800,
+                }}>
+                  OUT
+                </div>
+              )}
+
+              {/* Product image */}
+              <div style={{
+                height: 130,
+                background: 'linear-gradient(135deg, #F8FAFF, #F0F2FF)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                overflow: 'hidden', padding: 12, flexShrink: 0,
+              }}>
+                <ImgWithFallback
+                  src={p.image_url || p.image}
+                  alt={p.name}
+                  emoji={p.emoji}
+                  style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                />
+              </div>
+
+              {/* Product info */}
+              <div style={{
+                padding: '12px 14px 14px',
+                flex: 1, display: 'flex', flexDirection: 'column', gap: 6,
+              }}>
+                <div style={{
+                  fontSize: 13, fontWeight: 700, color: '#1A1A2E', lineHeight: 1.3,
+                  display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
+                  overflow: 'hidden',
+                }}>
+                  {p.name}
+                </div>
+
+                <div style={{ marginTop: 'auto', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+                  <div>
+                    {disc > 0 ? (
+                      <>
+                        <div style={{ fontSize: 11, color: '#9CA3AF', textDecoration: 'line-through' }}>{fmt(p.price, settings?.sym)}</div>
+                        <div style={{ fontSize: 18, fontWeight: 900, color: '#16A34A', letterSpacing: -0.5 }}>{fmt(p.price * (1 - disc / 100), settings?.sym)}</div>
+                      </>
+                    ) : (
+                      <div style={{ fontSize: 18, fontWeight: 900, color: '#1A1A2E', letterSpacing: -0.5 }}>{fmt(p.price, settings?.sym)}</div>
+                    )}
+                  </div>
+                  <div style={{
+                    fontSize: 11, fontWeight: 700,
+                    color: p.stock <= 5 ? '#DC2626' : '#6B7280',
+                    background: p.stock <= 5 ? '#FEF2F2' : '#F3F4F6',
+                    padding: '3px 8px', borderRadius: 8,
+                  }}>
+                    {p.stock}
                   </div>
                 </div>
               </div>
-            )
-          })}
-        </div>
-      )}
+            </div>
+          )
+        })}
+      </div>
+
+
+      <style>{`
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+      `}</style>
     </div>
   )
 }
