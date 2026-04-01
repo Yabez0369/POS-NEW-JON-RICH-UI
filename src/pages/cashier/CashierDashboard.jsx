@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTheme } from '@/context/ThemeContext'
 import { useAuth } from '@/context/AuthContext'
@@ -10,6 +11,7 @@ export function CashierDashboard() {
   const { t, darkMode } = useTheme()
   const { currentUser, logout } = useAuth()
   const navigate = useNavigate()
+  const [showOverflowMenu, setShowOverflowMenu] = useState(false)
 
   return (
     <div style={{
@@ -86,7 +88,7 @@ export function CashierDashboard() {
           </div>
         </div>
         
-        <div style={{ display: 'flex', alignItems: 'center', gap: 32 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <div style={{ width: 36, height: 36, borderRadius: '50%', background: t.accent, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 800 }}>
               {currentUser?.name?.charAt(0) || 'C'}
@@ -96,24 +98,47 @@ export function CashierDashboard() {
               <span style={{ fontSize: 11, fontWeight: 600, color: t.text3, textTransform: 'uppercase' }}>Session V-8829</span>
             </div>
           </div>
-          <button 
-            onClick={logout} 
-            style={{ 
-              display: 'flex', 
-              gap: 8, 
-              alignItems: 'center', 
-              background: t.bg3, 
-              border: `1px solid ${t.border}`, 
-              padding: '10px 16px',
-              borderRadius: 12,
-              color: t.red, 
-              fontWeight: 700, 
-              cursor: 'pointer',
-              fontSize: 14
-            }}
-          >
-            <LogOut size={18} strokeWidth={2.5} /> EXIT
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <button
+              onClick={() => setShowOverflowMenu(true)}
+              style={{
+                width: 42,
+                height: 42,
+                borderRadius: 14,
+                background: t.bg3,
+                border: `1px solid ${t.border}`,
+                color: t.text3,
+                fontWeight: 900,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: 20,
+                lineHeight: 1
+              }}
+              title="More"
+            >
+              ···
+            </button>
+            <button 
+              onClick={logout} 
+              style={{ 
+                display: 'flex', 
+                gap: 8, 
+                alignItems: 'center', 
+                background: t.bg3, 
+                border: `1px solid ${t.border}`, 
+                padding: '10px 16px',
+                borderRadius: 12,
+                color: t.red, 
+                fontWeight: 700, 
+                cursor: 'pointer',
+                fontSize: 14
+              }}
+            >
+              <LogOut size={18} strokeWidth={2.5} /> EXIT
+            </button>
+          </div>
         </div>
       </div>
 
@@ -197,6 +222,9 @@ export function CashierDashboard() {
               </div>
               <div style={{ flex: 1, textAlign: 'left' }}>
                 <div style={{ fontSize: 24, fontWeight: 700, letterSpacing: '-0.5px' }}>Online Orders</div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: t.text3, marginTop: 4, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  Review and prepare pending orders
+                </div>
               </div>
               <div style={{ 
                 background: '#0a2357', color: '#fff', padding: '6px 14px', 
@@ -219,7 +247,7 @@ export function CashierDashboard() {
                 flexDirection: 'column',
                 justifyContent: 'center',
                 padding: '24px',
-                gap: 16,
+                gap: 12,
                 cursor: 'pointer',
                 color: t.text
               }}
@@ -231,6 +259,9 @@ export function CashierDashboard() {
                 <RotateCcw size={28} strokeWidth={1.5} />
               </div>
               <div style={{ fontSize: 20, fontWeight: 700, letterSpacing: '-0.5px' }}>Returns</div>
+              <div style={{ fontSize: 12, fontWeight: 700, color: t.text3, marginTop: -4, whiteSpace: 'nowrap' }}>
+                Refund or return sold items
+              </div>
             </button>
 
             {/* EXCHANGE: Half width */}
@@ -246,7 +277,7 @@ export function CashierDashboard() {
                 flexDirection: 'column',
                 justifyContent: 'center',
                 padding: '24px',
-                gap: 16,
+                gap: 12,
                 cursor: 'pointer',
                 color: t.text
               }}
@@ -258,6 +289,9 @@ export function CashierDashboard() {
                 <ArrowLeftRight size={28} strokeWidth={1.5} />
               </div>
               <div style={{ fontSize: 20, fontWeight: 700, letterSpacing: '-0.5px' }}>Exchange</div>
+              <div style={{ fontSize: 12, fontWeight: 700, color: t.text3, marginTop: -4, whiteSpace: 'nowrap' }}>
+                Swap item, size, or variant
+              </div>
             </button>
 
           </div>
@@ -275,7 +309,6 @@ export function CashierDashboard() {
             { label: 'Order History', icon: Receipt, route: '/app/orders' },
             { label: 'Cash Drawer', icon: Banknote, route: '/app/cash' },
             { label: 'Hardware', icon: Printer, route: '/app/hardware' },
-            { label: 'Admin Override', icon: KeyRound, route: '/app/dashboard' },
           ].map((item, i) => (
             <button
               key={i}
@@ -304,6 +337,81 @@ export function CashierDashboard() {
           ))}
         </div>
       </div>
+
+      {/* Overflow menu (keeps Admin Override off the main screen) */}
+      {showOverflowMenu && (
+        <div
+          onClick={() => setShowOverflowMenu(false)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(15, 23, 42, 0.55)',
+            zIndex: 2000,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: 24
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              width: 'min(420px, 100%)',
+              background: t.bg2,
+              border: `1px solid ${t.border}`,
+              borderRadius: 18,
+              boxShadow: '0 25px 80px rgba(0,0,0,0.35)',
+              padding: 16
+            }}
+          >
+            <div style={{ fontSize: 11, fontWeight: 900, color: t.text4, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 10 }}>
+              Manager Actions
+            </div>
+            <button
+              onClick={() => {
+                setShowOverflowMenu(false)
+                navigate('/app/dashboard')
+              }}
+              style={{
+                width: '100%',
+                padding: '14px 16px',
+                background: t.bg,
+                border: `1px solid ${t.border}`,
+                borderRadius: 14,
+                color: t.text,
+                fontWeight: 800,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: 12,
+                marginBottom: 10
+              }}
+            >
+              <span style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <KeyRound size={18} strokeWidth={2.5} />
+                Admin Override
+              </span>
+              <span style={{ color: t.text3, fontWeight: 900 }}>→</span>
+            </button>
+            <button
+              onClick={() => setShowOverflowMenu(false)}
+              style={{
+                width: '100%',
+                padding: '12px 16px',
+                background: 'transparent',
+                border: `1px solid ${t.border}`,
+                borderRadius: 14,
+                color: t.text3,
+                fontWeight: 800,
+                cursor: 'pointer'
+              }}
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
 
     </div>
   )

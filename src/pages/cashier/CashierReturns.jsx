@@ -1,31 +1,30 @@
-import { useState } from 'react'
+import { useState, useMemo, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useTheme } from '@/context/ThemeContext'
 import { useAuth } from '@/context/AuthContext'
 import { useCashStore } from '@/stores/cashStore'
-import { Btn, Input, Badge, Card, Select } from '@/components/ui'
+import { Badge, Spinner } from '@/components/ui'
 import { notify } from '@/components/shared'
-import { fmt, ts } from '@/lib/utils'
+import { fmt } from '@/lib/utils'
 import dayjs from 'dayjs'
 import { returnsService, ordersService } from '@/services'
 import { isSupabaseConfigured } from '@/lib/supabase'
+import './CashierReturns.css'
 
 const REASON_CODES = [
-  { value: 'damaged', label: 'Defective / Damaged' },
-  { value: 'wrong_size', label: 'Wrong size' },
-  { value: 'wrong_item', label: 'Wrong item received' },
-  { value: 'changed_mind', label: 'Changed my mind' },
-  { value: 'not_as_described', label: 'Not as described' },
+  { value: 'damaged', label: 'Damaged' },
+  { value: 'wrong_size', label: 'Wrong Size' },
+  { value: 'wrong_item', label: 'Wrong Item' },
+  { value: 'changed_mind', label: 'Changed Mind' },
+  { value: 'not_as_described', label: 'Not as Described' },
   { value: 'other', label: 'Other' },
 ]
 
-const REFUND_METHODS = [
-  { value: 'original', label: 'Original payment method' },
-  { value: 'store_credit', label: 'Store credit' },
-]
-
-const PROCESS_MODES = [
-  { value: 'return', label: 'Return & Refund' },
-  { value: 'exchange', label: 'Exchange (return + replacement order)' },
+const STEPS = [
+  { id: 1, label: 'Find Order', icon: '🔍' },
+  { id: 2, label: 'Select Items', icon: '📦' },
+  { id: 3, label: 'Return Type', icon: '🔄' },
+  { id: 4, label: 'Confirm', icon: '✅' },
 ]
 
 function getOrderItems(order) {
@@ -59,25 +58,33 @@ export const CashierReturns = ({
   settings,
   addAudit,
   currentUser,
-  t: tProp,
   siteId,
+  onClose,
 }) => {
-  const { t: tCtx } = useTheme()
+  const { t } = useTheme()
   const { currentUser: authUser } = useAuth()
   const user = currentUser || authUser
-  const t = tProp || tCtx
 
+  const [currentStep, setCurrentStep] = useState(1)
   const [orderSearch, setOrderSearch] = useState('')
   const [selectedOrder, setSelectedOrder] = useState(null)
   const [selItemQtys, setSelItemQtys] = useState({})
-  const [reasonCode, setReasonCode] = useState(REASON_CODES[0].value)
+  const [reasonCode, setReasonCode] = useState('')
   const [refundMethod, setRefundMethod] = useState('original')
   const [processMode, setProcessMode] = useState('return')
   const [processing, setProcessing] = useState(false)
   const [lookupLoading, setLookupLoading] = useState(false)
+  const [isSuccess, setIsSuccess] = useState(false)
 
   const returnDays = settings?.returnDays ?? 30
   const effectiveSiteId = siteId || 'b0000000-0000-0000-0000-000000000001'
+
+  useEffect(() => {
+    const link = document.createElement('link');
+    link.href = 'https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@200..800&display=swap';
+    link.rel = 'stylesheet';
+    document.head.appendChild(link);
+  }, []);
 
   const isWithinReturnWindow = (orderDate) => {
     if (!orderDate) return true
@@ -93,37 +100,22 @@ export const CashierReturns = ({
   const lookupOrder = async () => {
     if (!orderSearch?.trim()) return
     setLookupLoading(true)
-    setSelectedOrder(null)
-    setSelItemQtys({})
     try {
-      const fromState = (orders || []).find(
+      let order = (orders || []).find(
         (o) =>
           String(o.order_number || o.id).toLowerCase() === orderSearch.trim().toLowerCase() ||
           String(o.id).toLowerCase() === orderSearch.trim().toLowerCase()
       )
-      if (fromState) {
-        setSelectedOrder(fromState)
-        const items = getOrderItems(fromState)
-        const initial = {}
-        items.forEach((it, idx) => {
-          initial[idx] = itemQty(it)
-        })
-        setSelItemQtys(initial)
-        return
+
+      if (!order && isSupabaseConfigured()) {
+        order = await ordersService.fetchOrderByNumber(orderSearch.trim())
       }
-      if (isSupabaseConfigured()) {
-        const o = await ordersService.fetchOrderByNumber(orderSearch.trim())
-        if (o) {
-          setSelectedOrder(o)
-          const items = getOrderItems(o)
-          const initial = {}
-          items.forEach((it, idx) => {
-            initial[idx] = itemQty(it)
-          })
-          setSelItemQtys(initial)
-        } else {
-          notify('Order not found', 'error')
-        }
+
+      if (order) {
+        setSelectedOrder(order)
+        const initial = {}
+        setSelItemQtys(initial)
+        setCurrentStep(2)
       } else {
         notify('Order not found', 'error')
       }
@@ -134,34 +126,26 @@ export const CashierReturns = ({
     }
   }
 
-  const items = selectedOrder ? getOrderItems(selectedOrder) : []
-  const selectedItems = items
-    .map((it, idx) => ({ item: it, idx, qty: selItemQtys[idx] ?? 0 }))
-    .filter(({ qty }) => qty > 0)
+  const items = useMemo(() => (selectedOrder ? getOrderItems(selectedOrder) : []), [selectedOrder])
 
-  const refundAmount = selectedItems.reduce((s, { item, qty }) => {
-    const price = itemPrice(item)
-    const disc = itemDiscount(item)
-    return s + price * (1 - disc / 100) * qty
-  }, 0)
+  const selectedItems = useMemo(() =>
+    items
+      .map((it, idx) => ({ item: it, idx, qty: selItemQtys[idx] || 0 }))
+      .filter(({ qty }) => qty > 0)
+    , [items, selItemQtys])
+
+  const refundAmount = useMemo(() =>
+    selectedItems.reduce((s, { item, qty }) => {
+      const price = itemPrice(item)
+      const disc = itemDiscount(item)
+      return s + price * (1 - disc / 100) * qty
+    }, 0)
+    , [selectedItems])
 
   const hasNonReturnable = selectedItems.some(({ item }) => !isProductReturnable(item.product_id || item.productId))
   const withinWindow = isWithinReturnWindow(selectedOrder?.created_at || selectedOrder?.date)
 
-  const processReturn = async () => {
-    if (!selectedOrder || selectedItems.length === 0) {
-      notify('Select at least one item to return', 'error')
-      return
-    }
-    if (hasNonReturnable) {
-      notify('Some selected items are non-returnable', 'error')
-      return
-    }
-    if (!withinWindow) {
-      notify(`Return window is ${returnDays} days`, 'error')
-      return
-    }
-
+  const handleProcessReturn = async () => {
     setProcessing(true)
     try {
       const orderId = selectedOrder.id
@@ -188,7 +172,7 @@ export const CashierReturns = ({
         customerId: selectedOrder.customer_id || selectedOrder.customerId || null,
         type: selectedItems.length === items.length ? 'full' : 'partial',
         reasonCode,
-        reason: REASON_CODES.find((r) => r.value === reasonCode)?.label || reasonCode,
+        reason: REASON_CODES.find((r) => r.value === reasonCode)?.label || reasonCode || 'Other',
         refundMethod: effectiveRefundMethod,
         items: returnItems,
         processedBy: user?.id,
@@ -196,16 +180,13 @@ export const CashierReturns = ({
       })
 
       if (ret) {
-        setReturns((rs) => [ret, ...(rs || [])])
-        setProducts((ps) =>
+        if (setReturns) setReturns((rs) => [ret, ...(rs || [])])
+        if (setProducts) setProducts((ps) =>
           (ps || []).map((p) => {
             const inc = returnItems.find((ri) => (ri.productId || ri.product_id) === p.id)
             return inc ? { ...p, stock: (p.stock ?? 0) + inc.qty } : p
           })
         )
-        if (selectedOrder.id && !(orders || []).find((o) => o.id === selectedOrder.id)) {
-          setOrders((os) => [selectedOrder, ...(os || [])])
-        }
 
         if (isExchange) {
           const exchangeItems = selectedItems.map(({ item, qty }) => ({
@@ -217,7 +198,6 @@ export const CashierReturns = ({
             discount: itemDiscount(item),
           }))
           const subtotal = exchangeItems.reduce((s, i) => s + i.price * (1 - i.discount / 100) * i.qty, 0)
-          const vatRate = 0 // per-product tax now
           const taxAmount = Math.round(exchangeItems.reduce((s, i) => { const p = (products || []).find(pr => pr.id === (i.productId || i.product_id)); const lineNet = i.price * (1 - i.discount / 100) * i.qty; return s + lineNet * ((p?.taxPct ?? 20) / 100) }, 0) * 100) / 100
           const total = Math.round((subtotal + taxAmount) * 100) / 100
 
@@ -239,12 +219,9 @@ export const CashierReturns = ({
             manualDiscountPct: 0,
           })
 
-          if (exchangeOrder) {
+          if (exchangeOrder && setOrders) {
             setOrders((os) => [exchangeOrder, ...(os || [])])
             if (addAudit) addAudit(user, 'Exchange Processed', 'Returns', `${ret.return_number || ret.id} → Order ${exchangeOrder.order_number || exchangeOrder.id}`)
-            notify(`Exchange: Return ${ret.return_number || ret.id} + Order ${exchangeOrder.order_number || exchangeOrder.id} created`, 'success')
-          } else {
-            notify(`Return ${ret.return_number || ret.id} processed. Exchange order failed.`, 'warning')
           }
         } else {
           const origPayment = selectedOrder.payment_method || selectedOrder.payment
@@ -252,12 +229,9 @@ export const CashierReturns = ({
             useCashStore.getState().addMovement('refund', refundAmount, `Refund: ${ret.return_number || ret.id}`, user)
           }
           if (addAudit) addAudit(user, 'Return Processed', 'Returns', `${ret.return_number || ret.id} — ${fmt(refundAmount, settings?.sym)}`)
-          notify(`Return ${ret.return_number || ret.id} processed`, 'success')
         }
 
-        setSelectedOrder(null)
-        setSelItemQtys({})
-        setOrderSearch('')
+        setIsSuccess(true)
       }
     } catch (err) {
       notify(err?.message || 'Failed to process return', 'error')
@@ -272,146 +246,305 @@ export const CashierReturns = ({
     setSelItemQtys((prev) => (n > 0 ? { ...prev, [idx]: n } : (() => { const { [idx]: _, ...rest } = prev; return rest })()))
   }
 
+  const toggleItem = (idx) => {
+    const max = itemQty(items[idx] || {})
+    const current = selItemQtys[idx] ?? 0
+    if (current > 0) {
+      setItemQty(idx, 0)
+    } else {
+      setItemQty(idx, max)
+    }
+  }
+
+  const resetFlow = () => {
+    setCurrentStep(1)
+    setSelectedOrder(null)
+    setOrderSearch('')
+    setSelItemQtys({})
+    setReasonCode('')
+    setRefundMethod('original')
+    setProcessMode('return')
+    setIsSuccess(false)
+  }
+
+  const navigate = useNavigate()
+
+  const handleExit = () => {
+    if (onClose) {
+      onClose()
+    } else {
+      navigate('/app/home')
+    }
+  }
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-      <div style={{ fontSize: 22, fontWeight: 900, color: t.text }}>Process Return</div>
-
-      <Card t={t}>
-        <div style={{ fontSize: 14, fontWeight: 800, color: t.text, marginBottom: 12 }}>Lookup Order</div>
-        <div style={{ display: 'flex', gap: 10 }}>
-          <Input
-            t={t}
-            value={orderSearch}
-            onChange={setOrderSearch}
-            placeholder="Order number (e.g. ORD-0001)"
-            onKeyDown={(e) => e.key === 'Enter' && lookupOrder()}
-            style={{ flex: 1 }}
-          />
-          <Btn t={t} onClick={lookupOrder} disabled={lookupLoading || !orderSearch?.trim()}>
-            {lookupLoading ? '...' : 'Lookup'}
-          </Btn>
+    <div className="returns-terminal-root">
+      <header className="returns-terminal-header">
+        <div className="header-left-actions">
+          <button className="terminal-exit-btn" onClick={handleExit} title="Exit Returns">✕</button>
+          <div className="terminal-title-group">
+            <span>TERMINAL</span>
+            <h1>RETURNS & EXCHANGES</h1>
+          </div>
         </div>
-      </Card>
 
-      {selectedOrder && (
-        <>
-          <Card t={t}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-              <div style={{ fontSize: 14, fontWeight: 800, color: t.text }}>
-                Order {selectedOrder.order_number || selectedOrder.id}
+        <div className="terminal-stepper">
+          {STEPS.map((s) => (
+            <div key={s.id} style={{ display: 'flex', alignItems: 'center' }}>
+              <div className={`terminal-step-dot ${currentStep === s.id ? 'active' : ''} ${currentStep > s.id ? 'done' : ''}`} />
+              {currentStep === s.id && <span className="terminal-step-label active">{s.label}</span>}
+            </div>
+          ))}
+        </div>
+
+        <div style={{ width: 48 }} />
+      </header>
+
+      <main className="terminal-canvas">
+        <div className="terminal-content-wrap">
+          
+          {isSuccess ? (
+            <div className="terminal-success">
+              <div className="success-lottie-mock">🎉</div>
+              <h2>Return Successful</h2>
+              <p>Transaction #{selectedOrder?.order_number || '---'} has been processed.</p>
+              <div style={{ display: 'flex', gap: 16, flexDirection: 'column', alignItems: 'center' }}>
+                <div style={{ display: 'flex', gap: 16 }}>
+                  <button className="terminal-btn-secondary" style={{ padding: '0 48px' }} onClick={() => window.print()}>Print Receipt</button>
+                  <button className="terminal-btn-primary" style={{ padding: '0 48px' }} onClick={resetFlow}>New Return</button>
+                </div>
+                <button 
+                  className="terminal-btn-secondary" 
+                  style={{ width: '100%', maxWidth: 400, background: 'transparent', border: '1px solid #E2E8F0' }} 
+                  onClick={handleExit}
+                >
+                  Back to Terminal
+                </button>
               </div>
-              {!withinWindow && <Badge t={t} text={`Outside ${returnDays}-day window`} color="red" />}
             </div>
-            <div style={{ fontSize: 13, color: t.text2, marginBottom: 12 }}>
-              Customer: {selectedOrder.customer_name || selectedOrder.customerName || 'Walk-in'} · Payment:{' '}
-              {selectedOrder.payment_method || selectedOrder.payment}
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {items.map((item, idx) => {
-                const returnable = isProductReturnable(item.product_id || item.productId)
-                const maxQty = itemQty(item)
-                const selQty = selItemQtys[idx] ?? 0
-                const linePrice = itemPrice(item) * (1 - itemDiscount(item) / 100)
-                return (
-                  <div
-                    key={idx}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 12,
-                      padding: '10px 12px',
-                      background: !returnable ? t.redBg + '40' : t.bg3,
-                      borderRadius: 9,
-                      border: `1px solid ${t.border}`,
-                    }}
-                  >
+          ) : (
+            <>
+              {currentStep === 1 && (
+                <div className="lookup-hero">
+                  <div className="lookup-icon-ring">🔍</div>
+                  <h2 className="lookup-title">Find the Order</h2>
+                  <p className="lookup-subtitle">Scan the customer receipt barcode or enter the order number manually to begin.</p>
+                  
+                  <div className="terminal-search-box">
                     <input
-                      type="checkbox"
-                      checked={selQty > 0}
-                      onChange={(e) => setItemQty(idx, e.target.checked ? maxQty : 0)}
-                      disabled={!returnable}
-                      style={{ width: 18, height: 18, accentColor: t.accent }}
+                      className="terminal-search-input"
+                      autoFocus
+                      placeholder="SCAN OR TYPE ORDER #"
+                      value={orderSearch}
+                      onChange={(e) => setOrderSearch(e.target.value.toUpperCase())}
+                      onKeyDown={(e) => e.key === 'Enter' && lookupOrder()}
                     />
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 13, fontWeight: 700, color: t.text }}>
-                        {itemName(item)}
-                        {!returnable && <Badge t={t} text="Non-returnable" color="red" />}
-                      </div>
-                      <div style={{ fontSize: 11, color: t.text3 }}>
-                        {fmt(linePrice, settings?.sym)} × {maxQty} max
-                      </div>
+                    <button className="search-submit-btn" onClick={lookupOrder} disabled={lookupLoading}>
+                      {lookupLoading ? '...' : '→'}
+                    </button>
+                  </div>
+
+                  <div className="terminal-quick-tools">
+                    <div className="tool-card" onClick={() => notify('Recent orders view coming soon', 'info')}>
+                      🕒 Recent Orders
                     </div>
-                    <input
-                      type="number"
-                      min={0}
-                      max={maxQty}
-                      value={selQty}
-                      onChange={(e) => setItemQty(idx, e.target.value)}
-                      disabled={!returnable}
-                      style={{
-                        width: 56,
-                        padding: '6px 8px',
-                        background: t.input,
-                        border: `1px solid ${t.border}`,
-                        borderRadius: 6,
-                        color: t.text,
-                        fontSize: 13,
-                        fontWeight: 700,
-                      }}
-                    />
-                    <div style={{ fontSize: 13, fontWeight: 800, color: t.accent, minWidth: 60, textAlign: 'right' }}>
-                      {fmt(linePrice * selQty, settings?.sym)}
+                    <div className="tool-card" onClick={() => notify('Customer search coming soon', 'info')}>
+                      👤 Find Customer
                     </div>
                   </div>
-                )
-              })}
-            </div>
-          </Card>
-
-          <Card t={t}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-              <Select
-                t={t}
-                label="Action"
-                value={processMode}
-                onChange={setProcessMode}
-                options={PROCESS_MODES.map((r) => ({ value: r.value, label: r.label }))}
-              />
-              <Select
-                t={t}
-                label="Return reason"
-                value={reasonCode}
-                onChange={setReasonCode}
-                options={REASON_CODES.map((r) => ({ value: r.value, label: r.label }))}
-              />
-              {processMode === 'return' && (
-                <Select
-                  t={t}
-                  label="Refund method"
-                  value={refundMethod}
-                  onChange={setRefundMethod}
-                  options={REFUND_METHODS.map((r) => ({ value: r.value, label: r.label }))}
-                />
+                </div>
               )}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: 8, borderTop: `1px solid ${t.border}` }}>
-                <span style={{ fontSize: 16, fontWeight: 800, color: t.text }}>
-                  {processMode === 'exchange' ? 'Exchange value' : 'Refund amount'}
-                </span>
-                <span style={{ fontSize: 22, fontWeight: 900, color: t.accent }}>{fmt(refundAmount, settings?.sym)}</span>
-              </div>
-              <Btn
-                t={t}
-                variant="success"
-                size="lg"
-                fullWidth
-                onClick={processReturn}
-                disabled={processing || selectedItems.length === 0 || hasNonReturnable || !withinWindow}
+
+              {currentStep === 2 && selectedOrder && (
+                <div style={{ animation: 'terminalFadeIn 0.4s' }}>
+                  <div className="selection-header">
+                    <div>
+                      <h2 style={{ fontSize: 32, fontWeight: 900, color: '#0F172A', margin: 0 }}>
+                        Order #{selectedOrder.order_number || selectedOrder.id}
+                      </h2>
+                      <p style={{ fontSize: 18, color: '#64748B', fontWeight: 600, marginTop: 8 }}>
+                        Tap items customer wishes to return
+                      </p>
+                    </div>
+                    {!withinWindow && <Badge text={`Outside ${returnDays}-day window`} color="red" />}
+                  </div>
+
+                  <div className="terminal-item-grid">
+                    {items.map((item, idx) => {
+                      const returnable = isProductReturnable(item.product_id || item.productId)
+                      const selQty = selItemQtys[idx] ?? 0
+                      const maxQty = itemQty(item)
+
+                      return (
+                        <div
+                          key={idx}
+                          className={`terminal-return-card ${selQty > 0 ? 'selected' : ''}`}
+                          onClick={() => returnable && toggleItem(idx)}
+                          style={{ opacity: returnable ? 1 : 0.5 }}
+                        >
+                          <div className="card-thumb">
+                            {item.image_url ? <img src={item.image_url} alt="" /> : '📦'}
+                          </div>
+                          <div className="card-info">
+                            <h3>{itemName(item)}</h3>
+                            <p>{fmt(itemPrice(item), settings?.sym)} · {maxQty} qty</p>
+                            {!returnable && <Badge text="Non-returnable" color="red" style={{ marginTop: 8 }} />}
+                          </div>
+
+                          <div className="card-checkbox">
+                            {selQty > 0 ? '✓' : ''}
+                          </div>
+
+                          {selQty > 0 && (
+                            <div className="card-qty-control" onClick={e => e.stopPropagation()}>
+                              <button className="qty-mini-btn" onClick={() => setItemQty(idx, selQty - 1)}>−</button>
+                              <span className="qty-display">{selQty}</span>
+                              <button className="qty-mini-btn" onClick={() => setItemQty(idx, selQty + 1)}>+</button>
+                            </div>
+                          )}
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {currentStep === 3 && (
+                <div style={{ animation: 'terminalFadeIn 0.4s' }}>
+                  <div style={{ textAlign: 'center', marginBottom: 48 }}>
+                    <h2 style={{ fontSize: 40, fontWeight: 900, color: '#0F172A' }}>Select Return Method</h2>
+                    <p style={{ fontSize: 20, color: '#64748B' }}>Choose how to compensate the customer</p>
+                  </div>
+
+                  <div className="terminal-giant-grid">
+                    <div 
+                      className={`giant-type-card ${processMode === 'return' && refundMethod !== 'store_credit' ? 'selected' : ''}`}
+                      onClick={() => { setProcessMode('return'); setRefundMethod('original'); }}
+                    >
+                      <i>💳</i>
+                      <div>
+                        <h2>Original Refund</h2>
+                        <p>Refund to original tender</p>
+                      </div>
+                    </div>
+
+                    <div 
+                      className={`giant-type-card ${processMode === 'exchange' ? 'selected' : ''}`}
+                      onClick={() => setProcessMode('exchange')}
+                    >
+                      <i>🔄</i>
+                      <div>
+                        <h2>Exchange</h2>
+                        <p>Switch for other products</p>
+                      </div>
+                    </div>
+
+                    <div 
+                      className={`giant-type-card ${refundMethod === 'store_credit' ? 'selected' : ''}`}
+                      onClick={() => { setProcessMode('return'); setRefundMethod('store_credit'); }}
+                    >
+                      <i>🎟️</i>
+                      <div>
+                        <h2>Store Credit</h2>
+                        <p>Issue a gift card/credit</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {currentStep === 4 && (
+                <div style={{ animation: 'terminalFadeIn 0.4s', maxWidth: 800, margin: '0 auto' }}>
+                   <div style={{ textAlign: 'center', marginBottom: 40 }}>
+                    <h2 style={{ fontSize: 32, fontWeight: 900, color: '#0F172A' }}>Final Confirmation</h2>
+                  </div>
+
+                  <div className="terminal-summary-card">
+                    <div className="summary-items-list">
+                      {selectedItems.map(({ item, qty }) => (
+                        <div key={item.id} className="summary-line">
+                          <div className="item-name-qty">
+                            <b>{itemName(item)}</b>
+                            <span>{qty} unit(s) @ {fmt(itemPrice(item), settings?.sym)}</span>
+                          </div>
+                          <div className="line-val">
+                             {fmt(itemPrice(item) * (1 - itemDiscount(item) / 100) * qty, settings?.sym)}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: 24 }}>
+                      <label style={{ fontSize: 18, fontWeight: 900, color: '#94A3B8' }}>TOTAL TO {processMode === 'exchange' ? 'EXCHANGE' : 'REFUND'}</label>
+                      <div style={{ fontSize: 56, fontWeight: 900, color: '#4F46E5', letterSpacing: -2 }}>
+                        {fmt(refundAmount, settings?.sym)}
+                      </div>
+                    </div>
+
+                    <div>
+                      <label style={{ display: 'block', fontSize: 13, fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase', marginBottom: 12 }}>Reason for Return</label>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12 }}>
+                        {REASON_CODES.map(rc => (
+                          <button
+                            key={rc.value}
+                            style={{
+                              padding: '12px 24px',
+                              borderRadius: 14,
+                              border: 'none',
+                              background: reasonCode === rc.value ? '#4F46E5' : '#F1F5F9',
+                              color: reasonCode === rc.value ? 'white' : '#64748B',
+                              fontWeight: 700,
+                              fontSize: 15,
+                              transition: 'all 0.2s',
+                              cursor: 'pointer'
+                            }}
+                            onClick={() => setReasonCode(rc.value)}
+                          >
+                            {rc.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+
+        </div>
+      </main>
+
+      {!isSuccess && currentStep > 1 && (
+        <footer className="terminal-footer">
+          <div className="footer-stats">
+            <label>Returning {selectedItems.length} items</label>
+            <div className="total-val">{fmt(refundAmount, settings?.sym)}</div>
+          </div>
+
+          <div className="footer-actions">
+            <button className="terminal-btn-secondary" onClick={() => setCurrentStep(currentStep - 1)}>Back</button>
+            
+            {currentStep === 2 && (
+              <button 
+                className="terminal-btn-primary" 
+                disabled={selectedItems.length === 0 || hasNonReturnable || !withinWindow}
+                onClick={() => setCurrentStep(3)}
               >
-                {processing ? 'Processing...' : processMode === 'exchange' ? 'Process Exchange' : 'Process Return'}
-              </Btn>
-            </div>
-          </Card>
-        </>
+                Choose Method →
+              </button>
+            )}
+
+            {currentStep === 3 && (
+              <button className="terminal-btn-primary" onClick={() => setCurrentStep(4)}>Review Summary →</button>
+            )}
+
+            {currentStep === 4 && (
+              <button className="terminal-btn-primary" onClick={handleProcessReturn} disabled={processing}>
+                {processing ? 'Processing...' : `Confirm & Process ${processMode === 'exchange' ? 'Exchange' : 'Refund'}`}
+              </button>
+            )}
+          </div>
+        </footer>
       )}
     </div>
   )

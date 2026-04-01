@@ -11,7 +11,10 @@ export function MainLayout() {
   const { sidebarOpen, closeSidebar } = useAppStore()
   const [venues, setVenues] = useState([])
   const location = useLocation()
-  const isPos = location.pathname.includes('/app/pos') || location.pathname.includes('/app/home')
+  const isPos = location.pathname.includes('/app/pos') || 
+                location.pathname.includes('/app/home') || 
+                location.pathname.includes('/app/cash') || 
+                location.pathname.includes('/app/pickup')
 
   useEffect(() => {
     venuesService.fetchVenuesWithSites().then(setVenues)

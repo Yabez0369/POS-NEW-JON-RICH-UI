@@ -312,12 +312,12 @@ export const POSTerminal = ({ products, setProducts, orders, setOrders, returns 
   const parkBill = async () => {
     if (cart.length === 0) return
     const cartForStore = cart.map(i => ({ id: i.id, originalId: i.originalId, name: i.name, qty: i.qty, price: i.price, discount: i.discount || 0, overridePrice: i.overridePrice ?? null }))
-    
+
     // Strict UUID check to avoid foreign key violations with mock/simulated IDs
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
     const isRealUuid = selCust?.id && uuidRegex.test(String(selCust.id))
     const validCustId = isRealUuid ? selCust.id : null
-    
+
     try {
       if (isSupabaseConfigured()) {
         const pb = await parkedBillsService.parkBill(effectiveSiteId, user?.counter_id, user?.id, validCustId, cartForStore)
@@ -767,7 +767,7 @@ export const POSTerminal = ({ products, setProducts, orders, setOrders, returns 
         cart={cart} updateQty={updateQty} setCart={setCart}
         search={search} setSearch={setSearch} scanMsg={scanMsg}
         filteredProds={filteredProds} getItemDiscount={getItemDiscount}
-        handleProductClick={(loadedOrderForReturn && returnProcessMode !== 'exchange') ? () => {} : handleProductClick}
+        handleProductClick={(loadedOrderForReturn && returnProcessMode !== 'exchange') ? () => { } : handleProductClick}
         cartSubtotal={cartSubtotal} cartTax={cartTax}
         couponDiscount={couponDiscount} loyaltyDiscount={loyaltyDiscount}
         manualDiscountAmount={manualDiscountAmount} cartTotal={cartTotal}
@@ -934,17 +934,17 @@ export const POSTerminal = ({ products, setProducts, orders, setOrders, returns 
       )}
 
       {showParkedDropdown && (
-        <Modal 
-          t={t} 
-          title="Recall Parked Sale" 
+        <Modal
+          t={t}
+          title="Recall Parked Sale"
           subtitle={`${parked.length} transactions waiting for attention`}
           onClose={() => setShowParkedDropdown(false)}
         >
-          <div style={{ 
-            display: 'flex', 
-            flexDirection: 'column', 
-            gap: 16, 
-            maxHeight: '65vh', 
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 16,
+            maxHeight: '65vh',
             overflowY: 'auto',
             padding: '4px 12px 24px 4px',
           }} className="recall-modal-list">
@@ -957,7 +957,7 @@ export const POSTerminal = ({ products, setProducts, orders, setOrders, returns 
               const totalItems = pb.cart?.reduce((acc, curr) => acc + curr.qty, 0) || 0
               const totalPrice = pb.cart?.reduce((acc, curr) => acc + (curr.price * (1 - (curr.discount || 0) / 100) * curr.qty), 0) || 0
               const previewEmojis = pb.cart?.slice(0, 5).map(i => i.emoji).join(' ')
-              
+
               return (
                 <div key={pb.id || idx} style={{
                   background: '#FFFFFF',
@@ -974,8 +974,8 @@ export const POSTerminal = ({ products, setProducts, orders, setOrders, returns 
                 }} className="recall-card">
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-                      <div style={{ 
-                        width: 48, height: 48, borderRadius: 14, 
+                      <div style={{
+                        width: 48, height: 48, borderRadius: 14,
                         background: 'linear-gradient(135deg, #F0F4FF, #E0E7FF)',
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                         fontSize: 20
@@ -999,9 +999,9 @@ export const POSTerminal = ({ products, setProducts, orders, setOrders, returns 
                     </div>
                   </div>
 
-                  <div style={{ 
-                    display: 'flex', 
-                    alignItems: 'center', 
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
                     justifyContent: 'space-between',
                     padding: '14px 20px',
                     background: '#F9FAFB',
@@ -1013,7 +1013,7 @@ export const POSTerminal = ({ products, setProducts, orders, setOrders, returns 
                       {pb.cart?.length > 5 && <span style={{ fontSize: 11, fontWeight: 800, color: '#9CA3AF', paddingLeft: 4 }}>+{pb.cart.length - 5} more</span>}
                     </div>
                     <div style={{ display: 'flex', gap: 10 }}>
-                      <button 
+                      <button
                         onClick={async (e) => {
                           e.stopPropagation();
                           if (isSupabaseConfigured() && pb.id) {
@@ -1035,7 +1035,7 @@ export const POSTerminal = ({ products, setProducts, orders, setOrders, returns 
                         onMouseOver={(e) => { e.target.style.color = '#EF4444'; e.target.style.borderColor = '#FCA5A5' }}
                         onMouseOut={(e) => { e.target.style.color = '#9CA3AF'; e.target.style.borderColor = '#E5E7EB' }}
                       >Discard</button>
-                      <button 
+                      <button
                         onClick={() => recallBill(pb)}
                         style={{
                           padding: '12px 28px',

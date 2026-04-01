@@ -292,7 +292,10 @@ export function POSFlowView({
             onClick={handleGoPayment}
           >
             {cart.length === 0 ? (
-              <span className="pos-continue-btn-text">Waiting for items…</span>
+              <span className="pos-continue-btn-empty">
+                <span className="pos-continue-btn-empty-title">Scan items to begin</span>
+                <span className="pos-continue-btn-empty-sub">Tap a product or scan a barcode</span>
+              </span>
             ) : (
               <>
                 <span className="pos-continue-btn-text">Pay {fmt(cartTotal, settings?.sym)}</span>
