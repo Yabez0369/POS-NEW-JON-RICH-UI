@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Modal, Btn, Input, Badge } from '@/components/ui'
+import { NumberPadModal } from '@/components/ui/NumberPadModal'
+import { FullKeyboard } from '@/components/ui/FullKeyboard'
 import { notify } from '@/components/shared'
 import { ts, fmt, getTier } from '@/lib/utils'
 
@@ -13,6 +15,17 @@ export function POSCustomerModal({
   const [otp, setOtp] = useState('')
   const [generatedOtp, setGeneratedOtp] = useState('')
   const [loading, setLoading] = useState(false)
+  const [showNumpad, setShowNumpad] = useState(false)
+  const [showFullKeyboard, setShowFullKeyboard] = useState(false)
+  const [keyboardTarget, setKeyboardTarget] = useState(null) // 'phone', 'name', 'otp'
+
+  // Auto-trigger Numpad when modal opens at phone step
+  useEffect(() => {
+    if (isOpen && step === 'phone' && !phone) {
+      setKeyboardTarget('phone')
+      setShowNumpad(true)
+    }
+  }, [isOpen, step])
 
   // Auto-search as typing phone number
   useEffect(() => {
@@ -41,7 +54,7 @@ export function POSCustomerModal({
     setLoading(true)
     const code = Math.floor(100000 + Math.random() * 900000).toString()
     setGeneratedOtp(code)
-    
+
     // Simulate API delay
     setTimeout(() => {
       setLoading(false)
@@ -132,6 +145,9 @@ export function POSCustomerModal({
                 t={t}
                 value={phone}
                 onChange={setPhone}
+                onFocus={() => { setKeyboardTarget('phone'); setShowNumpad(true); }}
+                onClick={() => { setKeyboardTarget('phone'); setShowNumpad(true); }}
+                readOnly={showNumpad}
                 placeholder="566778899*"
                 type="tel"
                 autoFocus
@@ -188,9 +204,9 @@ export function POSCustomerModal({
             }}>
               {foundCust.avatar || foundCust.name.charAt(0)}
             </div>
-            
+
             <Badge t={t} text="Registered Member" color="green" />
-            
+
             <div style={{ fontSize: 24, fontWeight: 900, color: t.text, marginTop: 12 }}>{foundCust.name}</div>
             <div style={{ fontSize: 14, color: t.text3, marginBottom: 20 }}>{foundCust.phone}</div>
 
@@ -242,12 +258,15 @@ export function POSCustomerModal({
                 <div style={{ fontSize: 11, fontWeight: 800, color: t.text3, textTransform: 'uppercase', marginBottom: 6, marginLeft: 4 }}>Phone Number</div>
                 <div style={{ background: t.bg2, padding: '12px 16px', borderRadius: 12, border: `1px solid ${t.border}`, fontSize: 18, fontWeight: 800, color: t.text3 }}>{phone}</div>
               </div>
-              
+
               <Input
                 t={t}
                 label="Full Name"
                 value={newName}
                 onChange={setNewName}
+                onFocus={() => { setKeyboardTarget('name'); setShowFullKeyboard(true); }}
+                onClick={() => { setKeyboardTarget('name'); setShowFullKeyboard(true); }}
+                readOnly={showFullKeyboard}
                 placeholder="e.g. John Doe"
                 autoFocus
                 style={{ fontSize: 16, padding: '14px', borderRadius: 12 }}
@@ -284,6 +303,9 @@ export function POSCustomerModal({
                 maxLength={6}
                 value={otp}
                 onChange={e => setOtp(e.target.value.replace(/[^0-9]/g, ''))}
+                onFocus={() => { setKeyboardTarget('otp'); setShowNumpad(true); }}
+                onClick={() => { setKeyboardTarget('otp'); setShowNumpad(true); }}
+                readOnly={showNumpad}
                 autoFocus
                 placeholder="••••••"
                 style={{
@@ -354,6 +376,46 @@ export function POSCustomerModal({
         )}
 
       </div>
+
+      {showNumpad && (
+        <NumberPadModal
+          title={keyboardTarget === 'phone' ? 'Customer Phone' : 'Verification OTP'}
+          subtitle={keyboardTarget === 'phone' ? 'Enter number to search profile' : 'Enter the 6-digit code received'}
+          initialValue={keyboardTarget === 'phone' ? phone : otp}
+          onClose={() => setShowNumpad(false)}
+          t={t}
+          position="left"
+          onSave={(v) => {
+            if (keyboardTarget === 'phone') {
+              setPhone(v)
+              if (v.length >= 5) {
+                // handleSearch is local but we can close numpad
+                setShowNumpad(false)
+              }
+            } else {
+              setOtp(v)
+              if (v.length === 6) setShowNumpad(false)
+            }
+          }}
+          onChange={(v) => {
+            if (keyboardTarget === 'phone') setPhone(v)
+            else setOtp(v)
+          }}
+        />
+      )}
+
+      {showFullKeyboard && (
+        <FullKeyboard
+          initialValue={newName}
+          t={t}
+          onClose={() => setShowFullKeyboard(false)}
+          onSave={(v) => {
+            setNewName(v)
+            setShowFullKeyboard(false)
+          }}
+          onChange={setNewName}
+        />
+      )}
 
       <style>{`
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
