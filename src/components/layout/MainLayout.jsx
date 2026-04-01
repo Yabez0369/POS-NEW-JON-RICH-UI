@@ -14,7 +14,8 @@ export function MainLayout() {
   const isPos = location.pathname.includes('/app/pos') || 
                 location.pathname.includes('/app/home') || 
                 location.pathname.includes('/app/cash') || 
-                location.pathname.includes('/app/pickup')
+                location.pathname.includes('/app/pickup') ||
+                location.pathname.includes('/app/hardware')
 
   useEffect(() => {
     venuesService.fetchVenuesWithSites().then(setVenues)

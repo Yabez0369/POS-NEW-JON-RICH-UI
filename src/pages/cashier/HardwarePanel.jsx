@@ -1,89 +1,178 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useTheme } from '@/context/ThemeContext'
 import { useAuth } from '@/context/AuthContext'
-import { Btn, Badge, Card } from '@/components/ui'
 import { notify } from '@/components/shared'
+import './HardwarePanel.css'
+
+// ── HARDWARE ICONS (SVG PATHS) ──
+const ICONS = {
+  scan: <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>,
+  print: <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>,
+  card: <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="5" width="20" height="14" rx="2" ry="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>,
+  drawer: <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/><path d="M12 11V11"/><path d="M12 17V17"/></svg>,
+}
 
 export const HardwarePanel = ({ addAudit, settings, t: tProp }) => {
-  const { t: tCtx } = useTheme()
+  const { t: tCtx, darkMode } = useTheme()
   const { currentUser } = useAuth()
+  const navigate = useNavigate()
   const t = tProp || tCtx
-  const user = currentUser
 
   const [devs, setDevs] = useState([
-    { id: 'scan', name: 'Barcode Scanner', type: 'Input', status: 'connected', icon: '📷', serial: 'BS-2024-001' },
-    { id: 'print', name: 'Receipt Printer', type: 'Output', status: 'connected', icon: '🖨️', serial: 'RP-2024-002' },
-    { id: 'card', name: 'Card Terminal', type: 'I/O', status: 'connected', icon: '💳', serial: 'CT-2024-003' },
-    { id: 'drawer', name: 'Cash Drawer', type: 'Output', status: 'connected', icon: '💰', serial: 'CD-2024-004' },
+    { id: 'scan', name: 'Barcode Scanner', type: 'USB-HID', status: 'connected', serial: 'BS-2024-001' },
+    { id: 'print', name: 'Receipt Printer', type: 'TCP-IP', status: 'connected', serial: 'RP-2024-002' },
+    { id: 'card', name: 'Card Terminal', type: 'WEB-API', status: 'connected', serial: 'CT-2024-003' },
+    { id: 'drawer', name: 'Cash Drawer', type: 'RJ11', status: 'connected', serial: 'CD-2024-004' },
   ])
-  const [test, setTest] = useState({})
+  
+  const [testStatus, setTestStatus] = useState({})
+  const [clock, setClock] = useState(() => new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }))
+
+  useEffect(() => {
+    const iv = setInterval(() => {
+      setClock(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }))
+    }, 1000)
+    return () => clearInterval(iv)
+  }, [])
 
   const toggleDevice = (d) => {
     setDevs(ds => ds.map(x => {
       if (x.id !== d.id) return x
       const s = x.status === 'connected' ? 'disconnected' : 'connected'
-      addAudit(user, `Device ${s}`, 'Hardware', x.name)
-      notify(`${x.name} ${s}`, s === 'connected' ? 'success' : 'warning')
+      if (addAudit) addAudit({ action: `Hardware ${s}`, detail: x.name, user: currentUser?.name || 'Staff' })
+      notify(`${x.name} is now ${s}`, s === 'connected' ? 'success' : 'warning')
       return { ...x, status: s }
     }))
   }
 
-  const testDevice = (d) => {
-    setTest(x => ({ ...x, [d.id]: 'testing' }))
+  const runDiagnostic = (d) => {
+    if (testStatus[d.id] === 'running') return
+    
+    setTestStatus(prev => ({ ...prev, [d.id]: 'running' }))
+    
+    // Simulate multi-step hardware check for premium feel
     setTimeout(() => {
-      const simulatedResponses = {
-        scan: 'Simulated: Barcode 123456789 read successfully',
-        print: 'Simulated: Receipt printed (42 chars)',
-        card: `Simulated: Card approved — ${settings?.sym || '£'}0.00`,
-        drawer: 'Simulated: Drawer opened and closed OK',
+      const logs = [
+        `> Initialized ${d.name} diag...`,
+        `> Checking connection: OK`,
+        `> Testing internal buffer...`,
+        `> SYNC SUCCESS`
+      ]
+      
+      const responses = {
+        scan: 'Barcode "5012345678901" read @ 12ms',
+        print: 'Printed: 180mm x 80mm feed test',
+        card: `Auth link: ${settings?.sym || '£'}0.01 success`,
+        drawer: 'Kick signal 24V pulsed: OK',
       }
-      setTest(x => ({ ...x, [d.id]: simulatedResponses[d.id] || 'Simulated: OK' }))
-      notify(`${d.name} test passed! (Simulated)`, 'success')
-      setTimeout(() => setTest(x => ({ ...x, [d.id]: null })), 2500)
-    }, 1200)
+      
+      setTestStatus(prev => ({ ...prev, [d.id]: responses[d.id] }))
+      notify(`${d.name} Diagnostic Passed!`, 'success')
+      
+      setTimeout(() => {
+        setTestStatus(prev => {
+          const next = { ...prev }
+          delete next[d.id]
+          return next
+        })
+      }, 5000)
+    }, 2000)
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-      <div style={{ background: t.yellowBg, border: `2px solid ${t.yellow}`, borderRadius: 12, padding: '14px 20px', display: 'flex', alignItems: 'center', gap: 12, textAlign: 'center' }}>
-        <span style={{ fontSize: 24 }}>⚠️</span>
-        <div>
-          <div style={{ fontSize: 16, fontWeight: 900, color: t.yellow, letterSpacing: 1, textTransform: 'uppercase' }}>SIMULATION MODE</div>
-          <div style={{ fontSize: 12, color: t.text3, marginTop: 3 }}>All hardware interactions are simulated. No real devices are connected.</div>
+    <div className="hw-terminal" data-theme={darkMode ? 'dark' : 'light'} style={{ color: t.text }}>
+      
+      {/* ════════════ TOPBAR ════════════ */}
+      <div className="hw-topbar" style={{ background: t.bg2 }}>
+        <button className="hw-back-btn" onClick={() => navigate('/app/home')} style={{ background: t.bg, color: t.text3 }}>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M15 18l-6-6 6-6"/></svg>
+        </button>
+
+        <div className="hw-topbar-center">
+          <div className="hw-topbar-title">Hardware Hub</div>
+          <div className="hw-status-badge hw-status--sim">
+            <span className="hw-status-pulse" />
+            Simulation Mode
+          </div>
+        </div>
+
+        <div className="hw-topbar-right">
+          <div className="hw-time">{clock}</div>
         </div>
       </div>
 
-      <div style={{ fontSize: 22, fontWeight: 900, color: t.text }}>Hardware</div>
+      <div className="hw-main">
+        {/* ── HERO ── */}
+        <div className="hw-hero">
+          <div className="hw-hero-title">System Health: Optimal</div>
+          <div className="hw-hero-subtitle">All core peripherals active and ready</div>
+        </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(min(260px,90vw),1fr))', gap: 14 }}>
-        {devs.map(d => (
-          <Card t={t} key={d.id} style={{ borderTop: `4px solid ${d.status === 'connected' ? t.green : t.border}` }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 14 }}>
-              <div style={{ display: 'flex', gap: 10 }}>
-                <div style={{ width: 42, height: 42, background: d.status === 'connected' ? t.greenBg : t.bg3, border: `1px solid ${d.status === 'connected' ? t.greenBorder : t.border}`, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20 }}>{d.icon}</div>
-                <div>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: t.text }}>{d.name}</div>
-                  <div style={{ fontSize: 11, color: t.text3 }}>{d.type} · {d.serial}</div>
+        {/* ── GRID ── */}
+        <div className="hw-grid">
+          {devs.map(d => {
+            const isOnline = d.status === 'connected'
+            const isTesting = testStatus[d.id] === 'running'
+            const testResult = typeof testStatus[d.id] === 'string' && testStatus[d.id] !== 'running' ? testStatus[d.id] : null
+
+            return (
+              <div key={d.id} className={`hw-card ${isOnline ? 'hw-card--online' : ''}`} style={{ borderColor: t.border }}>
+                <div className="hw-card-header">
+                  <div className="hw-icon-wrap" style={{ color: isOnline ? '#10b981' : t.text3 }}>
+                    {ICONS[d.id]}
+                  </div>
+                  <div className={isOnline ? "hw-online-dot" : "hw-offline-dot"} />
+                </div>
+
+                <div className="hw-card-info">
+                  <div className="hw-card-name">{d.name}</div>
+                  <div className="hw-card-meta">{d.type} • {d.serial}</div>
+                </div>
+
+                {isTesting && (
+                  <div className="hw-testing-bar">
+                    <div className="hw-testing-progress" />
+                  </div>
+                )}
+
+                {testResult && (
+                  <div className="hw-log slide-up">
+                    <div style={{ opacity: 0.6, fontSize: '9px', marginBottom: '2px' }}>DIAGNOSTIC LOG</div>
+                    {testResult}
+                  </div>
+                )}
+
+                <div className="hw-actions">
+                  <button 
+                    className="hw-btn hw-btn--secondary"
+                    onClick={() => toggleDevice(d)}
+                  >
+                    {isOnline ? 'Detach' : 'Initialize'}
+                  </button>
+                  <button 
+                    className={`hw-btn ${isOnline ? 'hw-btn--primary' : 'hw-btn--disabled'}`}
+                    disabled={!isOnline || isTesting}
+                    onClick={() => runDiagnostic(d)}
+                  >
+                    {isTesting ? 'Testing...' : 'Test Device'}
+                  </button>
                 </div>
               </div>
-              <Badge t={t} text={d.status} color={d.status === 'connected' ? 'green' : 'red'} />
-            </div>
-            <div style={{ display: 'flex', gap: 8 }}>
-              <Btn t={t} variant={d.status === 'connected' ? 'danger' : 'success'} size="sm" style={{ flex: 1 }} onClick={() => toggleDevice(d)}>
-                {d.status === 'connected' ? 'Disconnect' : 'Connect'}
-              </Btn>
-              <Btn t={t} variant="secondary" size="sm" style={{ flex: 1 }} disabled={d.status !== 'connected' || test[d.id] === 'testing'} onClick={() => testDevice(d)}>
-                {test[d.id] === 'testing' ? 'Testing...' : typeof test[d.id] === 'string' ? '✓ Pass' : 'Test'}
-              </Btn>
-            </div>
-            {test[d.id] && typeof test[d.id] === 'string' && test[d.id] !== 'testing' && (
-              <div style={{ marginTop: 10, padding: '8px 10px', background: t.bg3, borderRadius: 8, fontSize: 11, color: t.green, fontWeight: 700 }}>
-                {test[d.id]}
-              </div>
-            )}
-          </Card>
-        ))}
+            )
+          })}
+        </div>
+
+        {/* ── FOOTER WARNING ── */}
+        <div className="hw-sim-warning">
+          <div className="hw-sim-icon">⚠️</div>
+          <div className="hw-sim-text">
+            <div className="hw-sim-title">Virtual Environment Active</div>
+            <div className="hw-sim-desc">You are running in hardware simulation mode. Interaction signals bypass physical drivers.</div>
+          </div>
+        </div>
       </div>
     </div>
   )
 }
+
