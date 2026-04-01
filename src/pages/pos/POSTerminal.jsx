@@ -270,6 +270,19 @@ export const POSTerminal = ({ products, setProducts, orders, setOrders, returns 
     setCart(c => c.map(i => i.id === id ? { ...i, qty: Math.max(0, i.qty + d) } : i).filter(i => i.qty > 0))
   }
 
+  const updateQtyAbsolute = (id, val) => {
+    const num = parseInt(val)
+    if (isNaN(num) || num < 0) return
+    const ci = cart.find(i => i.id === id)
+    if (!ci) return
+    const baseId = ci.originalId || id
+    const p = products.find(x => x.id === baseId)
+    if (!p) return
+
+    if (num > p.stock) { notify(`Only ${p.stock} in stock!`, 'error'); return }
+    setCart(c => c.map(i => i.id === id ? { ...i, qty: num } : i).filter(i => i.qty > 0))
+  }
+
   const removeFromCart = (productId) => {
     setCart(c => {
       const cartId = c.find(i => (i.originalId || i.id) === productId || i.id === productId)?.id
@@ -676,7 +689,7 @@ export const POSTerminal = ({ products, setProducts, orders, setOrders, returns 
     notify(`Order ${orderId} complete! 🎉`, 'success')
     setShowReceipt(newOrder)
     setCompletedOrder(newOrder)
-    setPosStep('scan')
+    setPosStep('success')
     setCart([]); setSelCust(null); setCashGiven(''); setCardNum(''); setCardExp(''); setCardCvv(''); setQrPaid(false); setAppliedCoupon(null); setCouponCode(''); setLoyaltyRedeem(false); setShowQrModal(false); setSplitCash(''); setSplitCard(''); setManualDiscountPct(0)
     setCheckoutProcessing(false)
   }
@@ -707,24 +720,29 @@ export const POSTerminal = ({ products, setProducts, orders, setOrders, returns 
       if (Math.abs(sc + cc - cartTotal) > 0.01) { notify('Split amounts must equal the total', 'error'); return }
       if (sc <= 0 || cc <= 0) { notify('Both amounts must be > 0', 'error'); return }
     }
-    if (payMethod === 'Card') {
+    if (payMethod === 'Card' || payMethod === 'Split') {
       // Show card popup overlay on top of payment step
       setShowCardPopup(true)
       setCardPopupStep('waiting')
       return
     }
-    setPosStep('processing')
+    // setPosStep('processing') // Removed per user request to skip spinner screen
     processOrder()
   }
   const simulateCardTap = () => {
     setCardPopupStep('processing')
-    setTimeout(() => {
+    setTimeout(async () => {
       setCardPopupStep('approved')
-      setTimeout(() => {
-        setShowCardPopup(false)
-        setCardPopupStep('waiting')
-        processOrder()
-      }, 800)
+      
+      // We want to wait for BOTH the processOrder to finish AND a minimum of 2 seconds
+      const processPromise = processOrder()
+      const timerPromise = new Promise(resolve => setTimeout(resolve, 2000))
+      
+      await Promise.all([processPromise, timerPromise])
+      
+      // Now close the success message and reveal the bill
+      setShowCardPopup(false)
+      setCardPopupStep('waiting')
     }, 1800)
   }
 
@@ -764,7 +782,7 @@ export const POSTerminal = ({ products, setProducts, orders, setOrders, returns 
         startNewSale={startNewSale} confirmPayment={confirmPayment}
         simulateCardTap={simulateCardTap}
         showCardPopup={showCardPopup} setShowCardPopup={setShowCardPopup} cardPopupStep={cardPopupStep}
-        cart={cart} updateQty={updateQty} setCart={setCart}
+        cart={cart} updateQty={updateQty} updateQtyAbsolute={updateQtyAbsolute} setCart={setCart}
         search={search} setSearch={setSearch} scanMsg={scanMsg}
         filteredProds={filteredProds} getItemDiscount={getItemDiscount}
         handleProductClick={(loadedOrderForReturn && returnProcessMode !== 'exchange') ? () => { } : handleProductClick}
@@ -865,7 +883,7 @@ export const POSTerminal = ({ products, setProducts, orders, setOrders, returns 
               <>
                 <div style={{ fontSize: 80, color: '#34C759' }}>✅</div>
                 <div>
-                  <div style={{ fontSize: 28, fontWeight: 900, color: '#34C759', marginBottom: 8 }}>Approved</div>
+                  <div style={{ fontSize: 28, fontWeight: 900, color: '#34C759', marginBottom: 8 }}>Payment Successful</div>
                   <div style={{ fontSize: 16, color: t.text3 }}>Payment Successful</div>
                 </div>
                 <Btn t={t} variant="success" size="lg" style={{ width: '100%', marginTop: 20 }} onClick={() => {

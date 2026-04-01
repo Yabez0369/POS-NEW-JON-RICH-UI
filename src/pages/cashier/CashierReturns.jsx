@@ -70,11 +70,12 @@ export const CashierReturns = ({
   const [selectedOrder, setSelectedOrder] = useState(null)
   const [selItemQtys, setSelItemQtys] = useState({})
   const [reasonCode, setReasonCode] = useState('')
-  const [refundMethod, setRefundMethod] = useState('original')
-  const [processMode, setProcessMode] = useState('return')
+  const [refundMethod, setRefundMethod] = useState('')
+  const [processMode, setProcessMode] = useState('')
   const [processing, setProcessing] = useState(false)
   const [lookupLoading, setLookupLoading] = useState(false)
   const [isSuccess, setIsSuccess] = useState(false)
+  const [showReceiptModal, setShowReceiptModal] = useState(false)
 
   const returnDays = settings?.returnDays ?? 30
   const effectiveSiteId = siteId || 'b0000000-0000-0000-0000-000000000001'
@@ -262,9 +263,15 @@ export const CashierReturns = ({
     setOrderSearch('')
     setSelItemQtys({})
     setReasonCode('')
-    setRefundMethod('original')
-    setProcessMode('return')
+    setRefundMethod('')
+    setProcessMode('')
     setIsSuccess(false)
+    setShowReceiptModal(false)
+  }
+
+  const handlePrintMock = () => {
+    setShowReceiptModal(false)
+    notify('Bill printed', 'success')
   }
 
   const navigate = useNavigate()
@@ -302,25 +309,83 @@ export const CashierReturns = ({
 
       <main className="terminal-canvas">
         <div className="terminal-content-wrap">
-          
+
           {isSuccess ? (
             <div className="terminal-success">
-              <div className="success-lottie-mock">🎉</div>
-              <h2>Return Successful</h2>
-              <p>Transaction #{selectedOrder?.order_number || '---'} has been processed.</p>
-              <div style={{ display: 'flex', gap: 16, flexDirection: 'column', alignItems: 'center' }}>
-                <div style={{ display: 'flex', gap: 16 }}>
-                  <button className="terminal-btn-secondary" style={{ padding: '0 48px' }} onClick={() => window.print()}>Print Receipt</button>
-                  <button className="terminal-btn-primary" style={{ padding: '0 48px' }} onClick={resetFlow}>New Return</button>
+              <div className="success-ui-wrap" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                <div className="success-lottie-mock">🎉</div>
+                <h2>Return Successful</h2>
+                <p>Transaction #{selectedOrder?.order_number || '---'} has been processed.</p>
+                <div style={{ display: 'flex', gap: 16, flexDirection: 'column', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', gap: 16 }}>
+                    <button className="terminal-btn-secondary" style={{ padding: '0 48px' }} onClick={() => {
+                      setShowReceiptModal(true)
+                      notify('Bill printed', 'success')
+                    }}>Print Receipt</button>
+                    <button className="terminal-btn-primary" style={{ padding: '0 48px' }} onClick={resetFlow}>New Return</button>
+                  </div>
+                  <button
+                    className="terminal-btn-secondary"
+                    style={{ width: '100%', maxWidth: 400, background: 'transparent', border: '1px solid #E2E8F0' }}
+                    onClick={handleExit}
+                  >
+                    Back to Terminal
+                  </button>
                 </div>
-                <button 
-                  className="terminal-btn-secondary" 
-                  style={{ width: '100%', maxWidth: 400, background: 'transparent', border: '1px solid #E2E8F0' }} 
-                  onClick={handleExit}
-                >
-                  Back to Terminal
-                </button>
               </div>
+
+              {showReceiptModal && (
+                <div 
+                  style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.5)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                  onClick={() => setShowReceiptModal(false)}
+                >
+                  <div 
+                    style={{ background: '#fff', padding: 24, borderRadius: 16, width: 400, maxWidth: '90%', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 20px 50px rgba(0,0,0,0.15)' }}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <div style={{ fontFamily: 'monospace', color: '#000', padding: 16, border: '1px solid #E2E8F0', borderRadius: 8, background: '#FAFAFA' }}>
+                      <div style={{ textAlign: 'center', marginBottom: 16 }}>
+                        <h2 style={{ fontSize: 24, margin: '0 0 4px 0', textTransform: 'uppercase' }}>SCSTIX EPOS</h2>
+                        <div style={{ fontSize: 14 }}>RETURN RECEIPT</div>
+                        <div style={{ fontSize: 12, marginTop: 8 }}>TXN: #{selectedOrder?.order_number || selectedOrder?.id?.slice(0, 8)}</div>
+                        <div style={{ fontSize: 12 }}>DATE: {new Date().toLocaleString()}</div>
+                      </div>
+                      
+                      <div style={{ borderTop: '1px dashed #A0AEC0', borderBottom: '1px dashed #A0AEC0', padding: '12px 0', margin: '16px 0' }}>
+                        <table style={{ width: '100%', fontSize: 12, textAlign: 'left', borderCollapse: 'collapse' }}>
+                          <thead>
+                            <tr>
+                              <th style={{ paddingBottom: 8 }}>ITEM</th>
+                              <th style={{ paddingBottom: 8, textAlign: 'center' }}>QTY</th>
+                              <th style={{ paddingBottom: 8, textAlign: 'right' }}>AMT</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {selectedItems.map(({ item, qty }, idx) => (
+                              <tr key={idx}>
+                                <td style={{ paddingTop: 4 }}>{itemName(item)}</td>
+                                <td style={{ paddingTop: 4, textAlign: 'center' }}>{qty}</td>
+                                <td style={{ paddingTop: 4, textAlign: 'right' }}>{fmt(itemPrice(item) * (1 - itemDiscount(item) / 100) * qty, settings?.sym)}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14, fontWeight: 'bold' }}>
+                        <span>TOTAL REFUND</span>
+                        <span>{fmt(refundAmount, settings?.sym)}</span>
+                      </div>
+                      
+                      <div style={{ textAlign: 'center', marginTop: 24, fontSize: 12 }}>
+                        <div>METHOD: {processMode === 'exchange' ? 'EXCHANGE' : (refundMethod || 'Original').replace('_', ' ').toUpperCase()}</div>
+                        <div style={{ marginTop: 4 }}>REASON: {(REASON_CODES.find(r => r.value === reasonCode)?.label || reasonCode || 'OTHER').toUpperCase()}</div>
+                        <div style={{ marginTop: 16 }}>*** Customer Copy ***</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           ) : (
             <>
@@ -329,7 +394,7 @@ export const CashierReturns = ({
                   <div className="lookup-icon-ring">🔍</div>
                   <h2 className="lookup-title">Find the Order</h2>
                   <p className="lookup-subtitle">Scan the customer receipt barcode or enter the order number manually to begin.</p>
-                  
+
                   <div className="terminal-search-box">
                     <input
                       className="terminal-search-input"
@@ -411,15 +476,15 @@ export const CashierReturns = ({
 
               {currentStep === 3 && (
                 <div style={{ animation: 'terminalFadeIn 0.4s' }}>
-                  <div style={{ textAlign: 'center', marginBottom: 48 }}>
-                    <h2 style={{ fontSize: 40, fontWeight: 900, color: '#0F172A' }}>Select Return Method</h2>
-                    <p style={{ fontSize: 20, color: '#64748B' }}>Choose how to compensate the customer</p>
+                  <div style={{ textAlign: 'center', marginBottom: 32 }}>
+                    <h2 style={{ fontSize: 32, fontWeight: 900, color: '#0F172A' }}>Select Return Method</h2>
+                    <p style={{ fontSize: 16, color: '#64748B' }}>Choose how to compensate the customer</p>
                   </div>
 
                   <div className="terminal-giant-grid">
-                    <div 
-                      className={`giant-type-card ${processMode === 'return' && refundMethod !== 'store_credit' ? 'selected' : ''}`}
-                      onClick={() => { setProcessMode('return'); setRefundMethod('original'); }}
+                    <div
+                      className={`giant-type-card ${processMode === 'return' && refundMethod === 'original' ? 'selected' : ''}`}
+                      onClick={() => { setProcessMode('return'); setRefundMethod('original'); setCurrentStep(4); }}
                     >
                       <i>💳</i>
                       <div>
@@ -428,9 +493,9 @@ export const CashierReturns = ({
                       </div>
                     </div>
 
-                    <div 
+                    <div
                       className={`giant-type-card ${processMode === 'exchange' ? 'selected' : ''}`}
-                      onClick={() => setProcessMode('exchange')}
+                      onClick={() => { setProcessMode('exchange'); setRefundMethod('exchange'); setCurrentStep(4); }}
                     >
                       <i>🔄</i>
                       <div>
@@ -439,9 +504,9 @@ export const CashierReturns = ({
                       </div>
                     </div>
 
-                    <div 
+                    <div
                       className={`giant-type-card ${refundMethod === 'store_credit' ? 'selected' : ''}`}
-                      onClick={() => { setProcessMode('return'); setRefundMethod('store_credit'); }}
+                      onClick={() => { setProcessMode('return'); setRefundMethod('store_credit'); setCurrentStep(4); }}
                     >
                       <i>🎟️</i>
                       <div>
@@ -455,8 +520,8 @@ export const CashierReturns = ({
 
               {currentStep === 4 && (
                 <div style={{ animation: 'terminalFadeIn 0.4s', maxWidth: 800, margin: '0 auto' }}>
-                   <div style={{ textAlign: 'center', marginBottom: 40 }}>
-                    <h2 style={{ fontSize: 32, fontWeight: 900, color: '#0F172A' }}>Final Confirmation</h2>
+                  <div style={{ textAlign: 'center', marginBottom: 24 }}>
+                    <h2 style={{ fontSize: 28, fontWeight: 900, color: '#0F172A' }}>Final Confirmation</h2>
                   </div>
 
                   <div className="terminal-summary-card">
@@ -468,35 +533,41 @@ export const CashierReturns = ({
                             <span>{qty} unit(s) @ {fmt(itemPrice(item), settings?.sym)}</span>
                           </div>
                           <div className="line-val">
-                             {fmt(itemPrice(item) * (1 - itemDiscount(item) / 100) * qty, settings?.sym)}
+                            {fmt(itemPrice(item) * (1 - itemDiscount(item) / 100) * qty, settings?.sym)}
                           </div>
                         </div>
                       ))}
                     </div>
 
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: 24 }}>
-                      <label style={{ fontSize: 18, fontWeight: 900, color: '#94A3B8' }}>TOTAL TO {processMode === 'exchange' ? 'EXCHANGE' : 'REFUND'}</label>
-                      <div style={{ fontSize: 56, fontWeight: 900, color: '#4F46E5', letterSpacing: -2 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: 16 }}>
+                      <label style={{ fontSize: 14, fontWeight: 900, color: '#94A3B8' }}>TOTAL TO {processMode === 'exchange' ? 'EXCHANGE' : 'REFUND'}</label>
+                      <div style={{ fontSize: 40, fontWeight: 900, color: '#4F46E5', letterSpacing: -1 }}>
                         {fmt(refundAmount, settings?.sym)}
                       </div>
                     </div>
 
                     <div>
-                      <label style={{ display: 'block', fontSize: 13, fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase', marginBottom: 12 }}>Reason for Return</label>
+                      <label style={{ display: 'block', fontSize: 13, fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase', marginBottom: 8 }}>Reason for Return</label>
                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12 }}>
                         {REASON_CODES.map(rc => (
                           <button
                             key={rc.value}
                             style={{
-                              padding: '12px 24px',
-                              borderRadius: 14,
+                              height: 56,
+                              padding: '0 24px',
+                              borderRadius: 16,
                               border: 'none',
                               background: reasonCode === rc.value ? '#4F46E5' : '#F1F5F9',
                               color: reasonCode === rc.value ? 'white' : '#64748B',
-                              fontWeight: 700,
+                              fontWeight: 800,
                               fontSize: 15,
+                              flex: '1 1 calc(33.33% - 12px)',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
                               transition: 'all 0.2s',
-                              cursor: 'pointer'
+                              cursor: 'pointer',
+                              boxShadow: reasonCode === rc.value ? '0 10px 25px rgba(79, 70, 229, 0.3)' : '0 4px 12px rgba(0,0,0,0.03)'
                             }}
                             onClick={() => setReasonCode(rc.value)}
                           >
@@ -523,10 +594,10 @@ export const CashierReturns = ({
 
           <div className="footer-actions">
             <button className="terminal-btn-secondary" onClick={() => setCurrentStep(currentStep - 1)}>Back</button>
-            
+
             {currentStep === 2 && (
-              <button 
-                className="terminal-btn-primary" 
+              <button
+                className="terminal-btn-primary"
                 disabled={selectedItems.length === 0 || hasNonReturnable || !withinWindow}
                 onClick={() => setCurrentStep(3)}
               >
@@ -534,9 +605,7 @@ export const CashierReturns = ({
               </button>
             )}
 
-            {currentStep === 3 && (
-              <button className="terminal-btn-primary" onClick={() => setCurrentStep(4)}>Review Summary →</button>
-            )}
+
 
             {currentStep === 4 && (
               <button className="terminal-btn-primary" onClick={handleProcessReturn} disabled={processing}>

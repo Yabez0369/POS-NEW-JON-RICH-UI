@@ -7,6 +7,8 @@ import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ImgWithFallback } from '@/components/shared'
 import { fmt } from '@/lib/utils'
+import { NumberPadModal } from '@/components/ui/NumberPadModal'
+import { FullKeyboard } from '@/components/ui/FullKeyboard'
 import './POSFlowTerminal.css'
 
 const STEP_LABELS = { scan: 'Scan', payment: 'Pay', processing: 'Process', success: 'Done' }
@@ -19,7 +21,7 @@ export function POSFlowView({
   // Card popup
   showCardPopup, setShowCardPopup, cardPopupStep,
   // Cart
-  cart, updateQty, setCart, search, setSearch, scanMsg,
+  cart, updateQty, updateQtyAbsolute, setCart, search, setSearch, scanMsg,
   filteredProds, getItemDiscount, handleProductClick,
   // Totals
   cartSubtotal, cartTax, couponDiscount, loyaltyDiscount,
@@ -48,6 +50,13 @@ export function POSFlowView({
   const [lastAddedId, setLastAddedId] = useState(null)
   const [itemAddedAnim, setItemAddedAnim] = useState(false)
   const lastTapMap = useRef({})
+
+  // Numpad state
+  const [showNumpad, setShowNumpad] = useState(false)
+  const [numpadConfig, setNumpadConfig] = useState({ target: null, itemId: null, initialValue: '' })
+
+  // Full Keyboard state (for Search)
+  const [showFullKeyboard, setShowFullKeyboard] = useState(false)
 
   // Handle immediate barcode scan matching
   useEffect(() => {
@@ -122,6 +131,8 @@ export function POSFlowView({
                 className="pos-scan-search-input"
                 value={search}
                 onChange={e => setSearch(e.target.value)}
+                onFocus={() => setShowFullKeyboard(true)}
+                onClick={() => setShowFullKeyboard(true)}
                 onKeyDown={e => {
                   if (e.key === 'Enter') {
                     e.preventDefault()
@@ -129,6 +140,7 @@ export function POSFlowView({
                 }}
                 placeholder="Scan barcode or search product..."
                 autoFocus
+                readOnly={showFullKeyboard} // Prevent mobile system keyboard
               />
               {search && (
                 <button className="pos-scan-search-clear" onClick={() => setSearch('')}>✕</button>
@@ -252,7 +264,16 @@ export function POSFlowView({
 
                 <div className="pos-qty-controls">
                   <button className="pos-qty-btn" onClick={e => { e.stopPropagation(); updateQty(item.id, -1) }}>−</button>
-                  <span className="pos-qty-value">{item.qty}</span>
+                  <span 
+                    className="pos-qty-value" 
+                    onClick={() => {
+                      setNumpadConfig({ target: 'qty', itemId: item.id, initialValue: item.qty })
+                      setShowNumpad(true)
+                    }}
+                    style={{ cursor: 'pointer', padding: '0 10px' }}
+                  >
+                    {item.qty}
+                  </span>
                   <button className="pos-qty-btn" onClick={e => { e.stopPropagation(); updateQty(item.id, 1) }}>+</button>
                 </div>
 
@@ -383,9 +404,14 @@ export function POSFlowView({
                 className={`pos-cash-input${cashGiven && cashGivenNum >= cartTotal ? ' valid' : ''}`}
                 value={cashGiven}
                 onChange={e => setCashGiven(e.target.value)}
+                onFocus={(e) => {
+                  e.target.blur()
+                  setNumpadConfig({ target: 'cash', initialValue: cashGiven })
+                  setShowNumpad(true)
+                }}
                 placeholder={`${settings?.sym || '£'}0.00`}
                 type="number"
-                autoFocus
+                readOnly
               />
               {cashGiven !== '' && (
                 <div className="pos-cash-change-grid">
@@ -410,15 +436,43 @@ export function POSFlowView({
               <div className="pos-split-grid">
                 <div>
                   <div className="pos-split-label">💵 Cash</div>
-                  <input className="pos-split-input" type="number" value={splitCash}
+                  <input 
+                    className="pos-split-input" 
+                    type="number" 
+                    value={splitCash}
+                    onFocus={(e) => {
+                      e.target.blur()
+                      setNumpadConfig({ target: 'splitCash', initialValue: splitCash })
+                      setShowNumpad(true)
+                    }}
+                    onClick={(e) => {
+                      setNumpadConfig({ target: 'splitCash', initialValue: splitCash })
+                      setShowNumpad(true)
+                    }}
                     onChange={e => { setSplitCash(e.target.value); setSplitCard(String(Math.max(0, Math.round((cartTotal - (parseFloat(e.target.value) || 0)) * 100) / 100))) }}
-                    placeholder="0.00" />
+                    placeholder="0.00" 
+                    readOnly
+                  />
                 </div>
                 <div>
                   <div className="pos-split-label">💳 Card</div>
-                  <input className="pos-split-input" type="number" value={splitCard}
+                  <input 
+                    className="pos-split-input" 
+                    type="number" 
+                    value={splitCard}
+                    onFocus={(e) => {
+                      e.target.blur()
+                      setNumpadConfig({ target: 'splitCard', initialValue: splitCard })
+                      setShowNumpad(true)
+                    }}
+                    onClick={(e) => {
+                      setNumpadConfig({ target: 'splitCard', initialValue: splitCard })
+                      setShowNumpad(true)
+                    }}
                     onChange={e => { setSplitCard(e.target.value); setSplitCash(String(Math.max(0, Math.round((cartTotal - (parseFloat(e.target.value) || 0)) * 100) / 100))) }}
-                    placeholder="0.00" />
+                    placeholder="0.00" 
+                    readOnly
+                  />
                 </div>
                 {(parseFloat(splitCash) || 0) + (parseFloat(splitCard) || 0) > 0 && (
                   <div className={`pos-split-status ${Math.abs((parseFloat(splitCash) || 0) + (parseFloat(splitCard) || 0) - cartTotal) < 0.01 ? 'balanced' : 'unbalanced'}`}>
@@ -477,7 +531,7 @@ export function POSFlowView({
                 {cardPopupStep === 'approved' && (
                   <div className="pos-card-popup-approved">
                     <div className="pos-card-popup-check">✓</div>
-                    <div className="pos-card-popup-approved-text">Approved</div>
+                    <div className="pos-card-popup-approved-text">Payment Successful</div>
                   </div>
                 )}
               </div>
@@ -608,6 +662,46 @@ export function POSFlowView({
           {renderStep()}
         </div>
       </div>
+      {/* ── Numpad Modal ── */}
+      {showNumpad && (
+        <NumberPadModal
+          t={t}
+          title={numpadConfig.target === 'qty' ? 'Enter Quantity' : 'Enter Cash Received'}
+          subtitle={numpadConfig.target === 'qty' ? 'Set item quantity' : 'Enter amount received from customer'}
+          initialValue={numpadConfig.initialValue}
+          isDecimal={numpadConfig.target === 'cash'}
+          saveLabel={numpadConfig.target === 'qty' ? 'Add Quantity' : 'Confirm Amount'}
+          onClose={() => setShowNumpad(false)}
+          onSave={(val) => {
+            if (numpadConfig.target === 'qty') {
+              updateQtyAbsolute(numpadConfig.itemId, val)
+            } else if (numpadConfig.target === 'cash') {
+              setCashGiven(val)
+            } else if (numpadConfig.target === 'splitCash') {
+              setSplitCash(val)
+              setSplitCard(String(Math.max(0, Math.round((cartTotal - (parseFloat(val) || 0)) * 100) / 100)))
+            } else if (numpadConfig.target === 'splitCard') {
+              setSplitCard(val)
+              setSplitCash(String(Math.max(0, Math.round((cartTotal - (parseFloat(val) || 0)) * 100) / 100)))
+            }
+            setShowNumpad(false)
+          }}
+        />
+      )}
+
+      {/* ── Full QWERTY Keyboard ── */}
+      {showFullKeyboard && (
+        <FullKeyboard
+          t={t}
+          initialValue={search}
+          onClose={() => setShowFullKeyboard(false)}
+          onSave={(val) => {
+            setSearch(val)
+            setShowFullKeyboard(false)
+          }}
+          onChange={(val) => setSearch(val)} // Real-time update
+        />
+      )}
     </div>
   )
 }
