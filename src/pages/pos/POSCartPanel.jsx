@@ -41,7 +41,6 @@ export function POSCartPanel({
   const [editingPriceId, setEditingPriceId] = useState(null)
   const [editPriceVal, setEditPriceVal] = useState('')
   const [showCancelConfirm, setShowCancelConfirm] = useState(false)
-  const [showDoubleTapHint, setShowDoubleTapHint] = useState(true)
   const [deleteToast, setDeleteToast] = useState(null) // { name, id }
 
   const handleDoubleTapDelete = (item) => {
@@ -262,43 +261,6 @@ export function POSCartPanel({
         )}
       </div>
   
-      {/* ─── DOUBLE TAP HINT ─── */}
-      {showDoubleTapHint && cart.length > 0 && !loadedOrderForReturn && (
-        <div style={{
-          margin: '8px 14px 4px 14px',
-          padding: '8px 12px',
-          background: 'linear-gradient(135deg, rgba(99,102,241,0.04), rgba(99,102,241,0.08))',
-          border: '1px solid rgba(99,102,241,0.1)',
-          borderRadius: 10,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          animation: 'fadeIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)',
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <div style={{ 
-              width: 24, height: 24, borderRadius: 7, 
-              background: '#EEF2FF', display: 'flex', alignItems: 'center', 
-              justifyContent: 'center', fontSize: 13,
-              border: '1px solid #E0E7FF',
-            }}>👆</div>
-            <span style={{ fontSize: 12, fontWeight: 600, color: '#6366F1' }}>
-              Double tap a product to remove it instantly
-            </span>
-          </div>
-          <button
-            onClick={() => setShowDoubleTapHint(false)}
-            style={{
-              background: 'none', color: '#A5B4FC', border: 'none',
-              borderRadius: 6, padding: '2px 6px',
-              fontSize: 14, fontWeight: 600, cursor: 'pointer',
-              transition: 'all 0.15s', lineHeight: 1,
-            }}
-            onMouseEnter={e => { e.currentTarget.style.color = '#6366F1'; e.currentTarget.style.background = '#EEF2FF' }}
-            onMouseLeave={e => { e.currentTarget.style.color = '#A5B4FC'; e.currentTarget.style.background = 'none' }}
-          >✕</button>
-        </div>
-      )}
 
       {/* ─── CART ITEMS ─── */}
       <div style={{ flex: 1, overflowY: 'auto', padding: '8px 10px', WebkitOverflowScrolling: 'touch' }}>

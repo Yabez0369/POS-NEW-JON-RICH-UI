@@ -299,7 +299,7 @@ export const POSTerminal = ({ products, setProducts, orders, setOrders, returns 
   }
 
   const cartSubtotal = cart.reduce((s, i) => s + ((i.price ?? 0) * (1 - (i.discount || 0) / 100)) * i.qty, 0)
-  const cartTax = cart.reduce((s, i) => { const lineNet = (i.price ?? 0) * (1 - (i.discount || 0) / 100) * i.qty; return s + lineNet * ((i.taxPct ?? 0) / 100) }, 0)
+  const cartTax = cart.reduce((s, i) => { const lineNet = (i.price ?? 0) * (1 - (i.discount || 0) / 100) * i.qty; return s + Math.abs(lineNet * ((i.taxPct ?? 0) / 100)) }, 0)
   const cartBeforeExtras = cartSubtotal + cartTax
   let couponDiscount = 0
   if (appliedCoupon) {
@@ -510,7 +510,7 @@ export const POSTerminal = ({ products, setProducts, orders, setOrders, returns 
             discount: i.discount || 0,
           }))
           const subtotal = exchangeItems.reduce((s, i) => s + (i.price ?? 0) * (1 - (i.discount || 0) / 100) * (i.qty ?? 1), 0)
-          const taxAmount = Math.round(replacementOnlyItems.reduce((s, i) => { const lineNet = (i.price ?? 0) * (1 - (i.discount || 0) / 100) * (i.qty ?? 1); return s + lineNet * ((i.taxPct ?? 0) / 100) }, 0) * 100) / 100
+          const taxAmount = Math.round(replacementOnlyItems.reduce((s, i) => { const lineNet = (i.price ?? 0) * (1 - (i.discount || 0) / 100) * (i.qty ?? 1); return s + Math.abs(lineNet * ((i.taxPct ?? 0) / 100)) }, 0) * 100) / 100
           const total = Math.round((subtotal + taxAmount) * 100) / 100
           const exchangeOrder = await ordersService.createOrderWithItems({
             siteId: effectiveSiteId,
@@ -519,7 +519,7 @@ export const POSTerminal = ({ products, setProducts, orders, setOrders, returns 
             customerId: loadedOrderForReturn.customer_id || loadedOrderForReturn.customerId || null,
             items: exchangeItems,
             subtotal,
-            taxAmount,
+            taxAmount: Math.abs(taxAmount),
             discountAmount: 0,
             loyaltyDiscount: 0,
             total,
@@ -602,7 +602,7 @@ export const POSTerminal = ({ products, setProducts, orders, setOrders, returns 
           customerId: (selCust?.id && !String(selCust.id).startsWith('00000000')) ? selCust.id : null,
           items: orderItems,
           subtotal: cartSubtotal,
-          taxAmount: cartTax,
+          taxAmount: Math.abs(cartTax),
           discountAmount: couponDiscount + loyaltyDiscount + manualDiscountAmount,
           manualDiscountPct,
           loyaltyDiscount,
@@ -647,7 +647,7 @@ export const POSTerminal = ({ products, setProducts, orders, setOrders, returns 
       cashierName: user.name,
       items: orderItems.map(i => ({ ...i, productId: i.productId })),
       subtotal: cartSubtotal,
-      tax: cartTax,
+      tax: Math.abs(cartTax),
       discountAmt: couponDiscount + loyaltyDiscount,
       loyaltyDiscount,
       couponDiscount,

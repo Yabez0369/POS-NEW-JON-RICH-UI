@@ -4,7 +4,7 @@ import { useTheme } from '@/context/ThemeContext'
 import { useAuth } from '@/context/AuthContext'
 import { useCashStore } from '@/stores/cashStore'
 import { isSupabaseConfigured } from '@/lib/supabase'
-import { Input, Modal } from '@/components/ui'
+import { Input, Modal, NumberPadModal } from '@/components/ui'
 import { notify } from '@/components/shared'
 import { fmt } from '@/lib/utils'
 import './CashManagement.css'
@@ -40,6 +40,8 @@ export const CashManagement = ({ addAudit, settings, t: tProp }) => {
   const [liftAmt, setLiftAmt] = useState('')
   const [countDraft, setCountDraft] = useState('')
   const [countedCash, setCountedCash] = useState('')
+
+  const [activePad, setActivePad] = useState(null) // 'float' | 'drop' | 'lift' | 'count'
 
   // Clock
   const [clock, setClock] = useState(() => new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }))
@@ -198,9 +200,10 @@ export const CashManagement = ({ addAudit, settings, t: tProp }) => {
                 <input
                   className="cm-gate-input"
                   style={{ background: t.bg2, borderColor: t.border, color: t.text }}
-                  type="number"
+                  type="text"
                   value={openFloat}
-                  onChange={e => setOpenFloat(e.target.value)}
+                  readOnly
+                  onClick={() => setActivePad('float')}
                   placeholder="100.00"
                   autoFocus
                 />
@@ -233,143 +236,81 @@ export const CashManagement = ({ addAudit, settings, t: tProp }) => {
         /*  STATE: SESSION ACTIVE → Premium POS Terminal             */
         /* ══════════════════════════════════════════════════════════ */
         <div className="cm-main">
-
           {/* ── HERO BALANCE ── */}
           <div className="cm-hero">
-            <div className="cm-hero-bg" />
-            <div className="cm-hero-content">
-              <div className="cm-hero-label">Expected Balance</div>
-              <div className="cm-hero-amount">{fmt(balance, sym)}</div>
-              <div className="cm-hero-meta">
-                <span className="cm-hero-meta-item">
-                  <span className="cm-hero-meta-dot cm-dot--green" />
-                  Float {fmt(session.openFloat, sym)}
-                </span>
-                <span className="cm-hero-meta-divider">·</span>
-                <span className="cm-hero-meta-item">
-                  <span className="cm-hero-meta-dot cm-dot--blue" />
-                  In {fmt(cashIn, sym)}
-                </span>
-                <span className="cm-hero-meta-divider">·</span>
-                <span className="cm-hero-meta-item">
-                  <span className="cm-hero-meta-dot cm-dot--red" />
-                  Out {fmt(cashOut, sym)}
-                </span>
+            <div className="cm-hero-label" style={{ color: t.text3 }}>Expected Balance</div>
+            <div className="cm-hero-amount" style={{ color: t.text }}>{fmt(balance, sym)}</div>
+            <div className="cm-hero-meta">
+              <span className="cm-hero-meta-item" style={{ color: t.text3 }}>
+                <span className="cm-dot cm-dot--green" /> Float {fmt(session.openFloat, sym)}
+              </span>
+              <span className="cm-hero-meta-divider">·</span>
+              <span className="cm-hero-meta-item" style={{ color: t.text3 }}>
+                <span className="cm-dot cm-dot--blue" /> In {fmt(cashIn, sym)}
+              </span>
+              <span className="cm-hero-meta-divider">·</span>
+              <span className="cm-hero-meta-item" style={{ color: t.text3 }}>
+                <span className="cm-dot cm-dot--red" /> Out {fmt(cashOut, sym)}
+              </span>
+            </div>
+            {countedCash && (
+              <div className="cm-hero-counted" style={{ background: 'rgba(34,197,94,0.08)', color: '#16a34a', border: '1px solid rgba(34,197,94,0.15)' }}>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+                Counted: {fmt(countedNum, sym)}
               </div>
-              {countedCash && (
-                <div className="cm-hero-counted">
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="20 6 9 17 4 12" />
-                  </svg>
-                  Counted: {fmt(countedNum, sym)}
+            )}
+          </div>
+
+          {/* ── ACTION METHODS (Like Payment Methods) ── */}
+          <div className="cm-method-container">
+            <div className="cm-method-grid">
+               {[
+                 { id: 'drop', label: 'Cash Drop', icon: '📤', onClick: () => { setDropAmt(''); setShowDrop(true) } },
+                 { id: 'lift', label: 'Cash Lift', icon: '📥', onClick: () => { setLiftAmt(''); setShowLift(true) } },
+                 { id: 'count', label: 'Count Cash', icon: '💰', onClick: () => { setCountDraft(countedCash || ''); setShowCountCash(true) } }
+               ].map(btn => (
+                 <button key={btn.id} className="cm-method-btn" onClick={btn.onClick} style={{ background: t.bg2, borderColor: t.border }}>
+                    <span className="cm-method-icon">{btn.icon}</span>
+                    <span className="cm-method-label" style={{ color: t.text }}>{btn.label}</span>
+                 </button>
+               ))}
+            </div>
+
+            <div className="cm-status-area">
+              {!countedCash ? (
+                 <div className="cm-status-hint" style={{ color: t.text3 }}>
+                   <div className="cm-hint-icon">⚡</div>
+                   <div>Ready for operations</div>
+                   <small>Perform movements or count drawer</small>
+                 </div>
+              ) : (
+                <div
+                  className="cm-variance-pill"
+                  style={{
+                    background: (countedNum - expected) === 0 ? 'rgba(34,197,94,0.08)' : (countedNum - expected) > 0 ? 'rgba(37,99,235,0.08)' : 'rgba(239,68,68,0.08)',
+                    border: `1px solid ${(countedNum - expected) === 0 ? 'rgba(34,197,94,0.2)' : (countedNum - expected) > 0 ? 'rgba(37,99,235,0.2)' : 'rgba(239,68,68,0.2)'}`,
+                    color: (countedNum - expected) === 0 ? '#16a34a' : (countedNum - expected) > 0 ? '#2563eb' : '#dc2626'
+                  }}
+                >
+                  Variance: <strong>{(countedNum - expected) >= 0 ? '+' : ''}{fmt(countedNum - expected, sym)}</strong>
                 </div>
               )}
             </div>
-          </div>
 
-          {/* ── ACTION GRID ── */}
-          <div className="cm-grid-wrap">
-            <div className="cm-grid">
-
-              {/* Row 1: Cash Drop + Cash Lift */}
-              <button
-                className="cm-card cm-card--secondary"
-                style={{ background: t.bg2, color: t.text }}
-                onClick={() => { setDropAmt(''); setShowDrop(true) }}
-                id="cash-drop-btn"
-              >
-                <div className="cm-card-icon cm-card-icon--orange">
-                  <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M12 2v20M17 7l-5 5-5-5" />
-                  </svg>
-                </div>
-                <div className="cm-card-label">Cash Drop</div>
-                <div className="cm-card-hint" style={{ color: t.text3 }}>Remove to safe</div>
-              </button>
-
-              <button
-                className="cm-card cm-card--secondary"
-                style={{ background: t.bg2, color: t.text }}
-                onClick={() => { setLiftAmt(''); setShowLift(true) }}
-                id="cash-lift-btn"
-              >
-                <div className="cm-card-icon cm-card-icon--blue">
-                  <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M12 22V2M17 17l-5-5-5 5" />
-                  </svg>
-                </div>
-                <div className="cm-card-label">Cash Lift</div>
-                <div className="cm-card-hint" style={{ color: t.text3 }}>Add to till</div>
-              </button>
-
-              {/* Row 2: Count Cash — Primary */}
-              <button
-                className="cm-card cm-card--primary"
-                onClick={() => { setCountDraft(countedCash || ''); setShowCountCash(true) }}
-                id="count-cash-btn"
-              >
-                <div className="cm-card-icon cm-card-icon--white">
-                  <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <rect x="2" y="5" width="20" height="14" rx="2" />
-                    <line x1="2" y1="10" x2="22" y2="10" />
-                  </svg>
-                </div>
-                <div className="cm-card-label">Count Cash</div>
-                <div className="cm-card-hint cm-card-hint--white">Physically count your drawer</div>
-                {countedCash && (
-                  <span className="cm-count-badge">
-                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                      <polyline points="20 6 9 17 4 12" />
-                    </svg>
-                    {fmt(countedNum, sym)}
-                  </span>
-                )}
-              </button>
-
-              {/* Row 3: Close Shift — Danger */}
-              <button
-                className={`cm-card cm-card--danger ${canCloseShift ? '' : 'cm-card--muted'}`}
-                onClick={handleCloseShiftTile}
-                id="close-shift-btn"
-              >
-                <div className="cm-card-icon cm-card-icon--red">
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                  </svg>
-                </div>
-                <div className="cm-card-body">
-                  <div className="cm-card-label">Close Shift</div>
-                  <div className="cm-card-hint cm-card-hint--red">
-                    {canCloseShift ? 'End shift and submit' : 'Count cash first'}
-                  </div>
-                </div>
-                {!canCloseShift && (
-                  <div className="cm-card-arrow">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M9 18l6-6-6-6" />
-                    </svg>
-                  </div>
-                )}
-              </button>
-
-            </div>
-
-            {/* View History — Tertiary */}
             <button
-              className="cm-history-btn"
-              style={{ color: t.text3 }}
-              onClick={() => setShowHistory(true)}
-              id="view-history-btn"
+              className={`cm-confirm-btn ${canCloseShift ? 'active' : 'disabled'}`}
+              onClick={handleCloseShiftTile}
+              style={{ background: canCloseShift ? '#1e1b4b' : t.bg3, color: canCloseShift ? '#fff' : t.text3, borderColor: t.border }}
             >
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="10" />
-                <polyline points="12 6 12 12 16 14" />
-              </svg>
+              {canCloseShift ? `Confirm Close Shift — ${fmt(countedNum, sym)}` : 'Count Cash to End Shift'}
+            </button>
+
+            <button className="cm-history-link" style={{ color: t.text3 }} onClick={() => setShowHistory(true)}>
               View Shift History
             </button>
           </div>
-
         </div>
       )}
 
@@ -391,7 +332,7 @@ export const CashManagement = ({ addAudit, settings, t: tProp }) => {
               <span>Expected Balance</span>
               <span style={{ color: t.blue, fontWeight: 1000, fontSize: 16 }}>{fmt(expected, sym)}</span>
             </div>
-            <Input t={t} label="Drop Amount" value={dropAmt} onChange={setDropAmt} placeholder="0.00" type="number" />
+            <Input t={t} label="Drop Amount" value={dropAmt} onChange={setDropAmt} onClick={() => setActivePad('drop')} placeholder="0.00" readOnly />
             <div className="cash-modalActions">
               <button className="cash-modalBtn cash-modalBtn--secondary" style={{ color: t.text2, borderColor: t.border }} onClick={() => { setShowDrop(false); setDropAmt('') }}>
                 Cancel
@@ -414,7 +355,7 @@ export const CashManagement = ({ addAudit, settings, t: tProp }) => {
           width={420}
         >
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-            <Input t={t} label="Lift Amount" value={liftAmt} onChange={setLiftAmt} placeholder="0.00" type="number" />
+            <Input t={t} label="Lift Amount" value={liftAmt} onChange={setLiftAmt} onClick={() => setActivePad('lift')} placeholder="0.00" readOnly />
             <div className="cash-modalActions">
               <button className="cash-modalBtn cash-modalBtn--secondary" style={{ color: t.text2, borderColor: t.border }} onClick={() => { setShowLift(false); setLiftAmt('') }}>
                 Cancel
@@ -441,7 +382,7 @@ export const CashManagement = ({ addAudit, settings, t: tProp }) => {
               <span>System Expected</span>
               <span style={{ color: t.blue, fontWeight: 1000, fontSize: 16 }}>{fmt(expected, sym)}</span>
             </div>
-            <Input t={t} label="Actual Cash in Drawer" value={countDraft} onChange={setCountDraft} placeholder="0.00" type="number" />
+            <Input t={t} label="Actual Cash in Drawer" value={countDraft} onChange={setCountDraft} onClick={() => setActivePad('count')} placeholder="0.00" readOnly />
             {countDraft && !isNaN(parseFloat(countDraft)) && (
               <div
                 className="variance-display"
@@ -588,6 +529,23 @@ export const CashManagement = ({ addAudit, settings, t: tProp }) => {
             )}
           </div>
         </Modal>
+      )}
+
+      {activePad && (
+        <NumberPadModal
+          title={activePad === 'float' ? 'Opening Float' : activePad === 'drop' ? 'Cash Drop' : activePad === 'lift' ? 'Cash Lift' : 'Actual Cash'}
+          initialValue={activePad === 'float' ? openFloat : activePad === 'drop' ? dropAmt : activePad === 'lift' ? liftAmt : countDraft}
+          onClose={() => setActivePad(null)}
+          onSave={(val) => {
+            if (activePad === 'float') setOpenFloat(val)
+            if (activePad === 'drop') setDropAmt(val)
+            if (activePad === 'lift') setLiftAmt(val)
+            if (activePad === 'count') setCountDraft(val)
+            setActivePad(null)
+          }}
+          isDecimal={true}
+          currencySym={sym}
+        />
       )}
     </div>
   )

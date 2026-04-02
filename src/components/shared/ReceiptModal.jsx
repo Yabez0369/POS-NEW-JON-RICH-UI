@@ -1,12 +1,13 @@
-import { useRef } from 'react'
+import { useState, useRef } from 'react'
 import { useReactToPrint } from 'react-to-print'
 import { Modal } from '@/components/ui'
-import { Btn } from '@/components/ui'
 import { fmt } from '@/lib/utils'
 import { notify } from './NotificationCenter'
 
 export const ReceiptModal = ({ order, settings, onClose, onNewSale, t }) => {
+  const [showDetails, setShowDetails] = useState(false)
   const receiptRef = useRef(null)
+
   const handlePrint = useReactToPrint({
     content: () => receiptRef.current,
     documentTitle: `Receipt-${order?.id || order?.order_number || 'order'}`,
@@ -14,200 +15,281 @@ export const ReceiptModal = ({ order, settings, onClose, onNewSale, t }) => {
   })
 
   const finalizeSale = () => {
-    if (onNewSale) {
-      onNewSale()
-    }
+    if (onNewSale) onNewSale()
     onClose()
   }
 
-  const handlePrintAndNewSale = () => {
+  const handlePrintAction = () => {
     handlePrint()
     notify('Receipt Printed ✅', 'success')
-    // Wait a tiny bit to ensure the print capture happens before modal closes
-    setTimeout(finalizeSale, 150)
   }
 
+  if (!order) return null
+
+  const items = order.items || []
+  const displayItems = showDetails ? items : items.slice(0, 2)
+  const remainingCount = items.length - displayItems.length
+
   return (
-    <Modal t={t} width={460} onClose={onClose}>
-      <div style={{ padding: '8px' }}>
-        {/* Paper Receipt Simulation */}
-        <div 
-          ref={receiptRef} 
-          style={{ 
-            background: '#fffdf5', 
-            borderRadius: '12px 12px 0 0', 
-            padding: '44px 34px', 
-            fontFamily: "'Inter', sans-serif", 
-            boxShadow: '0 10px 40px rgba(0,0,0,0.06)',
-            position: 'relative',
-            color: '#1a1a1a',
-            overflow: 'hidden',
-            border: '1px solid rgba(0,0,0,0.05)'
-          }}
-        >
-          {/* Subtle paper texture overlay */}
-          <div style={{ position: 'absolute', inset: 0, opacity: 0.03, pointerEvents: 'none', background: 'radial-gradient(circle, #000 1px, transparent 1px)', backgroundSize: '12px 12px' }} />
+    <Modal t={t} width={440} onClose={onClose} noPadding>
+      <div className="digital-receipt-container" style={{ 
+        padding: '32px 24px', 
+        fontFamily: "'Plus Jakarta Sans', sans-serif",
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        textAlign: 'center',
+        maxHeight: '90vh',
+        overflowY: 'auto'
+      }}>
+        
+        {/* Success Header */}
+        <div style={{ marginBottom: '24px' }}>
+          <div style={{ 
+            width: '64px', 
+            height: '64px', 
+            borderRadius: '50%', 
+            background: '#ECFDF5', 
+            color: '#10B981', 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'center',
+            fontSize: '32px',
+            margin: '0 auto 16px',
+            boxShadow: '0 8px 20px rgba(16, 185, 129, 0.1)'
+          }}>
+            ✓
+          </div>
+          <div style={{ fontSize: '18px', fontWeight: 800, color: '#10B981', marginBottom: '8px' }}>Done</div>
+          <div style={{ fontSize: '48px', fontWeight: 950, color: '#0F172A', letterSpacing: '-1.5px', marginBottom: '4px' }}>
+            {fmt(order.total, settings?.sym)}
+          </div>
+          <div style={{ fontSize: '14px', fontWeight: 600, color: '#64748B' }}>
+            Paid via {order.payment}{order.cardLast4 ? ` (****${order.cardLast4})` : ''}
+          </div>
+        </div>
+
+        {/* Receipt Details Card */}
+        <div style={{ 
+          width: '100%', 
+          background: '#F8FAFF', 
+          borderRadius: '24px', 
+          padding: '24px', 
+          marginBottom: '24px',
+          border: '1px solid #E2E8F0',
+          position: 'relative',
+          transition: 'all 0.3s'
+        }}>
+          <div style={{ 
+            fontSize: '13px', 
+            fontWeight: 800, 
+            color: '#94A3B8', 
+            textTransform: 'uppercase', 
+            letterSpacing: '1px',
+            marginBottom: '16px',
+            textAlign: 'left'
+          }}>
+            {items.length} Item{items.length !== 1 ? 's' : ''}
+          </div>
           
-          <div style={{ textAlign: 'center', marginBottom: 28, position: 'relative' }}>
-            <div style={{ 
-              fontSize: 26, 
-              fontWeight: 950, 
-              letterSpacing: -0.5, 
-              marginBottom: 4,
-              color: '#000'
-            }}>{settings.storeName || "SCSTix EPOS"}</div>
-            <div style={{ fontSize: 13, color: '#666', fontWeight: 500 }}>{settings.storeAddress}</div>
-            <div style={{ fontSize: 13, color: '#666', fontWeight: 500 }}>{settings.storePhone}</div>
-            
-            <div style={{ margin: '22px 0', borderTop: '1px dashed #ccc', paddingTop: 20 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 4, fontWeight: 500, color: '#777' }}>
-                <span>Order No: {order.order_number || order.id}</span>
-                <span>{order.date}</span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, fontWeight: 500, color: '#777' }}>
-                <span>Counter: {order.counter || 'Counter 1'}</span>
-                <span>Staff: {order.cashierName || 'Cashier User'}</span>
-              </div>
-              {order.customerName && order.customerName !== 'Walk-in' && (
-                <div style={{ fontSize: 13, fontWeight: 700, marginTop: 10, textAlign: 'left', color: '#333' }}>
-                  Customer: <span style={{ color: '#000' }}>{order.customerName}</span>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            {displayItems.map((item, idx) => (
+              <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ fontSize: '14px', fontWeight: 800, color: '#1E293B' }}>{item.name}</span>
+                  <span style={{ fontSize: '13px', fontWeight: 600, color: '#64748B' }}>×{item.qty}</span>
                 </div>
-              )}
-            </div>
-          </div>
-
-          <div style={{ borderTop: '1px dashed #ccc', borderBottom: '1px dashed #ccc', padding: '16px 0', marginBottom: 20 }}>
-            {order.items.map((i, idx) => (
-              <div key={idx} style={{ marginBottom: 12 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14, fontWeight: 800, color: '#000' }}>
-                  <span>{i.name} × {i.qty}</span>
-                  <span>{fmt(i.price * (1 - (i.discount || 0) / 100) * i.qty, settings?.sym)}</span>
+                <div style={{ fontSize: '14px', fontWeight: 700, color: '#1E293B' }}>
+                  {fmt(item.price * (1 - (item.discount || 0) / 100) * item.qty, settings?.sym)}
                 </div>
-                {i.discount > 0 && (
-                  <div style={{ fontSize: 11, color: '#dc2626', fontWeight: 700, marginTop: 2 }}>
-                    Disc: -{i.discount}% off {fmt(i.price, settings?.sym)}
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {[
-              ['Subtotal', fmt(order.subtotal, settings?.sym)],
-              ['Tax', fmt(order.tax, settings?.sym)],
-              order.deliveryCharge > 0 && ['Delivery', fmt(order.deliveryCharge, settings?.sym)],
-              order.couponDiscount > 0 && [`Discount`, `-${fmt(order.couponDiscount, settings?.sym)}`],
-              order.loyaltyDiscount > 0 && ['Loyalty Used', `-${fmt(order.loyaltyDiscount, settings?.sym)}`]
-            ].filter(Boolean).map(([k, v]) => (
-              <div key={k} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14, color: '#666', fontWeight: 500 }}>
-                <span>{k}</span>
-                <span>{v}</span>
               </div>
             ))}
             
-            <div style={{ 
-              display: 'flex', 
-              justifyContent: 'space-between', 
-              fontWeight: 950, 
-              fontSize: 24, 
-              borderTop: '2px solid #1a1a1a', 
-              marginTop: 14, 
-              paddingTop: 14,
-              color: '#000'
-            }}>
-              <span>TOTAL</span>
-              <span>{fmt(order.total, settings?.sym)}</span>
-            </div>
-
-            <div style={{ marginTop: 16, fontSize: 13, background: '#f8f9fa', padding: 12, borderRadius: 8 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                <span style={{ color: '#666' }}>Payment Method</span>
-                <span style={{ fontWeight: 800 }}>{order.payment}{order.cardLast4 ? ` (****${order.cardLast4})` : ''}</span>
-              </div>
-              {order.payment === 'Cash' && order.cashGiven != null && (
-                <>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
-                    <span style={{ color: '#666' }}>Tendered</span>
-                    <span>{fmt(order.cashGiven, settings?.sym)}</span>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 700, color: '#10b981' }}>
-                    <span>Change</span>
-                    <span>{fmt(order.cashChange, settings?.sym)}</span>
-                  </div>
-                </>
-              )}
-            </div>
-
-            {order.loyaltyEarned > 0 && (
-              <div style={{ 
-                marginTop: 20, 
-                background: '#fef3c7', 
-                border: '1px solid #f59e0b',
-                padding: '10px', 
-                borderRadius: '8px',
-                fontSize: 13, 
-                textAlign: 'center', 
-                fontWeight: 800,
-                color: '#92400e'
-              }}>
-                ⭐ +{order.loyaltyEarned} loyalty points earned!
+            {!showDetails && remainingCount > 0 && (
+              <div style={{ textAlign: 'left', fontSize: '14px', fontWeight: 700, color: '#3730A3', marginTop: '4px' }}>
+                +{remainingCount} more item{remainingCount !== 1 ? 's' : ''}
               </div>
             )}
           </div>
 
+          <button 
+            onClick={() => setShowDetails(!showDetails)}
+            style={{ 
+              marginTop: '20px',
+              width: '100%',
+              padding: '12px',
+              background: '#FFFFFF',
+              border: '1px solid #E2E8F0',
+              borderRadius: '12px',
+              fontSize: '13px',
+              fontWeight: 800,
+              color: '#3730A3',
+              cursor: 'pointer',
+              transition: 'all 0.2s',
+              boxShadow: '0 2px 4px rgba(0,0,0,0.02)'
+            }}
+          >
+            {showDetails ? 'Hide Receipt Details' : 'View Full Receipt'}
+          </button>
+
+          {/* Collapsible Content */}
+          {showDetails && (
+            <div style={{ 
+              marginTop: '20px', 
+              paddingTop: '20px', 
+              borderTop: '1px dashed #CBD5E1', 
+              textAlign: 'left',
+              animation: 'slideDown 0.3s ease-out'
+            }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '20px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', color: '#64748B' }}>
+                  <span>Subtotal</span><span>{fmt(order.subtotal, settings?.sym)}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', color: '#64748B' }}>
+                  <span>Tax</span><span>{fmt(order.tax, settings?.sym)}</span>
+                </div>
+                {order.couponDiscount > 0 && (
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', color: '#EF4444' }}>
+                    <span>Discount</span><span>-{fmt(order.couponDiscount, settings?.sym)}</span>
+                  </div>
+                )}
+                {order.loyaltyDiscount > 0 && (
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', color: '#3730A3' }}>
+                    <span>Loyalty Used</span><span>-{fmt(order.loyaltyDiscount, settings?.sym)}</span>
+                  </div>
+                )}
+              </div>
+              
+              <div style={{ fontSize: '12px', color: '#94A3B8', fontWeight: 600 }}>
+                <div>Order: #{order.order_number || order.id}</div>
+                <div>Date: {order.date}</div>
+                <div>Staff: {order.cashierName}</div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Loyalty Reward Badge */}
+        {order.loyaltyEarned > 0 && (
           <div style={{ 
-            textAlign: 'center', 
-            marginTop: 36, 
-            fontSize: 12, 
-            color: '#777', 
-            borderTop: '1px dashed #ccc', 
-            paddingTop: 20,
-            fontStyle: 'italic'
+            width: '100%',
+            background: 'linear-gradient(135deg, #EEF2FF 0%, #E0E7FF 100%)',
+            padding: '16px',
+            borderRadius: '20px',
+            marginBottom: '32px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '10px',
+            border: '1px solid #C7D2FE',
+            boxShadow: '0 4px 12px rgba(55, 48, 163, 0.05)'
           }}>
-            {settings.receiptFooter || "Thank you for shopping at SCSTix EPOS!"}
+            <span style={{ fontSize: '20px' }}>✨</span>
+            <span style={{ fontSize: '14px', fontWeight: 800, color: '#3730A3' }}>
+              +{order.loyaltyEarned} loyalty points earned
+            </span>
+          </div>
+        )}
+
+        {/* Action Buttons */}
+        <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          <button 
+            onClick={finalizeSale}
+            style={{ 
+              height: '72px', 
+              background: '#3730A3', 
+              color: '#FFFFFF', 
+              border: 'none', 
+              borderRadius: '20px', 
+              fontSize: '18px', 
+              fontWeight: 900, 
+              cursor: 'pointer',
+              boxShadow: '0 12px 24px rgba(55, 48, 163, 0.2)',
+              transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)'
+            }}
+            onMouseDown={e => e.currentTarget.style.transform = 'scale(0.97)'}
+            onMouseUp={e => e.currentTarget.style.transform = 'scale(1)'}
+          >
+            New Sale →
+          </button>
+
+          <div style={{ display: 'flex', gap: '12px' }}>
+            <button 
+              onClick={handlePrintAction}
+              style={{ 
+                flex: 1,
+                height: '60px', 
+                background: '#FFFFFF', 
+                color: '#1E293B', 
+                border: '1px solid #E2E8F0', 
+                borderRadius: '16px', 
+                fontSize: '15px', 
+                fontWeight: 800, 
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                transition: 'all 0.2s'
+              }}
+            >
+              Print Receipt
+            </button>
+            <button 
+              style={{ 
+                flex: 1,
+                height: '60px', 
+                background: '#FFFFFF', 
+                color: '#1E293B', 
+                border: '1px solid #E2E8F0', 
+                borderRadius: '16px', 
+                fontSize: '15px', 
+                fontWeight: 800, 
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px'
+              }}
+              onClick={() => notify('Sharing option coming soon', 'info')}
+            >
+              Share / Email
+            </button>
           </div>
         </div>
 
-        {/* Action Buttons */}
-        <div style={{ display: 'flex', gap: 12, marginTop: 24 }}>
-          <button 
-            onClick={onClose} 
-            style={{ 
-              flex: 1, height: 60, borderRadius: 14, border: `1px solid ${t.border}`, 
-              background: '#fff', color: t.text, fontWeight: 800, fontSize: 16, cursor: 'pointer',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-              boxShadow: '0 2px 10px rgba(0,0,0,0.05)'
-            }}>
-            ✕ Close
-          </button>
-          
-          <button 
-            onClick={handlePrintAndNewSale}
-            style={{ 
-              flex: 1, height: 60, borderRadius: 14, border: 'none', 
-              background: '#f1f1f1', color: '#111', fontWeight: 800, fontSize: 16, cursor: 'pointer',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-              boxShadow: '0 2px 10px rgba(0,255,0,0.05)'
-            }}>
-            🖨️ Print
-          </button>
+        {/* Hidden Print Wrapper (legacy layout for thermal printer) */}
+        <div style={{ display: 'none' }}>
+           <div ref={receiptRef} style={{ width: '80mm', padding: '4mm', fontFamily: 'monospace', fontSize: '12px', color: '#000' }}>
+              <div style={{ textAlign: 'center', fontWeight: 'bold', fontSize: '16px', marginBottom: '10px' }}>{settings.storeName}</div>
+              <div style={{ textAlign: 'center', marginBottom: '10px' }}>{settings.storeAddress}</div>
+              <div style={{ borderBottom: '1px solid #000', margin: '5px 0' }} />
+              <div>Order: {order.order_number || order.id}</div>
+              <div>Date: {order.date}</div>
+              <div style={{ borderBottom: '1px solid #000', margin: '5px 0' }} />
+              {items.map((i, idx) => (
+                <div key={idx} style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span>{i.name} x{i.qty}</span>
+                  <span>{fmt(i.price * (1 - (i.discount || 0) / 100) * i.qty, settings?.sym)}</span>
+                </div>
+              ))}
+              <div style={{ borderBottom: '1px solid #000', margin: '5px 0' }} />
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', fontSize: '14px' }}>
+                <span>TOTAL</span>
+                <span>{fmt(order.total, settings?.sym)}</span>
+              </div>
+              <div style={{ borderBottom: '1px solid #000', margin: '5px 0' }} />
+              <div style={{ textAlign: 'center', marginTop: '10px' }}>{settings.receiptFooter || "Thank you!"}</div>
+           </div>
         </div>
-
-        <button 
-          onClick={finalizeSale} 
-          style={{ 
-            width: '100%', height: 66, marginTop: 12, borderRadius: 16, border: 'none', 
-            background: t.accent || '#1a1a1a', color: '#fff', fontWeight: 900, fontSize: 18, cursor: 'pointer',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
-            boxShadow: `0 8px 24px ${t.accent}40`, transition: 'transform 0.2s ease'
-          }}
-          onMouseDown={e => e.currentTarget.style.transform = 'scale(0.98)'}
-          onMouseUp={e => e.currentTarget.style.transform = 'scale(1)'}
-        >
-          New Sale →
-        </button>
       </div>
+
+      <style dangerouslySetInnerHTML={{ __html: `
+        @keyframes slideDown {
+          from { opacity: 0; transform: translateY(-10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+      `}} />
     </Modal>
   )
 }

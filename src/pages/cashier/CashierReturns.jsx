@@ -3,12 +3,18 @@ import { useNavigate } from 'react-router-dom'
 import { useTheme } from '@/context/ThemeContext'
 import { useAuth } from '@/context/AuthContext'
 import { useCashStore } from '@/stores/cashStore'
-import { Badge, Spinner } from '@/components/ui'
+import { Badge } from '@/components/ui'
 import { notify } from '@/components/shared'
 import { fmt } from '@/lib/utils'
 import dayjs from 'dayjs'
 import { returnsService, ordersService } from '@/services'
 import { isSupabaseConfigured } from '@/lib/supabase'
+import { 
+  Search, ArrowLeft, X, Check, Package, RotateCcw, 
+  ArrowLeftRight, CreditCard, Ticket, CheckCircle2, 
+  Printer, History, UserSearch, ChevronRight, Minus, Plus 
+} from 'lucide-react'
+import { FullKeyboard } from '@/components/ui/FullKeyboard'
 import './CashierReturns.css'
 
 const REASON_CODES = [
@@ -21,19 +27,18 @@ const REASON_CODES = [
 ]
 
 const STEPS = [
-  { id: 1, label: 'Find Order', icon: '🔍' },
-  { id: 2, label: 'Select Items', icon: '📦' },
-  { id: 3, label: 'Return Type', icon: '🔄' },
-  { id: 4, label: 'Confirm', icon: '✅' },
+  { id: 1, label: 'Find Order', icon: Search },
+  { id: 2, label: 'Select Items', icon: Package },
+  { id: 3, label: 'Return Type', icon: RotateCcw },
+  { id: 4, label: 'Confirmation', icon: CheckCircle2 },
 ]
 
 function getOrderItems(order) {
-  const items = order?.order_items || order?.items || []
-  return Array.isArray(items) ? items : []
+  return order?.order_items || order?.items || []
 }
 
 function itemName(i) {
-  return i?.product_name || i?.name || 'Unknown'
+  return i?.product_name || i?.name || 'Unknown Item'
 }
 
 function itemQty(i) {
@@ -61,9 +66,10 @@ export const CashierReturns = ({
   siteId,
   onClose,
 }) => {
-  const { t } = useTheme()
+  const { darkMode } = useTheme()
   const { currentUser: authUser } = useAuth()
   const user = currentUser || authUser
+  const navigate = useNavigate()
 
   const [currentStep, setCurrentStep] = useState(1)
   const [orderSearch, setOrderSearch] = useState('')
@@ -76,20 +82,14 @@ export const CashierReturns = ({
   const [lookupLoading, setLookupLoading] = useState(false)
   const [isSuccess, setIsSuccess] = useState(false)
   const [showReceiptModal, setShowReceiptModal] = useState(false)
+  const [showFullKeyboard, setShowFullKeyboard] = useState(false)
 
   const returnDays = settings?.returnDays ?? 30
   const effectiveSiteId = siteId || 'b0000000-0000-0000-0000-000000000001'
 
-  useEffect(() => {
-    const link = document.createElement('link');
-    link.href = 'https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@200..800&display=swap';
-    link.rel = 'stylesheet';
-    document.head.appendChild(link);
-  }, []);
-
   const isWithinReturnWindow = (orderDate) => {
     if (!orderDate) return true
-    const d = dayjs(orderDate).isValid() ? dayjs(orderDate) : dayjs(orderDate, ['DD/MM/YYYY, HH:mm:ss', 'YYYY-MM-DD HH:mm', 'YYYY-MM-DD'])
+    const d = dayjs(orderDate)
     return d.isValid() && dayjs().diff(d, 'day') <= returnDays
   }
 
@@ -104,24 +104,21 @@ export const CashierReturns = ({
     try {
       let order = (orders || []).find(
         (o) =>
-          String(o.order_number || o.id).toLowerCase() === orderSearch.trim().toLowerCase() ||
-          String(o.id).toLowerCase() === orderSearch.trim().toLowerCase()
+          String(o.order_number || o.id).toLowerCase() === orderSearch.trim().toLowerCase()
       )
-
       if (!order && isSupabaseConfigured()) {
         order = await ordersService.fetchOrderByNumber(orderSearch.trim())
       }
 
       if (order) {
         setSelectedOrder(order)
-        const initial = {}
-        setSelItemQtys(initial)
+        setSelItemQtys({})
         setCurrentStep(2)
       } else {
-        notify('Order not found', 'error')
+        notify('Order not found. Please check the receipt code.', 'error')
       }
     } catch (err) {
-      notify(err?.message || 'Lookup failed', 'error')
+      notify(err?.message || 'Lookup error', 'error')
     } finally {
       setLookupLoading(false)
     }
@@ -147,6 +144,10 @@ export const CashierReturns = ({
   const withinWindow = isWithinReturnWindow(selectedOrder?.created_at || selectedOrder?.date)
 
   const handleProcessReturn = async () => {
+    if (!reasonCode) {
+      notify('Please select a reason for the return', 'warning')
+      return
+    }
     setProcessing(true)
     try {
       const orderId = selectedOrder.id
@@ -222,20 +223,19 @@ export const CashierReturns = ({
 
           if (exchangeOrder && setOrders) {
             setOrders((os) => [exchangeOrder, ...(os || [])])
-            if (addAudit) addAudit(user, 'Exchange Processed', 'Returns', `${ret.return_number || ret.id} → Order ${exchangeOrder.order_number || exchangeOrder.id}`)
+            if (addAudit) addAudit(user, 'Exchange Processed', 'Returns', `${ret.return_number || ret.id}`)
           }
         } else {
           const origPayment = selectedOrder.payment_method || selectedOrder.payment
           if ((origPayment === 'Cash' || origPayment === 'Split') && refundMethod === 'original' && refundAmount > 0) {
             useCashStore.getState().addMovement('refund', refundAmount, `Refund: ${ret.return_number || ret.id}`, user)
           }
-          if (addAudit) addAudit(user, 'Return Processed', 'Returns', `${ret.return_number || ret.id} — ${fmt(refundAmount, settings?.sym)}`)
+          if (addAudit) addAudit(user, 'Return Processed', 'Returns', `${ret.return_number || ret.id}`)
         }
-
         setIsSuccess(true)
       }
     } catch (err) {
-      notify(err?.message || 'Failed to process return', 'error')
+      notify(err?.message || 'Processing failed', 'error')
     } finally {
       setProcessing(false)
     }
@@ -250,370 +250,319 @@ export const CashierReturns = ({
   const toggleItem = (idx) => {
     const max = itemQty(items[idx] || {})
     const current = selItemQtys[idx] ?? 0
-    if (current > 0) {
-      setItemQty(idx, 0)
-    } else {
-      setItemQty(idx, max)
-    }
+    setItemQty(idx, current > 0 ? 0 : max)
   }
 
   const resetFlow = () => {
-    setCurrentStep(1)
-    setSelectedOrder(null)
-    setOrderSearch('')
-    setSelItemQtys({})
-    setReasonCode('')
-    setRefundMethod('')
-    setProcessMode('')
-    setIsSuccess(false)
-    setShowReceiptModal(false)
+    setCurrentStep(1); setSelectedOrder(null); setOrderSearch(''); setSelItemQtys({});
+    setReasonCode(''); setRefundMethod(''); setProcessMode(''); setIsSuccess(false);
   }
 
-  const handlePrintMock = () => {
-    setShowReceiptModal(false)
-    notify('Bill printed', 'success')
-  }
-
-  const navigate = useNavigate()
-
-  const handleExit = () => {
-    if (onClose) {
-      onClose()
-    } else {
-      navigate('/app/home')
-    }
-  }
+  const handleExit = () => onClose ? onClose() : navigate('/app/home')
 
   return (
-    <div className="returns-terminal-root">
-      <header className="returns-terminal-header">
-        <div className="header-left-actions">
-          <button className="terminal-exit-btn" onClick={handleExit} title="Exit Returns">✕</button>
-          <div className="terminal-title-group">
-            <span>TERMINAL</span>
-            <h1>RETURNS & EXCHANGES</h1>
+    <div className={`returns-terminal-root ${darkMode ? 'dark' : ''}`}>
+      
+      <header className="returns-header">
+        <div className="header-left">
+          <button className="icon-btn exit-btn" onClick={handleExit}><X size={24} /></button>
+          <div className="title-stack">
+            <span className="eyebrow">Terminal Mode</span>
+            <h1>Returns & Exchanges</h1>
           </div>
         </div>
 
-        <div className="terminal-stepper">
-          {STEPS.map((s) => (
-            <div key={s.id} style={{ display: 'flex', alignItems: 'center' }}>
-              <div className={`terminal-step-dot ${currentStep === s.id ? 'active' : ''} ${currentStep > s.id ? 'done' : ''}`} />
-              {currentStep === s.id && <span className="terminal-step-label active">{s.label}</span>}
+        <nav className="step-tracker">
+          {STEPS.map((s, idx) => (
+            <div key={s.id} className={`step-item ${currentStep === s.id ? 'active' : ''} ${currentStep > s.id ? 'complete' : ''}`}>
+              <div className="step-marker">
+                {currentStep > s.id ? <Check size={14} strokeWidth={3} /> : <s.icon size={16} />}
+              </div>
+              <span className="step-label">{s.label}</span>
+              {idx < STEPS.length - 1 && <div className="step-connector" />}
             </div>
           ))}
-        </div>
-
-        <div style={{ width: 48 }} />
+        </nav>
+        <div className="header-right" />
       </header>
 
-      <main className="terminal-canvas">
-        <div className="terminal-content-wrap">
-
-          {isSuccess ? (
-            <div className="terminal-success">
-              <div className="success-ui-wrap" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                <div className="success-lottie-mock">🎉</div>
-                <h2>Return Successful</h2>
-                <p>Transaction #{selectedOrder?.order_number || '---'} has been processed.</p>
-                <div style={{ display: 'flex', gap: 16, flexDirection: 'column', alignItems: 'center' }}>
-                  <div style={{ display: 'flex', gap: 16 }}>
-                    <button className="terminal-btn-secondary" style={{ padding: '0 48px' }} onClick={() => {
-                      setShowReceiptModal(true)
-                      notify('Bill printed', 'success')
-                    }}>Print Receipt</button>
-                    <button className="terminal-btn-primary" style={{ padding: '0 48px' }} onClick={resetFlow}>New Return</button>
-                  </div>
-                  <button
-                    className="terminal-btn-secondary"
-                    style={{ width: '100%', maxWidth: 400, background: 'transparent', border: '1px solid #E2E8F0' }}
-                    onClick={handleExit}
-                  >
-                    Back to Terminal
-                  </button>
+      <main className="returns-main">
+        <div className="canvas-container">
+          
+          {currentStep === 1 && !isSuccess && (
+            <div className="step-view lookup-view">
+              <div className="hero-section">
+                <div className="hardware-scan-zone">
+                  <div className="glow-ring" />
+                  <Search size={64} className="hero-icon" />
                 </div>
+                <h2>Find the Transaction</h2>
+                <p>Scan the receipt barcode or type the order number below.</p>
               </div>
 
-              {showReceiptModal && (
-                <div 
-                  style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.5)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                  onClick={() => setShowReceiptModal(false)}
-                >
-                  <div 
-                    style={{ background: '#fff', padding: 24, borderRadius: 16, width: 400, maxWidth: '90%', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 20px 50px rgba(0,0,0,0.15)' }}
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <div style={{ fontFamily: 'monospace', color: '#000', padding: 16, border: '1px solid #E2E8F0', borderRadius: 8, background: '#FAFAFA' }}>
-                      <div style={{ textAlign: 'center', marginBottom: 16 }}>
-                        <h2 style={{ fontSize: 24, margin: '0 0 4px 0', textTransform: 'uppercase' }}>SCSTIX EPOS</h2>
-                        <div style={{ fontSize: 14 }}>RETURN RECEIPT</div>
-                        <div style={{ fontSize: 12, marginTop: 8 }}>TXN: #{selectedOrder?.order_number || selectedOrder?.id?.slice(0, 8)}</div>
-                        <div style={{ fontSize: 12 }}>DATE: {new Date().toLocaleString()}</div>
-                      </div>
-                      
-                      <div style={{ borderTop: '1px dashed #A0AEC0', borderBottom: '1px dashed #A0AEC0', padding: '12px 0', margin: '16px 0' }}>
-                        <table style={{ width: '100%', fontSize: 12, textAlign: 'left', borderCollapse: 'collapse' }}>
-                          <thead>
-                            <tr>
-                              <th style={{ paddingBottom: 8 }}>ITEM</th>
-                              <th style={{ paddingBottom: 8, textAlign: 'center' }}>QTY</th>
-                              <th style={{ paddingBottom: 8, textAlign: 'right' }}>AMT</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {selectedItems.map(({ item, qty }, idx) => (
-                              <tr key={idx}>
-                                <td style={{ paddingTop: 4 }}>{itemName(item)}</td>
-                                <td style={{ paddingTop: 4, textAlign: 'center' }}>{qty}</td>
-                                <td style={{ paddingTop: 4, textAlign: 'right' }}>{fmt(itemPrice(item) * (1 - itemDiscount(item) / 100) * qty, settings?.sym)}</td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
+              <div className="scan-input-container">
+                <input
+                  className="hardware-input"
+                  placeholder="SCAN ORDER NUMBER"
+                  value={orderSearch}
+                  autoFocus
+                  onFocus={() => setShowFullKeyboard(true)}
+                  onClick={() => setShowFullKeyboard(true)}
+                  readOnly={showFullKeyboard}
+                  onChange={(e) => setOrderSearch(e.target.value.toUpperCase())}
+                  onKeyDown={(e) => e.key === 'Enter' && lookupOrder()}
+                />
+                <button className="scan-submit-btn" onClick={lookupOrder} disabled={lookupLoading}>
+                  {lookupLoading ? <div className="spinner" /> : <ChevronRight size={32} />}
+                </button>
+              </div>
 
-                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14, fontWeight: 'bold' }}>
-                        <span>TOTAL REFUND</span>
-                        <span>{fmt(refundAmount, settings?.sym)}</span>
-                      </div>
-                      
-                      <div style={{ textAlign: 'center', marginTop: 24, fontSize: 12 }}>
-                        <div>METHOD: {processMode === 'exchange' ? 'EXCHANGE' : (refundMethod || 'Original').replace('_', ' ').toUpperCase()}</div>
-                        <div style={{ marginTop: 4 }}>REASON: {(REASON_CODES.find(r => r.value === reasonCode)?.label || reasonCode || 'OTHER').toUpperCase()}</div>
-                        <div style={{ marginTop: 16 }}>*** Customer Copy ***</div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
+              <div className="quick-action-pills">
+                <button className="pill-btn"><History size={18} /> Recent Orders</button>
+                <button className="pill-btn"><UserSearch size={18} /> Find Customer</button>
+              </div>
             </div>
-          ) : (
-            <>
-              {currentStep === 1 && (
-                <div className="lookup-hero">
-                  <div className="lookup-icon-ring">🔍</div>
-                  <h2 className="lookup-title">Find the Order</h2>
-                  <p className="lookup-subtitle">Scan the customer receipt barcode or enter the order number manually to begin.</p>
-
-                  <div className="terminal-search-box">
-                    <input
-                      className="terminal-search-input"
-                      autoFocus
-                      placeholder="SCAN OR TYPE ORDER #"
-                      value={orderSearch}
-                      onChange={(e) => setOrderSearch(e.target.value.toUpperCase())}
-                      onKeyDown={(e) => e.key === 'Enter' && lookupOrder()}
-                    />
-                    <button className="search-submit-btn" onClick={lookupOrder} disabled={lookupLoading}>
-                      {lookupLoading ? '...' : '→'}
-                    </button>
-                  </div>
-
-                  <div className="terminal-quick-tools">
-                    <div className="tool-card" onClick={() => notify('Recent orders view coming soon', 'info')}>
-                      🕒 Recent Orders
-                    </div>
-                    <div className="tool-card" onClick={() => notify('Customer search coming soon', 'info')}>
-                      👤 Find Customer
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {currentStep === 2 && selectedOrder && (
-                <div style={{ animation: 'terminalFadeIn 0.4s' }}>
-                  <div className="selection-header">
-                    <div>
-                      <h2 style={{ fontSize: 32, fontWeight: 900, color: '#0F172A', margin: 0 }}>
-                        Order #{selectedOrder.order_number || selectedOrder.id}
-                      </h2>
-                      <p style={{ fontSize: 18, color: '#64748B', fontWeight: 600, marginTop: 8 }}>
-                        Tap items customer wishes to return
-                      </p>
-                    </div>
-                    {!withinWindow && <Badge text={`Outside ${returnDays}-day window`} color="red" />}
-                  </div>
-
-                  <div className="terminal-item-grid">
-                    {items.map((item, idx) => {
-                      const returnable = isProductReturnable(item.product_id || item.productId)
-                      const selQty = selItemQtys[idx] ?? 0
-                      const maxQty = itemQty(item)
-
-                      return (
-                        <div
-                          key={idx}
-                          className={`terminal-return-card ${selQty > 0 ? 'selected' : ''}`}
-                          onClick={() => returnable && toggleItem(idx)}
-                          style={{ opacity: returnable ? 1 : 0.5 }}
-                        >
-                          <div className="card-thumb">
-                            {item.image_url ? <img src={item.image_url} alt="" /> : '📦'}
-                          </div>
-                          <div className="card-info">
-                            <h3>{itemName(item)}</h3>
-                            <p>{fmt(itemPrice(item), settings?.sym)} · {maxQty} qty</p>
-                            {!returnable && <Badge text="Non-returnable" color="red" style={{ marginTop: 8 }} />}
-                          </div>
-
-                          <div className="card-checkbox">
-                            {selQty > 0 ? '✓' : ''}
-                          </div>
-
-                          {selQty > 0 && (
-                            <div className="card-qty-control" onClick={e => e.stopPropagation()}>
-                              <button className="qty-mini-btn" onClick={() => setItemQty(idx, selQty - 1)}>−</button>
-                              <span className="qty-display">{selQty}</span>
-                              <button className="qty-mini-btn" onClick={() => setItemQty(idx, selQty + 1)}>+</button>
-                            </div>
-                          )}
-                        </div>
-                      )
-                    })}
-                  </div>
-                </div>
-              )}
-
-              {currentStep === 3 && (
-                <div style={{ animation: 'terminalFadeIn 0.4s' }}>
-                  <div style={{ textAlign: 'center', marginBottom: 32 }}>
-                    <h2 style={{ fontSize: 32, fontWeight: 900, color: '#0F172A' }}>Select Return Method</h2>
-                    <p style={{ fontSize: 16, color: '#64748B' }}>Choose how to compensate the customer</p>
-                  </div>
-
-                  <div className="terminal-giant-grid">
-                    <div
-                      className={`giant-type-card ${processMode === 'return' && refundMethod === 'original' ? 'selected' : ''}`}
-                      onClick={() => { setProcessMode('return'); setRefundMethod('original'); setCurrentStep(4); }}
-                    >
-                      <i>💳</i>
-                      <div>
-                        <h2>Original Refund</h2>
-                        <p>Refund to original tender</p>
-                      </div>
-                    </div>
-
-                    <div
-                      className={`giant-type-card ${processMode === 'exchange' ? 'selected' : ''}`}
-                      onClick={() => { setProcessMode('exchange'); setRefundMethod('exchange'); setCurrentStep(4); }}
-                    >
-                      <i>🔄</i>
-                      <div>
-                        <h2>Exchange</h2>
-                        <p>Switch for other products</p>
-                      </div>
-                    </div>
-
-                    <div
-                      className={`giant-type-card ${refundMethod === 'store_credit' ? 'selected' : ''}`}
-                      onClick={() => { setProcessMode('return'); setRefundMethod('store_credit'); setCurrentStep(4); }}
-                    >
-                      <i>🎟️</i>
-                      <div>
-                        <h2>Store Credit</h2>
-                        <p>Issue a gift card/credit</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {currentStep === 4 && (
-                <div style={{ animation: 'terminalFadeIn 0.4s', maxWidth: 800, margin: '0 auto' }}>
-                  <div style={{ textAlign: 'center', marginBottom: 24 }}>
-                    <h2 style={{ fontSize: 28, fontWeight: 900, color: '#0F172A' }}>Final Confirmation</h2>
-                  </div>
-
-                  <div className="terminal-summary-card">
-                    <div className="summary-items-list">
-                      {selectedItems.map(({ item, qty }) => (
-                        <div key={item.id} className="summary-line">
-                          <div className="item-name-qty">
-                            <b>{itemName(item)}</b>
-                            <span>{qty} unit(s) @ {fmt(itemPrice(item), settings?.sym)}</span>
-                          </div>
-                          <div className="line-val">
-                            {fmt(itemPrice(item) * (1 - itemDiscount(item) / 100) * qty, settings?.sym)}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: 16 }}>
-                      <label style={{ fontSize: 14, fontWeight: 900, color: '#94A3B8' }}>TOTAL TO {processMode === 'exchange' ? 'EXCHANGE' : 'REFUND'}</label>
-                      <div style={{ fontSize: 40, fontWeight: 900, color: '#4F46E5', letterSpacing: -1 }}>
-                        {fmt(refundAmount, settings?.sym)}
-                      </div>
-                    </div>
-
-                    <div>
-                      <label style={{ display: 'block', fontSize: 13, fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase', marginBottom: 8 }}>Reason for Return</label>
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12 }}>
-                        {REASON_CODES.map(rc => (
-                          <button
-                            key={rc.value}
-                            style={{
-                              height: 56,
-                              padding: '0 24px',
-                              borderRadius: 16,
-                              border: 'none',
-                              background: reasonCode === rc.value ? '#4F46E5' : '#F1F5F9',
-                              color: reasonCode === rc.value ? 'white' : '#64748B',
-                              fontWeight: 800,
-                              fontSize: 15,
-                              flex: '1 1 calc(33.33% - 12px)',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              transition: 'all 0.2s',
-                              cursor: 'pointer',
-                              boxShadow: reasonCode === rc.value ? '0 10px 25px rgba(79, 70, 229, 0.3)' : '0 4px 12px rgba(0,0,0,0.03)'
-                            }}
-                            onClick={() => setReasonCode(rc.value)}
-                          >
-                            {rc.label}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </>
           )}
 
+          {currentStep === 2 && !isSuccess && selectedOrder && (
+            <div className="step-view items-view">
+              <div className="section-intro">
+                <div className="order-chip">Order #{selectedOrder.order_number || selectedOrder.id}</div>
+                <h2>Select items for return</h2>
+                <p>Choose products and adjust quantities if necessary.</p>
+              </div>
+
+              <div className="returns-item-grid">
+                {items.map((item, idx) => {
+                  const returnable = isProductReturnable(item.product_id || item.productId)
+                  const selQty = selItemQtys[idx] ?? 0
+                  const maxQty = itemQty(item)
+
+                  return (
+                    <div
+                      key={idx}
+                      className={`item-return-card ${selQty > 0 ? 'active' : ''} ${!returnable ? 'disabled' : ''}`}
+                      onClick={() => returnable && toggleItem(idx)}
+                    >
+                      <div className="item-select-feedback">
+                        <div className="checkbox-ring">
+                          {selQty > 0 && <Check size={14} strokeWidth={4} />}
+                        </div>
+                      </div>
+                      
+                      <div className="item-visual">
+                        {item.image_url ? <img src={item.image_url} alt="" /> : <Package size={32} />}
+                      </div>
+
+                      <div className="item-details">
+                        <h3>{itemName(item)}</h3>
+                        <span className="price-tag">{fmt(itemPrice(item), settings?.sym)}</span>
+                        {!returnable && <div className="warning-note">Non-returnable</div>}
+                      </div>
+
+                      {selQty > 0 && (
+                        <div className="qty-stepper" onClick={e => e.stopPropagation()}>
+                          <button onClick={() => setItemQty(idx, selQty - 1)}><Minus size={18} /></button>
+                          <span className="qty-val">{selQty}</span>
+                          <button onClick={() => setItemQty(idx, selQty + 1)}><Plus size={18} /></button>
+                        </div>
+                      )}
+                      
+                      {selQty === 0 && returnable && <div className="qty-badge-max">{maxQty} available</div>}
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+
+          {currentStep === 3 && !isSuccess && (
+            <div className="step-view type-view">
+              <div className="section-intro centered">
+                <h2>Select Compensation</h2>
+                <p>How would you like to handle this return?</p>
+              </div>
+
+              <div className="type-selection-cards">
+                <button 
+                  className={`type-hero-card ${processMode === 'return' && refundMethod === 'original' ? 'active' : ''}`}
+                  onClick={() => { setProcessMode('return'); setRefundMethod('original'); setCurrentStep(4); }}
+                >
+                  <div className="type-icon-box original"><CreditCard size={40} /></div>
+                  <div className="type-info">
+                    <h3>Original Refund</h3>
+                    <p>Process back to original payment method</p>
+                  </div>
+                  <ChevronRight className="arrow" />
+                </button>
+
+                <button 
+                  className={`type-hero-card ${processMode === 'exchange' ? 'active' : ''}`}
+                  onClick={() => { setProcessMode('exchange'); setRefundMethod('exchange'); setCurrentStep(4); }}
+                >
+                  <div className="type-icon-box exchange"><ArrowLeftRight size={40} /></div>
+                  <div className="type-info">
+                    <h3>Exchange</h3>
+                    <p>Swap items for new products or size</p>
+                  </div>
+                  <ChevronRight className="arrow" />
+                </button>
+
+                <button 
+                  className={`type-hero-card ${refundMethod === 'store_credit' ? 'active' : ''}`}
+                  onClick={() => { setProcessMode('return'); setRefundMethod('store_credit'); setCurrentStep(4); }}
+                >
+                  <div className="type-icon-box credit"><Ticket size={40} /></div>
+                  <div className="type-info">
+                    <h3>Store Credit</h3>
+                    <p>Issue digital credit for future purchase</p>
+                  </div>
+                  <ChevronRight className="arrow" />
+                </button>
+              </div>
+            </div>
+          )}
+
+          {currentStep === 4 && !isSuccess && (
+            <div className="step-view confirm-view">
+              <div className="confirm-layout">
+                <div className="confirm-summary">
+                  <div className="summary-header">
+                    <span>Summary of Return</span>
+                    <div className="giant-total">{fmt(refundAmount, settings?.sym)}</div>
+                  </div>
+
+                  <div className="summary-scrollable">
+                    {selectedItems.map(({ item, qty }) => (
+                      <div key={item.id} className="summary-line">
+                        <div className="line-item-info">
+                          <span className="name">{itemName(item)}</span>
+                          <span className="detail">{qty} unit(s) @ {fmt(itemPrice(item), settings?.sym)}</span>
+                        </div>
+                        <div className="line-price">{fmt(itemPrice(item) * (1 - itemDiscount(item) / 100) * qty, settings?.sym)}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="confirm-logic">
+                  <span className="logic-label">Select Return Reason</span>
+                  <div className="reason-pill-grid">
+                    {REASON_CODES.map(rc => (
+                      <button
+                        key={rc.value}
+                        className={`reason-pill ${reasonCode === rc.value ? 'active' : ''}`}
+                        onClick={() => setReasonCode(rc.value)}
+                      >
+                        {rc.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="method-preview-chip">
+                    Refund via <strong>{processMode === 'exchange' ? 'Exchange' : refundMethod.replace('_', ' ')}</strong>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {isSuccess && (
+            <div className="step-view success-view">
+              <div className="success-card">
+                <div className="success-anim-box">
+                  <div className="party-bg" />
+                  <CheckCircle2 size={80} className="check-icon" />
+                </div>
+                <h2>Refund Processed</h2>
+                <div className="success-amount">{fmt(refundAmount, settings?.sym)}</div>
+                <p>Transaction completed and recorded successfully.</p>
+                
+                <div className="success-actions">
+                  <button className="primary-cta" onClick={resetFlow}><Plus size={20} /> New Return</button>
+                  <div className="secondary-row">
+                    <button className="ghost-btn" onClick={() => setShowReceiptModal(true)}><Printer size={18} /> Print Receipt</button>
+                    <button className="ghost-btn" onClick={handleExit}><ArrowLeft size={18} /> Terminal Home</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </main>
 
       {!isSuccess && currentStep > 1 && (
-        <footer className="terminal-footer">
-          <div className="footer-stats">
-            <label>Returning {selectedItems.length} items</label>
-            <div className="total-val">{fmt(refundAmount, settings?.sym)}</div>
+        <footer className="returns-footer">
+          <div className="footer-preview">
+            <span className="preview-label">Selected Total</span>
+            <span className="preview-val">{fmt(refundAmount, settings?.sym)}</span>
           </div>
 
-          <div className="footer-actions">
-            <button className="terminal-btn-secondary" onClick={() => setCurrentStep(currentStep - 1)}>Back</button>
-
-            {currentStep === 2 && (
-              <button
-                className="terminal-btn-primary"
-                disabled={selectedItems.length === 0 || hasNonReturnable || !withinWindow}
-                onClick={() => setCurrentStep(3)}
-              >
-                Choose Method →
-              </button>
-            )}
-
-
-
-            {currentStep === 4 && (
-              <button className="terminal-btn-primary" onClick={handleProcessReturn} disabled={processing}>
-                {processing ? 'Processing...' : `Confirm & Process ${processMode === 'exchange' ? 'Exchange' : 'Refund'}`}
-              </button>
-            )}
+          <div className="footer-btns">
+            <button className="footer-back-btn" onClick={() => setCurrentStep(currentStep - 1)}>
+              <ArrowLeft size={20} /> Back
+            </button>
+            <button 
+              className="footer-primary-btn"
+              disabled={selectedItems.length === 0 || processing || hasNonReturnable || !withinWindow}
+              onClick={() => {
+                if (currentStep === 4) handleProcessReturn()
+                else setCurrentStep(currentStep + 1)
+              }}
+            >
+              {processing ? 'Processing...' : currentStep === 4 ? `Process ${processMode === 'exchange' ? 'Exchange' : 'Refund'}` : 'Next Step'}
+              <ChevronRight size={20} />
+            </button>
           </div>
         </footer>
+      )}
+
+      {showReceiptModal && (
+        <div className="receipt-overlay" onClick={() => setShowReceiptModal(false)}>
+          <div className="receipt-container" onClick={e => e.stopPropagation()}>
+            <div className="receipt-paper">
+              <div className="receipt-header">
+                <h3>SCSTIX POS</h3>
+                <span>RETURN RECEIPT</span>
+                <div className="receipt-meta">
+                  <span>TXN: #{selectedOrder?.order_number || '---'}</span>
+                  <span>{dayjs().format('DD/MM/YYYY HH:mm')}</span>
+                </div>
+              </div>
+              <div className="receipt-body">
+                {selectedItems.map(({ item, qty }, idx) => (
+                  <div key={idx} className="receipt-row">
+                    <span>{itemName(item)} x{qty}</span>
+                    <span>{fmt(itemPrice(item) * (1 - itemDiscount(item) / 100) * qty, settings?.sym)}</span>
+                  </div>
+                ))}
+              </div>
+              <div className="receipt-footer">
+                <div className="receipt-total">
+                  <span>REFUND TOTAL</span>
+                  <span>{fmt(refundAmount, settings?.sym)}</span>
+                </div>
+                <p>Reason: {REASON_CODES.find(r => r.value === reasonCode)?.label || 'Other'}</p>
+                <div className="barcode-mock" />
+                <p className="thank-you">THANK YOU</p>
+              </div>
+            </div>
+            <button className="modal-close" onClick={() => setShowReceiptModal(false)}>Close</button>
+          </div>
+        </div>
+      )}
+
+      {showFullKeyboard && (
+        <FullKeyboard
+          initialValue={orderSearch}
+          onClose={() => setShowFullKeyboard(false)}
+          onSave={(val) => {
+            setOrderSearch(val)
+            setShowFullKeyboard(false)
+            lookupOrder()
+          }}
+          onChange={(val) => setOrderSearch(val)}
+        />
       )}
     </div>
   )
