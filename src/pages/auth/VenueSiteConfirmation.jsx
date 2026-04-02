@@ -56,7 +56,11 @@ export function VenueSiteConfirmation() {
     const siteId = selectedSiteId || (sites[0]?.id || detectedSiteId)
     setVenue(venueId)
     setSite(siteId)
-    navigate('/app')
+    if (currentUser?.role === 'cashier') {
+      navigate('/app/cash')
+    } else {
+      navigate('/app')
+    }
   }
 
   if (loading) {
@@ -77,14 +81,14 @@ export function VenueSiteConfirmation() {
     <div style={{ minHeight: '100vh', display: 'flex', background: t.bg }}>
       <div style={{ flex: 1.2, backgroundImage: `url(${bgImage})`, backgroundSize: 'cover', backgroundPosition: 'center', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', justifyContent: 'flex-end', padding: '60px', position: 'relative', overflow: 'hidden', boxShadow: 'inset -20px 0 50px rgba(0,0,0,0.5)' }} className="hide-mobile">
         <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.2) 60%, rgba(0,0,0,0.1) 100%)' }} />
-        
+
         <div style={{ position: 'relative', color: '#fff', maxWidth: 500, zIndex: 1 }}>
           <div style={{ display: 'inline-flex', alignItems: 'center', background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(10px)', padding: '8px 16px', borderRadius: 30, marginBottom: 20, border: '1px solid rgba(255,255,255,0.3)' }}>
             <span style={{ fontSize: 18, marginRight: 8 }}>📍</span>
             <span style={{ fontSize: 14, fontWeight: 600, letterSpacing: 1, textTransform: 'uppercase' }}>Workspace Setup</span>
           </div>
           <div style={{ fontSize: 42, fontWeight: 800, letterSpacing: -1, marginBottom: 16, lineHeight: 1.1, textShadow: '0 2px 10px rgba(0,0,0,0.5)' }}>
-            Welcome to<br/>the POS System
+            Welcome to<br />the POS System
           </div>
           <div style={{ fontSize: 16, opacity: 0.9, lineHeight: 1.6, fontWeight: 300, textShadow: '0 1px 4px rgba(0,0,0,0.5)' }}>
             Step into a premium retail experience. Please verify your working location to begin serving customers.
@@ -141,9 +145,9 @@ export function VenueSiteConfirmation() {
             </div>
 
             <div style={{ marginTop: 12 }}>
-               <Btn t={t} variant="primary" fullWidth onClick={handleConfirm} style={{ padding: '16px', borderRadius: 12, fontSize: 16, fontWeight: 700, letterSpacing: 0.2, boxShadow: '0 8px 16px rgba(0,0,0,0.1)' }}>
-                 Confirm & Continue &rarr;
-               </Btn>
+              <Btn t={t} variant="primary" fullWidth onClick={handleConfirm} style={{ padding: '16px', borderRadius: 12, fontSize: 16, fontWeight: 700, letterSpacing: 0.2, boxShadow: '0 8px 16px rgba(0,0,0,0.1)' }}>
+                Confirm & Continue &rarr;
+              </Btn>
             </div>
           </div>
         </div>

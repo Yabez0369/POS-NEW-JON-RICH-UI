@@ -96,7 +96,7 @@ export function POSFlowView({
             <div className="pos-scan-input-container">
               <div className="pos-scan-icon-large">
                 <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#4F46E5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M3 7V5a2 2 0 012-2h2m10 0h2a2 2 0 012 2v2m0 10v2a2 2 0 01-2 2h-2M7 21H5a2 2 0 01-2-2v-2M7 12h10"/>
+                  <path d="M3 7V5a2 2 0 012-2h2m10 0h2a2 2 0 012 2v2m0 10v2a2 2 0 01-2 2h-2M7 21H5a2 2 0 01-2-2v-2M7 12h10" />
                 </svg>
               </div>
               <input
@@ -128,7 +128,7 @@ export function POSFlowView({
                 <div className="pos-product-card-info">
                   <div className="pos-product-card-name">{p.name}</div>
                   <div className="pos-product-card-bottom">
-                    <div className="pos-product-card-price">{fmt(p.price * (1 - disc/100), settings?.sym)}</div>
+                    <div className="pos-product-card-price">{fmt(p.price * (1 - disc / 100), settings?.sym)}</div>
                     <div className={`pos-product-card-stock ${p.stock <= 5 ? 'low' : 'ok'}`}>{p.stock}</div>
                   </div>
                 </div>
@@ -140,7 +140,7 @@ export function POSFlowView({
 
       <div className="pos-scan-right">
         <div className="pos-cart-header">
-          <div className="pos-cart-title">Cart {cart.length > 0 && <span className="pos-cart-count">{cart.reduce((s,i)=>s+i.qty, 0)}</span>}</div>
+          <div className="pos-cart-title">Cart {cart.length > 0 && <span className="pos-cart-count">{cart.reduce((s, i) => s + i.qty, 0)}</span>}</div>
           {selCust && <div className="pos-active-customer"><div className="pos-active-customer-dot" />{selCust.name}</div>}
         </div>
 
@@ -149,7 +149,7 @@ export function POSFlowView({
             <div className="pos-cart-empty">
               <div className="pos-cart-empty-visual">
                 <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="m5 11 4-7"/><path d="m19 11-4-7"/><path d="M2 11h20"/><path d="m3.5 11 1.6 7.4a2 2 0 0 0 2 1.6h9.8a2 2 0 0 0 2-1.6l1.7-7.4"/><path d="M9 17v1"/><path d="M15 17v1"/>
+                  <path d="m5 11 4-7" /><path d="m19 11-4-7" /><path d="M2 11h20" /><path d="m3.5 11 1.6 7.4a2 2 0 0 0 2 1.6h9.8a2 2 0 0 0 2-1.6l1.7-7.4" /><path d="M9 17v1" /><path d="M15 17v1" />
                 </svg>
               </div>
               <div className="pos-cart-empty-text">Empty Cart</div>
@@ -163,13 +163,13 @@ export function POSFlowView({
                 </div>
                 <div className="pos-cart-qty-zone">
                   <button className="pos-qty-action-btn" onClick={(e) => { e.stopPropagation(); updateQty(item.id, -1) }}>−</button>
-                  <span className="pos-qty-display" onClick={(e) => { e.stopPropagation(); setNumpadConfig({target:'qty', itemId:item.id, initialValue:item.qty}); setShowNumpad(true)}}>{item.qty}</span>
+                  <span className="pos-qty-display" onClick={(e) => { e.stopPropagation(); setNumpadConfig({ target: 'qty', itemId: item.id, initialValue: item.qty }); setShowNumpad(true) }}>{item.qty}</span>
                   <button className="pos-qty-action-btn" onClick={(e) => { e.stopPropagation(); updateQty(item.id, 1) }}>+</button>
                 </div>
                 <button className="pos-cart-delete-btn" onClick={(e) => { e.stopPropagation(); handleInlineDelete(item.id) }}>
-                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M3 6h18m-2 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M3 6h18m-2 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" /></svg>
                 </button>
-                <div className="pos-cart-item-price">{fmt(item.price * (1 - (item.discount||0)/100) * item.qty, settings?.sym)}</div>
+                <div className="pos-cart-item-price">{fmt(item.price * (1 - (item.discount || 0) / 100) * item.qty, settings?.sym)}</div>
               </div>
             ))
           )}
@@ -197,7 +197,7 @@ export function POSFlowView({
           {cart.map(item => (
             <div key={item.id} className="pos-summary-item">
               <div className="pos-summary-item-name">{item.name} <span>× {item.qty}</span></div>
-              <div className="pos-summary-item-price">{fmt(item.price * (1 - (item.discount||0)/100) * item.qty, settings?.sym)}</div>
+              <div className="pos-summary-item-price">{fmt(item.price * (1 - (item.discount || 0) / 100) * item.qty, settings?.sym)}</div>
             </div>
           ))}
         </div>
@@ -211,12 +211,12 @@ export function POSFlowView({
 
       <div className="pos-payment-right">
         <div className="pos-payment-methods-grid">
-           {[['Card', '💳'], ['Cash', '💵'], ['Split', '✂️']].map(([m, ic]) => (
-              <button key={m} className={`pos-method-choice-btn${payMethod === m ? ' selected' : ''}`} onClick={() => setPayMethod(m)}>
-                <span className="method-icon">{ic}</span>
-                <span className="method-label">{m}</span>
-              </button>
-            ))}
+          {[['Card', '💳'], ['Cash', '💵'], ['Split', '✂️']].map(([m, ic]) => (
+            <button key={m} className={`pos-method-choice-btn${payMethod === m ? ' selected' : ''}`} onClick={() => setPayMethod(m)}>
+              <span className="method-icon">{ic}</span>
+              <span className="method-label">{m}</span>
+            </button>
+          ))}
         </div>
 
         <div className="pos-payment-method-details">
@@ -224,7 +224,7 @@ export function POSFlowView({
             <div className="pos-cash-flow">
               <div className="pos-cash-input-group">
                 <label>Cash Received</label>
-                <div className="pos-cash-input-large" onClick={() => { setNumpadConfig({target:'cash', initialValue:cashGiven}); setShowNumpad(true) }}>
+                <div className="pos-cash-input-large" onClick={() => { setNumpadConfig({ target: 'cash', initialValue: cashGiven }); setShowNumpad(true) }}>
                   {cashGiven ? fmt(cashGivenNum, settings?.sym) : "Touch to enter"}
                 </div>
               </div>
@@ -239,19 +239,19 @@ export function POSFlowView({
             </div>
           )}
           {payMethod === 'Split' && (
-             <div className="pos-split-flow">
-                <div className="pos-split-inputs">
-                   <div className="split-field" onClick={() => { setNumpadConfig({target:'splitCash', initialValue:splitCash}); setShowNumpad(true) }}>
-                     <label>Cash</label><div className="split-val">{fmt(parseFloat(splitCash)||0, settings?.sym)}</div>
-                   </div>
-                   <div className="split-field" onClick={() => { setNumpadConfig({target:'splitCard', initialValue:splitCard}); setShowNumpad(true) }}>
-                     <label>Card</label><div className="split-val">{fmt(parseFloat(splitCard)||0, settings?.sym)}</div>
-                   </div>
+            <div className="pos-split-flow">
+              <div className="pos-split-inputs">
+                <div className="split-field" onClick={() => { setNumpadConfig({ target: 'splitCash', initialValue: splitCash }); setShowNumpad(true) }}>
+                  <label>Cash</label><div className="split-val">{fmt(parseFloat(splitCash) || 0, settings?.sym)}</div>
                 </div>
-                <div className={`pos-split-status-bar ${Math.abs((parseFloat(splitCash)||0)+(parseFloat(splitCard)||0)-cartTotal)<0.01?'ready':'await'}`}>
-                  {Math.abs((parseFloat(splitCash)||0)+(parseFloat(splitCard)||0)-cartTotal)<0.01 ? "Ready" : `Remaining: ${fmt(cartTotal-((parseFloat(splitCash)||0)+(parseFloat(splitCard)||0)), settings?.sym)}`}
+                <div className="split-field" onClick={() => { setNumpadConfig({ target: 'splitCard', initialValue: splitCard }); setShowNumpad(true) }}>
+                  <label>Card</label><div className="split-val">{fmt(parseFloat(splitCard) || 0, settings?.sym)}</div>
                 </div>
-             </div>
+              </div>
+              <div className={`pos-split-status-bar ${Math.abs((parseFloat(splitCash) || 0) + (parseFloat(splitCard) || 0) - cartTotal) < 0.01 ? 'ready' : 'await'}`}>
+                {Math.abs((parseFloat(splitCash) || 0) + (parseFloat(splitCard) || 0) - cartTotal) < 0.01 ? "Ready" : `Remaining: ${fmt(cartTotal - ((parseFloat(splitCash) || 0) + (parseFloat(splitCard) || 0)), settings?.sym)}`}
+              </div>
+            </div>
           )}
           {payMethod === 'Card' && <div className="pos-card-flow-ready"><div className="card-ready-icon">⚡</div><div className="card-ready-text">Ready to transmit</div></div>}
         </div>
@@ -314,7 +314,7 @@ export function POSFlowView({
       <div className="pos-flow-header">
         <div className="pos-flow-header-left">
           <button className="pos-flow-exit-btn" onClick={() => navigate('/app')}>
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M19 12H5m7 7l-7-7 7-7"/></svg>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M19 12H5m7 7l-7-7 7-7" /></svg>
           </button>
           <div className="pos-flow-path">
             {STEP_ORDER.map((s, i) => (
@@ -328,7 +328,7 @@ export function POSFlowView({
         {scanMsg && <div className={`pos-floating-msg ${scanMsg.includes('❌') ? 'err' : 'ok'}`}>{scanMsg}</div>}
         <div className="pos-flow-header-right">
           <button className={`pos-utility-btn${showMenu ? ' open' : ''}`} onClick={() => setShowMenu(v => !v)}>
-            <span>More</span><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg>
+            <span>More</span><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="1" /><circle cx="12" cy="5" r="1" /><circle cx="12" cy="19" r="1" /></svg>
           </button>
           {showMenu && (
             <>
@@ -337,7 +337,7 @@ export function POSFlowView({
                 <button className="pos-menu-item" onClick={() => { setShowNewCust(true); setShowMenu(false) }}>👤 Add Customer</button>
                 <div className="pos-menu-divider" />
                 <button className="pos-menu-item" onClick={() => { parkBill(); setShowMenu(false) }} disabled={cart.length === 0}>⏸ Park Sale</button>
-                <button className="pos-menu-item" onClick={() => { setShowParkedDropdown(true); setShowMenu(false) }}>📂 Recall Sale {parked.length > 0 && <span className="m-badge">{parked.length}</span>}</button>
+                <button className="pos-menu-item" onClick={() => { setShowParkedDropdown(true); setShowMenu(false) }} disabled={cart.length > 0}>📂 Recall Sale {parked.length > 0 && <span className="m-badge">{parked.length}</span>}</button>
               </div>
             </>
           )}
@@ -347,7 +347,11 @@ export function POSFlowView({
         <div className={`pos-step-view animate-${animDir}`} key={posStep}>{renderStep()}</div>
       </div>
       {showNumpad && (
-        <NumberPadModal t={t} title="Enter Value" initialValue={numpadConfig.initialValue} isDecimal={numpadConfig.target !== 'qty'} onClose={() => setShowNumpad(false)}
+        <NumberPadModal t={t} title={numpadConfig.target === 'qty' ? 'Enter Quantity' : 'Enter Amount'} 
+          initialValue={numpadConfig.initialValue} 
+          isDecimal={numpadConfig.target !== 'qty'} 
+          showCurrency={numpadConfig.target !== 'qty'}
+          onClose={() => setShowNumpad(false)}
           onSave={(val) => {
             if (numpadConfig.target === 'qty') updateQtyAbsolute(numpadConfig.itemId, val)
             else if (numpadConfig.target === 'cash') setCashGiven(val)

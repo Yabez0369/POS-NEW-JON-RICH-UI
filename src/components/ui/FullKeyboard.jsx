@@ -240,7 +240,7 @@ const Key = ({ label, onClick, isPressed, type }) => {
 const overlayStyle = {
   position: 'fixed',
   inset: 0,
-  zIndex: 10000,
+  zIndex: 20000,
   display: 'flex',
   alignItems: 'flex-end',
   justifyContent: 'center',

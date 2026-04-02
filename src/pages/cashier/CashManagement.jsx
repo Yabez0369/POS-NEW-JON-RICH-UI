@@ -23,7 +23,7 @@ const MOVE_META = {
 
 export const CashManagement = ({ addAudit, settings, t: tProp }) => {
   const { t: tCtx, darkMode } = useTheme()
-  const { currentUser } = useAuth()
+  const { logout, currentUser } = useAuth()
   const navigate = useNavigate()
   const t = tProp || tCtx
 
@@ -42,6 +42,8 @@ export const CashManagement = ({ addAudit, settings, t: tProp }) => {
   const [countedCash, setCountedCash] = useState('')
 
   const [activePad, setActivePad] = useState(null) // 'float' | 'drop' | 'lift' | 'count'
+  const [isOpening, setIsOpening] = useState(false)
+  const [isClosing, setIsClosing] = useState(false)
 
   // Clock
   const [clock, setClock] = useState(() => new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }))
@@ -72,9 +74,11 @@ export const CashManagement = ({ addAudit, settings, t: tProp }) => {
   const openTill = async () => {
     const amt = parseFloat(openFloat)
     if (isNaN(amt) || amt < 0) { notify('Enter a valid float amount', 'error'); return }
+    setIsOpening(true)
     await storeOpenTill(currentUser, amt)
     if (addAudit) addAudit({ action: 'Till Opened', detail: `Float: ${fmt(amt, settings?.sym)}`, user: currentUser?.name || 'Cashier' })
     notify(`Till opened with ${fmt(amt, settings?.sym)} float`, 'success')
+    navigate('/app/home')
   }
 
   const doCashDrop = async () => {
@@ -122,6 +126,12 @@ export const CashManagement = ({ addAudit, settings, t: tProp }) => {
         })
       }
       notify(`Till closed. Variance: ${fmt(closed.variance, settings?.sym)}`, closed.variance === 0 ? 'success' : 'warning')
+
+      // Redirect to login page by logging out
+      setIsClosing(true)
+      setTimeout(() => {
+        logout()
+      }, 1000)
     }
     setCountDraft('')
     setCountedCash('')
@@ -172,9 +182,17 @@ export const CashManagement = ({ addAudit, settings, t: tProp }) => {
       </div>
 
       {/* ════════════════════════════════════════════════════════════ */}
-      {/*  STATE: NO SESSION → OPEN TILL GATE                        */}
+      {/*  STATE: NO SESSION OR OPENING → OPEN TILL GATE             */}
       {/* ════════════════════════════════════════════════════════════ */}
-      {!session ? (
+      {isClosing ? (
+        <div className="cm-gate" style={{ opacity: 0.8 }}>
+          <div className="cm-gate-content" style={{ animation: 'none' }}>
+            <div style={{ width: 44, height: 44, border: '4px solid rgba(0,0,0,.1)', borderTopColor: '#2563eb', borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto 20px' }} />
+            <div className="cm-gate-title" style={{ color: t.text }}>Closing Session...</div>
+            <div className="cm-gate-subtitle" style={{ color: t.text3 }}>Redirecting to secure login</div>
+          </div>
+        </div>
+      ) : (!session || isOpening) ? (
         <div className="cm-gate">
           <div className="cm-gate-glow" />
           <div className="cm-gate-content">
@@ -266,25 +284,25 @@ export const CashManagement = ({ addAudit, settings, t: tProp }) => {
           {/* ── ACTION METHODS (Like Payment Methods) ── */}
           <div className="cm-method-container">
             <div className="cm-method-grid">
-               {[
-                 { id: 'drop', label: 'Cash Drop', icon: '📤', onClick: () => { setDropAmt(''); setShowDrop(true) } },
-                 { id: 'lift', label: 'Cash Lift', icon: '📥', onClick: () => { setLiftAmt(''); setShowLift(true) } },
-                 { id: 'count', label: 'Count Cash', icon: '💰', onClick: () => { setCountDraft(countedCash || ''); setShowCountCash(true) } }
-               ].map(btn => (
-                 <button key={btn.id} className="cm-method-btn" onClick={btn.onClick} style={{ background: t.bg2, borderColor: t.border }}>
-                    <span className="cm-method-icon">{btn.icon}</span>
-                    <span className="cm-method-label" style={{ color: t.text }}>{btn.label}</span>
-                 </button>
-               ))}
+              {[
+                { id: 'drop', label: 'Cash Drop', icon: '📤', onClick: () => { setDropAmt(''); setShowDrop(true) } },
+                { id: 'lift', label: 'Cash Lift', icon: '📥', onClick: () => { setLiftAmt(''); setShowLift(true) } },
+                { id: 'count', label: 'Count Cash', icon: '💰', onClick: () => { setCountDraft(countedCash || ''); setShowCountCash(true) } }
+              ].map(btn => (
+                <button key={btn.id} className="cm-method-btn" onClick={btn.onClick} style={{ background: t.bg2, borderColor: t.border }}>
+                  <span className="cm-method-icon">{btn.icon}</span>
+                  <span className="cm-method-label" style={{ color: t.text }}>{btn.label}</span>
+                </button>
+              ))}
             </div>
 
             <div className="cm-status-area">
               {!countedCash ? (
-                 <div className="cm-status-hint" style={{ color: t.text3 }}>
-                   <div className="cm-hint-icon">⚡</div>
-                   <div>Ready for operations</div>
-                   <small>Perform movements or count drawer</small>
-                 </div>
+                <div className="cm-status-hint" style={{ color: t.text3 }}>
+                  <div className="cm-hint-icon">⚡</div>
+                  <div>Ready for operations</div>
+                  <small>Perform movements or count drawer</small>
+                </div>
               ) : (
                 <div
                   className="cm-variance-pill"

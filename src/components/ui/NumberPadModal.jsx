@@ -15,7 +15,8 @@ export const NumberPadModal = ({
   t,
   isDecimal = true,
   saveLabel = 'DONE',
-  currencySym = '£'
+  currencySym = '£',
+  showCurrency = true
 }) => {
   const [val, setVal] = useState(String(initialValue))
   const [isFirstKey, setIsFirstKey] = useState(true)
@@ -134,8 +135,8 @@ export const NumberPadModal = ({
         >
           <div style={previewLabel}>{title.toUpperCase()}</div>
           <div style={previewValueBox}>
-            <span style={currencyPrefix}>{currencySym}</span>
-            <span style={previewText}>{val || '0.00'}</span>
+            {showCurrency && <span style={currencyPrefix}>{currencySym}</span>}
+            <span style={previewText}>{val || (showCurrency ? '0.00' : '')}</span>
             <span style={cursorStyle} />
           </div>
           <button onClick={onClose} style={closeBtnStyle}><X size={18} /></button>
