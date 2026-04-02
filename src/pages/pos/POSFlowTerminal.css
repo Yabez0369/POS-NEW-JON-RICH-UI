@@ -487,6 +487,37 @@
   z-index: 10;
 }
 
+.pos-product-card.oos {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none !important;
+  box-shadow: none !important;
+  border-color: var(--pos-border) !important;
+}
+
+.pos-product-card.oos .pos-product-card-image {
+  background: #F1F5F9;
+  filter: grayscale(0.8);
+}
+
+.pos-product-card.oos::after {
+  content: 'OUT OF STOCK';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) rotate(-15deg);
+  background: #EF4444;
+  color: #FFF;
+  padding: 4px 12px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 900;
+  white-space: nowrap;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+  z-index: 20;
+  pointer-events: none;
+}
+
 .pos-product-card:active {
   transform: scale(0.96) translateY(-4px);
 }

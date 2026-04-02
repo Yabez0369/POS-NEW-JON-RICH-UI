@@ -93,17 +93,44 @@ export const ReceiptModal = ({ order, settings, onClose, onNewSale, t }) => {
           </div>
           
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            {displayItems.map((item, idx) => (
-              <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <span style={{ fontSize: '14px', fontWeight: 800, color: '#1E293B' }}>{item.name}</span>
-                  <span style={{ fontSize: '13px', fontWeight: 600, color: '#64748B' }}>×{item.qty}</span>
+            {displayItems.map((item, idx) => {
+              const nameParts = item.name.split(' (');
+              const mainName = nameParts[0];
+              const variantText = nameParts.length > 1 ? `(${nameParts.slice(1).join(' (')}` : null;
+
+              return (
+                <div key={idx} style={{ 
+                  display: 'flex', 
+                  justifyContent: 'space-between', 
+                  alignItems: 'flex-start', 
+                  gap: '12px',
+                  padding: '6px 0',
+                  width: '100%'
+                }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', textAlign: 'left', flex: 1 }}>
+                    <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px', flexWrap: 'wrap' }}>
+                      <span style={{ fontSize: '14px', fontWeight: 800, color: '#1E293B', lineHeight: '1.2' }}>{mainName}</span>
+                      <span style={{ fontSize: '12px', fontWeight: 600, color: '#64748B', whiteSpace: 'nowrap' }}>×{item.qty}</span>
+                    </div>
+                    {variantText && (
+                      <span style={{ fontSize: '11px', fontWeight: 600, color: '#94A3B8', marginTop: '2px', lineHeight: '1.4' }}>
+                        {variantText}
+                      </span>
+                    )}
+                  </div>
+                  <div style={{ 
+                    fontSize: '14px', 
+                    fontWeight: 700, 
+                    color: '#1E293B', 
+                    textAlign: 'right',
+                    minWidth: 'fit-content',
+                    paddingTop: '1px'
+                  }}>
+                    {fmt(item.price * (1 - (item.discount || 0) / 100) * item.qty, settings?.sym)}
+                  </div>
                 </div>
-                <div style={{ fontSize: '14px', fontWeight: 700, color: '#1E293B' }}>
-                  {fmt(item.price * (1 - (item.discount || 0) / 100) * item.qty, settings?.sym)}
-                </div>
-              </div>
-            ))}
+              );
+            })}
             
             {!showDetails && remainingCount > 0 && (
               <div style={{ textAlign: 'left', fontSize: '14px', fontWeight: 700, color: '#3730A3', marginTop: '4px' }}>

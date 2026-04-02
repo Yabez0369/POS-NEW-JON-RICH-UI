@@ -385,6 +385,8 @@ export function POSCustomerModal({
           onClose={() => setShowNumpad(false)}
           t={t}
           position="left"
+          showCurrency={false}
+          isDecimal={false}
           onSave={(v) => {
             if (keyboardTarget === 'phone') {
               setPhone(v)

@@ -65,6 +65,7 @@ export const CashierReturns = ({
   currentUser,
   siteId,
   onClose,
+  t,
 }) => {
   const { darkMode } = useTheme()
   const { currentUser: authUser } = useAuth()
@@ -305,7 +306,6 @@ export const CashierReturns = ({
                   className="hardware-input"
                   placeholder="SCAN ORDER NUMBER"
                   value={orderSearch}
-                  autoFocus
                   onFocus={() => setShowFullKeyboard(true)}
                   onClick={() => setShowFullKeyboard(true)}
                   readOnly={showFullKeyboard}
@@ -555,6 +555,7 @@ export const CashierReturns = ({
       {showFullKeyboard && (
         <FullKeyboard
           initialValue={orderSearch}
+          t={t}
           onClose={() => setShowFullKeyboard(false)}
           onSave={(val) => {
             setOrderSearch(val)

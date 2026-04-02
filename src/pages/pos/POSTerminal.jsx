@@ -733,13 +733,13 @@ export const POSTerminal = ({ products, setProducts, orders, setOrders, returns 
     setCardPopupStep('processing')
     setTimeout(async () => {
       setCardPopupStep('approved')
-      
+
       // We want to wait for BOTH the processOrder to finish AND a minimum of 2 seconds
       const processPromise = processOrder()
       const timerPromise = new Promise(resolve => setTimeout(resolve, 2000))
-      
+
       await Promise.all([processPromise, timerPromise])
-      
+
       // Now close the success message and reveal the bill
       setShowCardPopup(false)
       setCardPopupStep('waiting')
@@ -1019,18 +1019,31 @@ export const POSTerminal = ({ products, setProducts, orders, setOrders, returns 
 
                   <div style={{
                     display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    padding: '14px 20px',
+                    flexDirection: 'column',
+                    gap: 16,
+                    padding: '20px',
                     background: '#F9FAFB',
-                    borderRadius: 16,
+                    borderRadius: 20,
                     border: '1px solid #F3F4F6'
                   }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                      <span style={{ fontSize: 18 }}>{previewEmojis}</span>
-                      {pb.cart?.length > 5 && <span style={{ fontSize: 11, fontWeight: 800, color: '#9CA3AF', paddingLeft: 4 }}>+{pb.cart.length - 5} more</span>}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10, maxHeight: 120, overflowY: 'auto', paddingRight: 6 }} className="recall-item-list">
+                      {pb.cart?.map((item, iidx) => (
+                        <div key={iidx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 13 }}>
+                          <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                            <span style={{ fontSize: 18 }}>{item.emoji}</span>
+                            <div>
+                              <div style={{ fontWeight: 700, color: '#374151' }}>{item.name}</div>
+                              <div style={{ fontWeight: 600, color: '#9CA3AF', fontSize: 11 }}>Qty: {item.qty}</div>
+                            </div>
+                          </div>
+                          <div style={{ fontWeight: 800, color: '#111827' }}>
+                            {fmt(item.price * (1 - (item.discount || 0) / 100) * item.qty, settings?.sym)}
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                    <div style={{ display: 'flex', gap: 10 }}>
+
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12, borderTop: '1px solid #E5E7EB', paddingTop: 16 }}>
                       <button
                         onClick={async (e) => {
                           e.stopPropagation();
@@ -1040,7 +1053,7 @@ export const POSTerminal = ({ products, setProducts, orders, setOrders, returns 
                           setParked(p => p.filter(x => (x.id || x.ts) !== (pb.id || pb.ts)))
                         }}
                         style={{
-                          padding: '10px 16px',
+                          padding: '10px 18px',
                           background: 'transparent',
                           color: '#9CA3AF',
                           border: '1px solid #E5E7EB',
@@ -1055,20 +1068,22 @@ export const POSTerminal = ({ products, setProducts, orders, setOrders, returns 
                       >Discard</button>
                       <button
                         onClick={() => recallBill(pb)}
+                        disabled={cart.length > 0}
                         style={{
                           padding: '12px 28px',
-                          background: 'linear-gradient(135deg, #4F46E5, #6366F1)',
-                          color: '#fff',
+                          background: cart.length > 0 ? '#F3F4F6' : 'linear-gradient(135deg, #4F46E5, #6366F1)',
+                          color: cart.length > 0 ? '#9CA3AF' : '#fff',
                           border: 'none',
                           borderRadius: 14,
                           fontSize: 14,
                           fontWeight: 900,
-                          cursor: 'pointer',
-                          boxShadow: '0 8px 16px rgba(79,70,229,0.25)',
-                          transition: 'all 0.2s cubic-bezier(1, 0, 0, 1)'
+                          cursor: cart.length > 0 ? 'not-allowed' : 'pointer',
+                          boxShadow: cart.length > 0 ? 'none' : '0 8px 16px rgba(79,70,229,0.25)',
+                          transition: 'all 0.2s cubic-bezier(1, 0, 0, 1)',
+                          opacity: cart.length > 0 ? 0.7 : 1
                         }}
                         className="recall-btn"
-                      >Recall Sale</button>
+                      >{cart.length > 0 ? 'Cart Busy' : 'Recall Sale'}</button>
                     </div>
                   </div>
                 </div>

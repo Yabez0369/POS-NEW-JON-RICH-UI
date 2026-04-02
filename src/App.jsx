@@ -15,6 +15,7 @@ import { isSupabaseConfigured } from '@/lib/supabase'
 import { fetchSettings } from '@/services/settings'
 import { productsService } from '@/services'
 import { useRealtimeOrders, useRealtimeInventory, useRealtimeReturns, useRealtimeCashSessions } from '@/hooks/useRealtime'
+import { useCashStore } from '@/stores/cashStore'
 
 import { LoginPage } from '@/pages/auth/LoginPage'
 import { VenueSiteConfirmation } from '@/pages/auth/VenueSiteConfirmation'
@@ -157,11 +158,12 @@ function ProtectedRoute({ children, allowedRoles }) {
 
 function RoleRedirect() {
   const { currentUser } = useAuth()
+  const { session } = useCashStore()
   if (!currentUser) return <Navigate to="/login" replace />
   const map = {
     admin: '/app/dashboard',
     manager: '/app/dashboard',
-    cashier: '/app/home',
+    cashier: session ? '/app/home' : '/app/cash',
     staff: '/app/staff-dashboard',
     customer: '/app/shop',
   }
@@ -172,9 +174,9 @@ function useSupabaseSync(setter, table, seedData, fetchFn) {
   useEffect(() => {
     if (!isSupabaseConfigured()) return
     let cancelled = false
-    
+
     const promise = fetchFn ? fetchFn() : supabase.from(table).select('*')
-    
+
     Promise.resolve(promise).then((res) => {
       const data = res?.data || res
       const error = res?.error
@@ -228,7 +230,7 @@ function AppContent() {
       supabase.from('audit_logs').insert({
         user_id: isValidUuid ? uid : null,
         action, module, details,
-      }).then(() => { }).catch(() => {})
+      }).then(() => { }).catch(() => { })
     }
   }, [])
 
