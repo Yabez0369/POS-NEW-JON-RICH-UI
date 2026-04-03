@@ -1,13 +1,13 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { useTheme } from '@/context/ThemeContext'
 import { useAuth } from '@/context/AuthContext'
 import { Btn, Input, Badge, Card, StatCard, Modal, Table, Select } from '@/components/ui'
-import { notify, ImgWithFallback } from '@/components/shared'
+import { notify } from '@/components/shared'
 import { fmt, ts } from '@/lib/utils'
-import { PRODUCT_IMAGES } from '@/lib/seed-data'
 import { inventoryService, serialsService } from '@/services'
 import { isSupabaseConfigured } from '@/lib/supabase'
+import { InventoryHeader } from '@/components/inventory/InventoryHeader'
 
 const DEFAULT_REORDER = 10
 
@@ -21,15 +21,27 @@ export function InventoryManagement({ products, setProducts, addAudit, currentUs
   const [ns, setNs] = useState('')
   const [addQ, setAddQ] = useState('')
   const [showReceiving, setShowReceiving] = useState(false)
-  const [receivingForm, setReceivingForm] = useState({ productId: '', qty: '', notes: '', serials: [] })
+  const [receivingForm, setReceivingForm] = useState({ productId: '', qty: '', fromOutlet: '', notes: '', serials: [] })
   const [showSerialLookup, setShowSerialLookup] = useState(false)
+  const [searchTerm, setSearchTerm] = useState('')
+  const location = useLocation()
+
+  useEffect(() => {
+    if (location.state?.openReceiving) {
+      setShowReceiving(true)
+      navigate(location.pathname, { replace: true, state: {} })
+    } else if (location.state?.openSerial) {
+      setShowSerialLookup(true)
+      navigate(location.pathname, { replace: true, state: {} })
+    }
+  }, [location.state, navigate, location.pathname])
+
   const [serialLookupInput, setSerialLookupInput] = useState('')
-  const [serialLookupResult, setSerialLookupResult] = useState(undefined) // undefined=not searched, null=not found, object=found
+  const [serialLookupResult, setSerialLookupResult] = useState(undefined)
   const [movements, setMovements] = useState([])
 
   const user = currentUser ?? authUser
   const userName = user?.name || 'System'
-
   const sites = ['Main Stadium Store', 'East Wing Megastore', 'Airport Pop-up']
 
   const getReorder = (p) => p.reorderPoint ?? DEFAULT_REORDER
@@ -60,14 +72,12 @@ export function InventoryManagement({ products, setProducts, addAudit, currentUs
     if (!product) { notify('Select a product', 'error'); return }
     const qty = parseInt(receivingForm.qty)
     if (!qty || qty <= 0) { notify('Enter a valid quantity', 'error'); return }
-
     const trackSerial = product.track_serial
     const serials = (receivingForm.serials || []).map(s => String(s).trim()).filter(Boolean)
     if (trackSerial && serials.length !== qty) {
       notify(`Enter ${qty} serial number(s) for this product`, 'error')
       return
     }
-
     const newStock = product.stock + qty
     try {
       if (isSupabaseConfigured()) {
@@ -77,9 +87,9 @@ export function InventoryManagement({ products, setProducts, addAudit, currentUs
         }
       }
       applyStockChange(product.id, newStock, 'Goods Received', receivingForm.notes ? `+${qty} — ${receivingForm.notes}` : `+${qty}`)
-      notify(`Received ${qty}× ${product.name}${trackSerial ? ` (${serials.length} serials)` : ''}`, 'success')
+      notify(`Received ${qty}× ${product.name}`, 'success')
       setShowReceiving(false)
-      setReceivingForm({ productId: '', qty: '', notes: '', serials: [] })
+      setReceivingForm({ productId: '', qty: '', fromOutlet: '', notes: '', serials: [] })
     } catch (err) {
       notify(err?.message || 'Failed to record receipt', 'error')
     }
@@ -107,35 +117,36 @@ export function InventoryManagement({ products, setProducts, addAudit, currentUs
     return { text: 'Good', color: 'green' }
   }
 
+  const filteredProducts = products.filter(p =>
+    p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    p.sku.toLowerCase().includes(searchTerm.toLowerCase())
+  )
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10 }}>
-        <div style={{ fontSize: 22, fontWeight: 900, color: t.text }}>Inventory</div>
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-          <Btn t={t} variant="secondary" onClick={() => setShowReceiving(true)}>📥 Goods Receiving</Btn>
-          <Btn t={t} variant="secondary" onClick={() => navigate('/app/stocktake')}>📋 Stocktake</Btn>
-          <Btn t={t} variant="secondary" onClick={() => navigate('/app/stock-transfer')}>🔄 Transfer Stock</Btn>
-          <Btn t={t} variant="secondary" onClick={() => navigate('/app/damage-lost')}>🔴 Damaged/Lost</Btn>
-          <Btn t={t} variant="secondary" onClick={() => setShowSerialLookup(true)}>🔢 Serial Lookup</Btn>
-        </div>
-      </div>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 20, padding: 'clamp(16px, 4vw, 28px)', maxWidth: 1400, margin: '0 auto', width: '100%', boxSizing: 'border-box' }}>
+      <InventoryHeader title="Inventory" t={t} activePage="inventory" onGoodsReceiving={() => setShowReceiving(true)} onSerialLookup={() => setShowSerialLookup(true)} />
 
       {/** 1. Stock overview */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(min(180px,45vw),1fr))', gap: 14 }}>
-        <StatCard t={t} title="Total Items" value={products.length} color={t.blue} icon="📦" />
-        <StatCard t={t} title="Total Units" value={totalUnits} color={t.green} icon="🔢" />
-        <StatCard t={t} title="Low Stock" value={lowStockCount} color={t.yellow} icon="⚠️" />
-        <StatCard t={t} title="Out of Stock" value={outOfStockCount} color={t.red} icon="❌" />
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(min(260px,45vw),1fr))', gap: 14 }}>
+        <StatCard t={t} title="Total Items" value={products.length} color={t.text} icon="📦" />
+        <StatCard t={t} title="Total Units" value={totalUnits} color={t.text} icon="🔢" />
+        <StatCard t={t} title="Low Stock" value={lowStockCount} color={t.text2} icon="⚠️" />
+        <StatCard t={t} title="Out of Stock" value={outOfStockCount} color={t.text2} icon="❌" />
       </div>
 
       {/** 7. Low stock alerts section */}
       {lowStockProducts.length > 0 && (
         <Card t={t} style={{ padding: 16, borderLeft: `4px solid ${t.yellow}` }}>
-          <div style={{ fontSize: 14, fontWeight: 800, color: t.text, marginBottom: 12 }}>⚠️ Low Stock Alerts</div>
+          <div style={{ fontSize: 14, fontWeight: 800, color: '#93c5fd', marginBottom: 12 }}>⚠️ Low Stock Alerts</div>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
             {lowStockProducts.sort((a, b) => a.stock - b.stock).map(p => (
-              <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 8, background: t.bg3, padding: '8px 12px', borderRadius: 8 }}>
-                <span style={{ fontWeight: 600, color: t.text }}>{p.emoji} {p.name}</span>
+              <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(255,255,255,0.05)', padding: '8px 12px', borderRadius: 8, border: `1px solid rgba(255,255,255,0.08)` }}>
+                {p.image_url || p.image ? (
+                  <img src={p.image_url || p.image} alt="" style={{ width: 24, height: 24, borderRadius: 4, objectFit: 'cover' }} />
+                ) : (
+                  <span style={{ fontSize: 16 }}>📦</span>
+                )}
+                <span style={{ fontWeight: 600, color: '#f0f4ff' }}>{p.name}</span>
                 <Badge t={t} text={`${p.stock} / ${getReorder(p)}`} color={p.stock === 0 ? 'red' : 'yellow'} />
                 <Btn t={t} variant="secondary" size="sm" onClick={() => { setEditStock(p); setNs(String(p.stock)); setAddQ('') }}>Update</Btn>
               </div>
@@ -144,19 +155,33 @@ export function InventoryManagement({ products, setProducts, addAudit, currentUs
         </Card>
       )}
 
+      {/** Search Bar */}
+      <div style={{ maxWidth: 400 }}>
+        <Input
+          t={t}
+          placeholder="🔍 Search by product name or SKU..."
+          value={searchTerm}
+          onChange={setSearchTerm}
+        />
+      </div>
+
       {/** 2. Product table */}
       <Card t={t} style={{ padding: 0, overflow: 'hidden' }}>
         <Table
           t={t}
           cols={['Product', 'SKU', 'Stock', 'Reorder Point', 'Status', 'Action']}
-          rows={products.map(p => {
+          rows={filteredProducts.map(p => {
             const sb = getStatusBadge(p)
             return [
-              <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <ImgWithFallback src={PRODUCT_IMAGES[p.name]} alt={p.name} emoji={p.emoji} style={{ width: 32, height: 32, borderRadius: 6, objectFit: 'cover' }} />
+              <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                {p.image_url || p.image ? (
+                  <img src={p.image_url || p.image} alt="" style={{ width: 32, height: 32, borderRadius: 6, objectFit: 'cover', background: '#f8fafc' }} />
+                ) : (
+                  <div style={{ width: 32, height: 32, borderRadius: 6, background: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16 }}>📦</div>
+                )}
                 <span style={{ fontWeight: 600, color: t.text }}>{p.name}</span>
               </div>,
-              <span style={{ fontSize: 10, fontFamily: 'monospace', color: t.text3 }}>{p.sku}</span>,
+              <span style={{ fontSize: 10, fontFamily: 'monospace', color: t.text4 }}>{p.sku}</span>,
               <span style={{ fontWeight: 900, fontSize: 15, color: p.stock === 0 ? t.red : isLowStock(p) ? t.yellow : t.green }}>{p.stock}</span>,
               <span style={{ fontSize: 13, color: t.text3 }}>{getReorder(p)}</span>,
               <Badge t={t} text={sb.text} color={sb.color} />,
@@ -168,19 +193,19 @@ export function InventoryManagement({ products, setProducts, addAudit, currentUs
 
       {/** 9. Movement audit trail */}
       <Card t={t} style={{ padding: 16 }}>
-        <div style={{ fontSize: 14, fontWeight: 800, color: t.text, marginBottom: 12 }}>📜 Movement Audit Trail</div>
+        <div style={{ fontSize: 14, fontWeight: 800, color: '#93c5fd', marginBottom: 12 }}>📜 Movement Audit Trail</div>
         {movements.length === 0 ? (
-          <div style={{ color: t.text3, fontSize: 13 }}>No movements recorded yet. Stock actions will appear here.</div>
+          <div style={{ color: '#94a3b8', fontSize: 13 }}>No movements recorded yet. Stock actions will appear here.</div>
         ) : (
           <Table
             t={t}
             cols={['Type', 'Product', 'Quantity', 'User', 'Timestamp']}
             rows={movements.slice(0, 20).map(m => [
               <Badge t={t} text={m.type} color={m.type === 'Goods Received' ? 'green' : m.type === 'Damaged/Lost' ? 'red' : m.type === 'Stocktake Adjustment' ? 'blue' : 'teal'} />,
-              <span style={{ fontWeight: 600, color: t.text }}>{m.productName}</span>,
+              <span style={{ fontWeight: 600, color: '#f0f4ff' }}>{m.productName}</span>,
               <span style={{ fontWeight: 700, color: m.quantity >= 0 ? t.green : t.red }}>{m.quantity >= 0 ? '+' : ''}{m.quantity}</span>,
-              <span style={{ fontSize: 12, color: t.text3 }}>{m.user}</span>,
-              <span style={{ fontSize: 11, fontFamily: 'monospace', color: t.text4 }}>{m.timestamp}</span>,
+              <span style={{ fontSize: 12, color: '#94a3b8' }}>{m.user}</span>,
+              <span style={{ fontSize: 11, fontFamily: 'monospace', color: '#64748b' }}>{m.timestamp}</span>,
             ])}
           />
         )}
@@ -214,9 +239,7 @@ export function InventoryManagement({ products, setProducts, addAudit, currentUs
                 <Badge t={t} text={serialLookupResult.serial_status || 'unknown'} color={serialLookupResult.serial_status === 'in_stock' ? 'green' : serialLookupResult.serial_status === 'sold' ? 'blue' : 'yellow'} style={{ marginTop: 8 }} />
               </div>
             )}
-            {serialLookupResult === null && (
-              <div style={{ fontSize: 13, color: t.text3 }}>Serial not found</div>
-            )}
+            {serialLookupResult === null && <div style={{ fontSize: 13, color: t.text3 }}>Serial not found</div>}
           </div>
         </Modal>
       )}
@@ -225,40 +248,15 @@ export function InventoryManagement({ products, setProducts, addAudit, currentUs
       {showReceiving && (
         <Modal t={t} title="Goods Receiving" onClose={() => setShowReceiving(false)}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-            <div style={{ background: t.greenBg || t.bg3, border: `1px solid ${t.green || t.border}`, borderRadius: 9, padding: '10px 14px', fontSize: 12, color: t.green }}>
-              📥 Record incoming stock. Add quantity and optional notes.
-            </div>
-            <Select
-              t={t} label="Product"
-              value={receivingForm.productId}
-              onChange={v => setReceivingForm(f => ({ ...f, productId: v, serials: [] }))}
-              options={[{ value: '', label: '— Select Product —' }, ...products.map(p => ({ value: String(p.id), label: `${p.emoji} ${p.name} (current: ${p.stock})` }))]}
-            />
-            <Input t={t} label="Quantity Received" value={receivingForm.qty} onChange={v => {
-              const qty = parseInt(v) || 0
-              setReceivingForm(f => ({ ...f, qty: v, serials: Array.from({ length: qty }, (_, i) => f.serials[i] || '') }))
-            }} type="number" placeholder="Units to add" />
-            {receivingForm.productId && (() => {
-              const p = products.find(x => String(x.id) === receivingForm.productId)
-              const qty = parseInt(receivingForm.qty) || 0
-              if (!p?.track_serial || qty <= 0) return null
-              return (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                  <div style={{ fontSize: 11, fontWeight: 800, color: t.text3, textTransform: 'uppercase' }}>Serial numbers ({qty} required)</div>
-                  {Array.from({ length: qty }, (_, i) => (
-                    <Input key={i} t={t} label={`Serial #${i + 1}`} value={receivingForm.serials[i] || ''} onChange={v => setReceivingForm(f => ({ ...f, serials: f.serials.map((s, j) => j === i ? v : s) }))} placeholder="Enter serial number" />
-                  ))}
-                </div>
-              )
-            })()}
-            <Input t={t} label="Notes (optional)" value={receivingForm.notes} onChange={v => setReceivingForm(f => ({ ...f, notes: v }))} placeholder="e.g. PO-12345, delivery date" />
-            <Btn t={t} onClick={handleReceiving} disabled={!receivingForm.productId || !receivingForm.qty}>
-              📥 Record Receipt
-            </Btn>
+            <div style={{ background: t.greenBg || t.bg3, border: `1px solid ${t.green || t.border}`, borderRadius: 9, padding: '10px 14px', fontSize: 12, color: t.green }}>📥 Record incoming stock.</div>
+            <Select t={t} label="Product" value={receivingForm.productId} onChange={v => setReceivingForm(f => ({ ...f, productId: v, serials: [] }))} options={[{ value: '', label: '— Select Product —' }, ...products.map(p => ({ value: String(p.id), label: `${p.emoji} ${p.name}` }))]} />
+            <Input t={t} label="Quantity Received" value={receivingForm.qty} onChange={v => { const qty = parseInt(v) || 0; setReceivingForm(f => ({ ...f, qty: v, serials: Array.from({ length: qty }, (_, i) => f.serials[i] || '') })) }} type="number" />
+            <Select t={t} label="Receive stock from" value={receivingForm.fromOutlet} onChange={v => setReceivingForm(f => ({ ...f, fromOutlet: v }))} options={[{ value: '', label: '— Select Outlet —' }, ...sites.map(s => ({ value: s, label: s }))]} />
+            <Input t={t} label="Notes (optional)" value={receivingForm.notes} onChange={v => setReceivingForm(f => ({ ...f, notes: v }))} />
+            <Btn t={t} onClick={handleReceiving} disabled={!receivingForm.productId || !receivingForm.qty}>📥 Record Receipt</Btn>
           </div>
         </Modal>
       )}
-
     </div>
   )
 }

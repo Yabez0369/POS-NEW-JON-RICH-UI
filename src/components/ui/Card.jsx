@@ -5,13 +5,13 @@ import { useAuth } from '@/context/AuthContext'
 export const Card = ({ children, t, style = {}, onClick, hover = false }) => {
   const [hov, setHov] = useState(false)
   const theme = t || THEMES.light
-  
+
   // Safe useAuth destructuring in case it's used outside provider
   let isManager = false;
   try {
     const auth = useAuth();
     if (auth?.currentUser?.role === 'manager') isManager = true;
-  } catch (e) {}
+  } catch (e) { }
 
   const baseStyle = isManager ? {
     background: hov ? 'linear-gradient(145deg, #1E293B, #0F172A)' : 'linear-gradient(135deg, #0F172A, #1E293B)',
@@ -34,9 +34,9 @@ export const Card = ({ children, t, style = {}, onClick, hover = false }) => {
   }
 
   return (
-    <div 
-      onClick={onClick} 
-      onMouseEnter={() => hover && setHov(true)} 
+    <div
+      onClick={onClick}
+      onMouseEnter={() => hover && setHov(true)}
       onMouseLeave={() => setHov(false)}
       style={{ ...baseStyle, ...style }}
     >

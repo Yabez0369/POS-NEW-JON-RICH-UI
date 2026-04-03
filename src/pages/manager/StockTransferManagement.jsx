@@ -7,6 +7,7 @@ import { notify } from '@/components/shared'
 import { ts } from '@/lib/utils'
 import { inventoryService, productsService, sitesService } from '@/services'
 import { useQuery } from '@tanstack/react-query'
+import { InventoryHeader } from '@/components/inventory/InventoryHeader'
 
 const STATUSES = ['pending', 'in-transit', 'completed', 'cancelled']
 
@@ -14,22 +15,23 @@ export default function StockTransferManagement() {
   const navigate = useNavigate()
   const { t } = useTheme()
   const { currentUser } = useAuth()
-  
+
   const [showModal, setShowModal] = useState(false)
   const [editingId, setEditingId] = useState(null)
   const [filterStatus, setFilterStatus] = useState('All')
+  const [searchTerm, setSearchTerm] = useState('')
 
   // Fetch data
   const { data: dbProducts = [] } = useQuery({ queryKey: ['products'], queryFn: productsService.fetchProducts })
   const { data: dbSites = [] } = useQuery({ queryKey: ['sites'], queryFn: sitesService.fetchSites })
-  const { data: movements = [], refetch: refetchMovements } = useQuery({ 
-    queryKey: ['inventory_movements', 'transfer'], 
+  const { data: movements = [], refetch: refetchMovements } = useQuery({
+    queryKey: ['inventory_movements', 'transfer'],
     queryFn: () => inventoryService.fetchMovements(null, null).then(data => data.filter(m => m.movement_type === 'transfer'))
   })
 
   // Derived movements
   const transferItems = useMemo(() => movements || [], [movements])
-  
+
   const [form, setForm] = useState({
     productId: '',
     quantity: '',
@@ -37,7 +39,7 @@ export default function StockTransferManagement() {
     toOutlet: '',
     notes: ''
   })
-  
+
   const [errors, setErrors] = useState({})
 
   // Validation
@@ -74,10 +76,10 @@ export default function StockTransferManagement() {
         form.notes,
         currentUser?.id
       )
-      
+
       notify(`Transfer initiated: ${form.quantity}× ${product.name}`, 'success')
       refetchMovements()
-      
+
       // Reset
       setForm({ productId: '', quantity: '', fromOutlet: '', toOutlet: '', notes: '' })
       setErrors({})
@@ -125,19 +127,34 @@ export default function StockTransferManagement() {
 
   // Filter transfers
   const filteredTransfers = useMemo(() => {
-    if (filterStatus === 'All') return transferItems
-    // Note: movement record might not have 'status' directly in the same way mock did
-    // Mapping movement type or other fields if needed
-    return transferItems.filter(t => t.status === filterStatus)
-  }, [transferItems, filterStatus])
+    let items = transferItems
+    if (filterStatus !== 'All') {
+      items = items.filter(t => t.status === filterStatus)
+    }
+    if (searchTerm) {
+      const s = searchTerm.toLowerCase()
+      items = items.filter(t =>
+        (t.product?.name || '').toLowerCase().includes(s) ||
+        (t.notes || '').toLowerCase().includes(s)
+      )
+    }
+    return items
+  }, [transferItems, filterStatus, searchTerm])
 
   // Table rows
   const tableRows = filteredTransfers.map(transfer => [
-    transfer.product?.name || 'Unknown Product',
-    transfer.quantity.toString(),
-    transfer.from_site?.name || 'External/New',
-    transfer.to_site?.name || 'External/Loss',
-    new Date(transfer.created_at).toLocaleDateString(),
+    <div key={transfer.id} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+      {transfer.product?.image_url || transfer.product?.image ? (
+        <img src={transfer.product?.image_url || transfer.product?.image} alt="" style={{ width: 32, height: 32, borderRadius: 6, objectFit: 'cover' }} />
+      ) : (
+        <div style={{ width: 32, height: 32, borderRadius: 6, background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16 }}>📦</div>
+      )}
+      <span style={{ fontWeight: 600, color: t.text }}>{transfer.product?.name || 'Unknown Product'}</span>
+    </div>,
+    <span key={transfer.id} style={{ color: t.text2, fontWeight: 500 }}>{transfer.quantity.toString()}</span>,
+    <span key={transfer.id} style={{ color: t.text3 }}>{transfer.from_site?.name || 'External/New'}</span>,
+    <span key={transfer.id} style={{ color: t.text3 }}>{transfer.to_site?.name || 'External/Loss'}</span>,
+    <span key={transfer.id} style={{ color: t.text4, fontSize: 12 }}>{new Date(transfer.created_at).toLocaleDateString()}</span>,
     <Badge key={transfer.id} label={transfer.movement_type} color={
       transfer.movement_type === 'transfer' ? '#3b82f6' : '#6b7280'
     } t={t} />,
@@ -150,43 +167,49 @@ export default function StockTransferManagement() {
   ])
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 20, padding: 'clamp(16px, 4vw, 28px)', maxWidth: 1400, margin: '0 auto' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10 }}>
-        <div style={{ fontSize: 22, fontWeight: 900, color: t.text }}>🔄 Stock Transfer</div>
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-          <Btn t={t} variant="secondary" onClick={() => navigate('/app/inventory')}>📥 Goods Receiving</Btn>
-          <Btn t={t} variant="secondary" onClick={() => navigate('/app/stocktake')}>📋 Stocktake</Btn>
-          <Btn t={t} onClick={() => {}} disabled>🔄 Transfer Stock</Btn>
-          <Btn t={t} variant="secondary" onClick={() => navigate('/app/damage-lost')}>🔴 Damaged/Lost</Btn>
-        </div>
-      </div>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 20, padding: 'clamp(16px, 4vw, 28px)', maxWidth: 1400, margin: '0 auto', width: '100%', boxSizing: 'border-box' }}>
+      <InventoryHeader
+        title="🔄 Stock Transfer"
+        t={t}
+        activePage="transfer"
+      />
 
       {/* Stats */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16, marginBottom: 28 }}>
         <Card t={t} style={{ padding: 16 }}>
-          <div style={{ fontSize: 11, color: t.text3, textTransform: 'uppercase', fontWeight: 800, letterSpacing: 0.7, marginBottom: 8 }}>Total Transfers</div>
-          <div style={{ fontSize: 28, fontWeight: 900, color: t.text }}>{transferItems.length}</div>
+          <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', fontWeight: 800, letterSpacing: 0.7, marginBottom: 8 }}>Total Transfers</div>
+          <div style={{ fontSize: 28, fontWeight: 900, color: '#fff' }}>{transferItems.length}</div>
         </Card>
         <Card t={t} style={{ padding: 16 }}>
-          <div style={{ fontSize: 11, color: t.text3, textTransform: 'uppercase', fontWeight: 800, letterSpacing: 0.7, marginBottom: 8 }}>Pending</div>
+          <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', fontWeight: 800, letterSpacing: 0.7, marginBottom: 8 }}>Pending</div>
           <div style={{ fontSize: 28, fontWeight: 900, color: '#f59e0b' }}>{transferItems.filter(t => t.status === 'pending').length}</div>
         </Card>
         <Card t={t} style={{ padding: 16 }}>
-          <div style={{ fontSize: 11, color: t.text3, textTransform: 'uppercase', fontWeight: 800, letterSpacing: 0.7, marginBottom: 8 }}>In Transit</div>
+          <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', fontWeight: 800, letterSpacing: 0.7, marginBottom: 8 }}>In Transit</div>
           <div style={{ fontSize: 28, fontWeight: 900, color: '#3b82f6' }}>{transferItems.filter(t => t.status === 'in-transit').length}</div>
         </Card>
         <Card t={t} style={{ padding: 16 }}>
-          <div style={{ fontSize: 11, color: t.text3, textTransform: 'uppercase', fontWeight: 800, letterSpacing: 0.7, marginBottom: 8 }}>Completed</div>
+          <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', fontWeight: 800, letterSpacing: 0.7, marginBottom: 8 }}>Completed</div>
           <div style={{ fontSize: 28, fontWeight: 900, color: '#10b981' }}>{transferItems.filter(t => t.status === 'completed').length}</div>
         </Card>
       </div>
 
       {/* Controls */}
-      <div className="controls-row" style={{ display: 'flex', flexDirection: 'column', gap: 16, marginBottom: 24 }}>
-        <Btn onClick={() => setShowModal(true)} t={t} style={{ padding: '10px 20px', fontSize: 13, fontWeight: 700 }}>
-          ➕ New Transfer
-        </Btn>
-        
+      <div className="controls-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16, marginBottom: 24 }}>
+        <div style={{ display: 'flex', gap: 12, alignItems: 'center', flex: 1 }}>
+          <Btn onClick={() => setShowModal(true)} t={t} size="sm" style={{ minWidth: 140 }}>
+            ➕ New Transfer
+          </Btn>
+          <div style={{ flex: 1, maxWidth: 500 }}>
+            <Input
+              t={t}
+              placeholder="🔍 Search transfers by product or notes..."
+              value={searchTerm}
+              onChange={setSearchTerm}
+            />
+          </div>
+        </div>
+
         <Select
           value={filterStatus}
           onChange={setFilterStatus}
@@ -204,7 +227,7 @@ export default function StockTransferManagement() {
 
       {/* Table */}
       <Card t={t} style={{ padding: 0, overflow: 'hidden' }}>
-        <Table 
+        <Table
           cols={['Product Name', 'Qty', 'From', 'To', 'Date', 'Status', 'Actions']}
           rows={tableRows}
           empty="No stock transfers found"
@@ -214,10 +237,10 @@ export default function StockTransferManagement() {
 
       {/* Add/Edit Modal */}
       {showModal && (
-        <Modal 
-          title={editingId ? 'Edit Transfer' : 'New Stock Transfer'} 
-          onClose={closeModal} 
-          t={t} 
+        <Modal
+          title={editingId ? 'Edit Transfer' : 'New Stock Transfer'}
+          onClose={closeModal}
+          t={t}
           width={520}
           subtitle={editingId ? 'Update the transfer details' : 'Create a new stock transfer'}
         >

@@ -4,29 +4,31 @@ import { useAuth } from '@/context/AuthContext'
 
 export const StatCard = ({ title, value, sub, color, icon, t, trend }) => {
   const theme = t || THEMES.light
-  
+
   let isManager = false;
   try {
     const auth = useAuth();
     if (auth?.currentUser?.role === 'manager') isManager = true;
-  } catch (e) {}
+  } catch (e) { }
 
   if (isManager) {
     return (
-      <Card t={t} style={{ position: 'relative', overflow: 'hidden' }}>
+      <Card t={t} style={{ position: 'relative', overflow: 'hidden', padding: '12px 16px' }}>
         <div style={{ position: 'absolute', top: -40, right: -40, width: 120, height: 120, background: `radial-gradient(circle, ${color}30 0%, transparent 70%)`, filter: 'blur(30px)' }}></div>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12, position: 'relative', zIndex: 1 }}>
-          <div style={{ fontSize: 13, color: '#94A3B8', fontWeight: 600, letterSpacing: 0.2 }}>{title}</div>
-          <div style={{ width: 40, height: 40, borderRadius: 12, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.05)', display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20 }}>{icon}</div>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", position: 'relative', zIndex: 1 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <div style={{ fontSize: 11, color: '#94A3B8', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5 }}>{title}</div>
+            <div style={{ fontSize: 24, fontWeight: 800, color: '#fff', letterSpacing: -0.5 }}>{value}</div>
+            {sub && <div style={{ fontSize: 11, color: '#64748B' }}>{sub}</div>}
+          </div>
+          <div style={{ width: 36, height: 36, borderRadius: 10, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 }}>{icon}</div>
         </div>
-        <div style={{ fontSize: 32, fontWeight: 800, color: '#fff', letterSpacing: -1, marginBottom: 8, position: 'relative', zIndex: 1, textShadow: '0 2px 10px rgba(0,0,0,0.2)' }}>{value}</div>
-        {sub && <div style={{ fontSize: 13, color: '#64748B', position: 'relative', zIndex: 1 }}>{sub}</div>}
         {trend !== undefined && (
-          <div style={{ fontSize: 12, color: trend > 0 ? '#10B981' : '#EF4444', marginTop: 8, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4, position: 'relative', zIndex: 1 }}>
-            <span style={{ display: 'inline-block', padding: '2px 6px', background: trend > 0 ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)', borderRadius: 4 }}>
+          <div style={{ fontSize: 10, color: trend > 0 ? '#10B981' : '#EF4444', marginTop: 6, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4, position: 'relative', zIndex: 1 }}>
+            <span style={{ display: 'inline-block', padding: '1px 5px', background: trend > 0 ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)', borderRadius: 3 }}>
               {trend > 0 ? "↑" : "↓"} {Math.abs(trend)}%
             </span>
-            <span style={{ color: '#64748B' }}>vs last week</span>
+            <span style={{ color: '#64748B', fontWeight: 500 }}>vs last week</span>
           </div>
         )}
       </Card>

@@ -107,3 +107,9 @@ export async function createAttribute(name) {
   if (error) throw error
   return data
 }
+
+export async function deleteAttribute(id) {
+  if (!isSupabaseConfigured()) return
+  const { error } = await supabase.from('attributes').delete().eq('id', id)
+  if (error) throw error
+}

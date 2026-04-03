@@ -1,5 +1,6 @@
 import { Card, StatCard, Badge, Table } from '@/components/ui'
 import { fmt } from '@/lib/utils'
+import { useNavigate } from 'react-router-dom'
 
 function getOrderItems(o) {
   const items = o?.items || o?.order_items || []
@@ -15,6 +16,7 @@ function toItemQty(i) {
 }
 
 export const ManagerDashboard = ({ orders = [], products = [], users = [], counters = [], t, settings }) => {
+  const navigate = useNavigate()
   const storeOrders = Array.isArray(orders) ? orders : []
   const todayRevenue = storeOrders.reduce((s, o) => s + (o.total ?? 0), 0)
   const staffCount = (users || []).filter(u => u.role === 'cashier').length
@@ -29,9 +31,42 @@ export const ManagerDashboard = ({ orders = [], products = [], users = [], count
   })
   const topProducts = Object.entries(topP).sort((a, b) => b[1] - a[1]).slice(0, 5)
 
+  const handleExportCSV = () => {
+    const csvRows = [
+      ['Manager Dashboard Summary'],
+      [`Date: ${new Date().toLocaleString()}`],
+      [''],
+      ['Metric', 'Value'],
+      ['Total Revenue', fmt(todayRevenue, settings?.sym)],
+      ['Active Sales', storeOrders.length],
+      ['Active Staff', staffCount],
+      [''],
+      ['Top Products', 'Quantity Sold'],
+      ...topProducts.map(([name, qty]) => [name, qty]),
+      [''],
+      ['Low Stock Alert', 'Current Stock'],
+      ...(products || [])
+        .filter(p => (p.stock ?? 0) < 15)
+        .sort((a, b) => (a.stock ?? 0) - (b.stock ?? 0))
+        .slice(0, 10)
+        .map(p => [p.name, p.stock])
+    ];
+
+    const csvContent = csvRows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',')).join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `Dashboard_Summary_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 32, paddingBottom: 40, fontFamily: "'Inter', sans-serif" }}>
-      
+
       {/* Header Area */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
         <div>
@@ -47,11 +82,14 @@ export const ManagerDashboard = ({ orders = [], products = [], users = [], count
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
             Customize
           </button>
-          <button style={{
-            background: 'linear-gradient(135deg, #0F172A, #1E293B)', border: 'none', borderRadius: 12, padding: '10px 20px',
-            fontSize: 13, fontWeight: 600, color: '#fff', boxShadow: '0 4px 12px rgba(15, 23, 42, 0.2)', cursor: 'pointer',
-            display: 'flex', alignItems: 'center', gap: 8
-          }}>
+          <button
+            onClick={handleExportCSV}
+            style={{
+              background: 'linear-gradient(135deg, #0F172A, #1E293B)', border: 'none', borderRadius: 12, padding: '10px 20px',
+              fontSize: 13, fontWeight: 600, color: '#fff', boxShadow: '0 4px 12px rgba(15, 23, 42, 0.2)', cursor: 'pointer',
+              display: 'flex', alignItems: 'center', gap: 8
+            }}
+          >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
             Export Report
           </button>
@@ -67,16 +105,23 @@ export const ManagerDashboard = ({ orders = [], products = [], users = [], count
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 2fr) minmax(0, 1fr)', gap: 24 }}>
-        
+
         {/* Left Column - Large Data Views */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-          
+
           <div style={{ background: '#fff', borderRadius: 24, padding: 24, boxShadow: '0 4px 20px rgba(0,0,0,0.03)', border: '1px solid rgba(0,0,0,0.04)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
               <div style={{ fontSize: 16, fontWeight: 700, color: '#1E293B' }}>Recent Activity</div>
-              <div style={{ fontSize: 13, fontWeight: 600, color: '#3B82F6', cursor: 'pointer' }}>View all</div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: '#3B82F6', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, transition: 'opacity 0.15s' }}
+                onClick={() => navigate('/app/order-history')}
+                onMouseEnter={e => e.currentTarget.style.opacity = '0.7'}
+                onMouseLeave={e => e.currentTarget.style.opacity = '1'}
+              >
+                View all
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+              </div>
             </div>
-            
+
             <div style={{ overflowX: 'auto' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
                 <thead>
@@ -91,9 +136,9 @@ export const ManagerDashboard = ({ orders = [], products = [], users = [], count
                 <tbody>
                   {storeOrders.slice(0, 5).map(o => (
                     <tr key={o.id} style={{ borderBottom: '1px solid #F8FAFC' }}>
-                      <td style={{ padding: '16px 0', fontSize: 13, fontWeight: 600, color: '#475569', fontFamily: 'monospace' }}>{o.order_number || o.id.slice(0,8)}</td>
+                      <td style={{ padding: '16px 0', fontSize: 13, fontWeight: 600, color: '#475569', fontFamily: 'monospace' }}>{o.order_number || o.id.slice(0, 8)}</td>
                       <td style={{ padding: '16px 0' }}>
-                        <span style={{ 
+                        <span style={{
                           fontSize: 11, fontWeight: 700, padding: '4px 8px', borderRadius: 6,
                           background: (o.order_type || o.orderType) === 'delivery' ? '#FEF3C7' : '#E0E7FF',
                           color: (o.order_type || o.orderType) === 'delivery' ? '#D97706' : '#4F46E5',
@@ -126,15 +171,15 @@ export const ManagerDashboard = ({ orders = [], products = [], users = [], count
               <div style={{ fontSize: 16, fontWeight: 700, color: '#1E293B' }}>Data Imports & Exports</div>
               <button style={{ background: 'transparent', border: 'none', color: '#64748B', cursor: 'pointer' }}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 16 16 12 12 8"></polyline><line x1="8" y1="12" x2="16" y2="12"></line></svg></button>
             </div>
-            
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16 }}>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
               {[
                 { name: 'Products_Q3.csv', size: '2.4 MB', date: 'Oct 24, 2026', icon: 'file-text', color: '#10B981' },
                 { name: 'Store_Revenue.pdf', size: '840 KB', date: 'Oct 23, 2026', icon: 'file', color: '#EF4444' },
                 { name: 'User_Manifest.json', size: '1.1 MB', date: 'Oct 20, 2026', icon: 'database', color: '#8B5CF6' }
               ].map(file => (
-                <div key={file.name} style={{ 
-                  display: 'flex', alignItems: 'center', gap: 14, padding: 16, borderRadius: 16, 
+                <div key={file.name} style={{
+                  display: 'flex', alignItems: 'center', gap: 14, padding: 16, borderRadius: 16,
                   border: '1px solid #F1F5F9', background: '#F8FAFC', transition: 'all 0.2s', cursor: 'pointer'
                 }} onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-2px)'} onMouseLeave={e => e.currentTarget.style.transform = 'none'}>
                   <div style={{ width: 44, height: 44, borderRadius: 12, background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', color: file.color, boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
@@ -152,7 +197,7 @@ export const ManagerDashboard = ({ orders = [], products = [], users = [], count
 
         {/* Right Column - Mini Panels & Analytics */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-          
+
           <div style={{ background: '#fff', borderRadius: 24, padding: 24, boxShadow: '0 4px 20px rgba(0,0,0,0.03)', border: '1px solid rgba(0,0,0,0.04)' }}>
             <div style={{ fontSize: 16, fontWeight: 700, color: '#1E293B', marginBottom: 20 }}>Top Selling Items</div>
             {topProducts.length === 0 ? (
@@ -161,7 +206,7 @@ export const ManagerDashboard = ({ orders = [], products = [], users = [], count
               <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                 {topProducts.map(([name, qty], i) => (
                   <div key={name} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                    <div style={{ width: 32, height: 32, borderRadius: '50%', background: i === 0 ? '#FEF3C7' : '#F1F5F9', color: i === 0 ? '#D97706' : '#64748B', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 800 }}>#{i+1}</div>
+                    <div style={{ width: 32, height: 32, borderRadius: '50%', background: i === 0 ? '#FEF3C7' : '#F1F5F9', color: i === 0 ? '#D97706' : '#64748B', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 800 }}>#{i + 1}</div>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontSize: 13, fontWeight: 600, color: '#1E293B', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{name}</div>
                     </div>
@@ -173,11 +218,11 @@ export const ManagerDashboard = ({ orders = [], products = [], users = [], count
           </div>
 
           <div style={{ background: '#fff', borderRadius: 24, padding: 24, boxShadow: '0 4px 20px rgba(0,0,0,0.03)', border: '1px solid rgba(0,0,0,0.04)' }}>
-             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
               <div style={{ fontSize: 16, fontWeight: 700, color: '#1E293B' }}>Stock Alerts</div>
               <div style={{ background: '#FEF2F2', color: '#EF4444', padding: '4px 8px', borderRadius: 6, fontSize: 11, fontWeight: 800 }}>{lowStock} items</div>
             </div>
-            
+
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               {(products || []).filter(p => (p.stock ?? 0) < 15).sort((a, b) => (a.stock ?? 0) - (b.stock ?? 0)).slice(0, 5).map(p => (
                 <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', background: p.stock < 5 ? '#FEF2F2' : '#FFFBEB', borderRadius: 12, border: `1px solid ${p.stock < 5 ? '#FECACA' : '#FEF3C7'}` }}>
@@ -195,24 +240,24 @@ export const ManagerDashboard = ({ orders = [], products = [], users = [], count
           </div>
 
           <div style={{ background: '#fff', borderRadius: 24, padding: 24, boxShadow: '0 4px 20px rgba(0,0,0,0.03)', border: '1px solid rgba(0,0,0,0.04)' }}>
-             <div style={{ fontSize: 16, fontWeight: 700, color: '#1E293B', marginBottom: 20 }}>Counter Connectivity</div>
-             <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-               {(counters || []).slice(0, 4).map(c => {
-                 const isActive = c.active === true || c.status === 'active';
-                 return (
-                   <div key={c.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                     <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                       <div style={{ position: 'relative', display: 'flex', height: 10, width: 10 }}>
-                         {isActive && <span className="animate-ping" style={{ position: 'absolute', display: 'inline-flex', height: '100%', width: '100%', borderRadius: '50%', background: '#10B981', opacity: 0.75 }}></span>}
-                         <span style={{ position: 'relative', display: 'inline-flex', borderRadius: '50%', height: 10, width: 10, background: isActive ? '#10B981' : '#94A3B8' }}></span>
-                       </div>
-                       <span style={{ fontSize: 13, fontWeight: 600, color: '#1E293B' }}>{c.name}</span>
-                     </div>
-                     <span style={{ fontSize: 11, color: '#64748B', fontWeight: 500 }}>{isActive ? 'Online' : 'Offline'}</span>
-                   </div>
-                 )
-               })}
-             </div>
+            <div style={{ fontSize: 16, fontWeight: 700, color: '#1E293B', marginBottom: 20 }}>Counter Connectivity</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              {(counters || []).slice(0, 4).map(c => {
+                const isActive = c.active === true || c.status === 'active';
+                return (
+                  <div key={c.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <div style={{ position: 'relative', display: 'flex', height: 10, width: 10 }}>
+                        {isActive && <span className="animate-ping" style={{ position: 'absolute', display: 'inline-flex', height: '100%', width: '100%', borderRadius: '50%', background: '#10B981', opacity: 0.75 }}></span>}
+                        <span style={{ position: 'relative', display: 'inline-flex', borderRadius: '50%', height: 10, width: 10, background: isActive ? '#10B981' : '#94A3B8' }}></span>
+                      </div>
+                      <span style={{ fontSize: 13, fontWeight: 600, color: '#1E293B' }}>{c.name}</span>
+                    </div>
+                    <span style={{ fontSize: 11, color: '#64748B', fontWeight: 500 }}>{isActive ? 'Online' : 'Offline'}</span>
+                  </div>
+                )
+              })}
+            </div>
           </div>
 
         </div>
