@@ -11,6 +11,7 @@ import { ErrorBoundary } from '@/components/shared/ErrorBoundary'
 import { OfflineBanner } from '@/components/shared/OfflineBanner'
 import { MainLayout } from '@/components/layout/MainLayout'
 import { GuestLayout } from '@/components/layout/GuestLayout'
+import { useAppStore } from '@/stores/appStore'
 import { isSupabaseConfigured } from '@/lib/supabase'
 import { fetchSettings } from '@/services/settings'
 import { productsService } from '@/services'
@@ -47,6 +48,9 @@ const CategoryManagement = lazyRetry(() => import('@/pages/manager/CategoryManag
 const DamageManagement = lazyRetry(() => import('@/pages/manager/DamageManagement'))
 const StockTransferManagement = lazyRetry(() => import('@/pages/manager/StockTransferManagement'))
 const StocktakeManagement = lazyRetry(() => import('@/pages/manager/StocktakeManagement'))
+const OrderHistory = lazyRetry(() => import('@/pages/manager/OrderHistory'), 'OrderHistory')
+const PurchaseOrders = lazyRetry(() => import('@/pages/manager/PurchaseOrders'))
+const CreatePurchaseOrder = lazyRetry(() => import('@/pages/manager/CreatePurchaseOrder'))
 
 const POSTerminal = lazyRetry(() => import('@/pages/pos/POSTerminal'), 'POSTerminal')
 const CashierDashboard = lazyRetry(() => import('@/pages/cashier/CashierDashboard'), 'CashierDashboard')
@@ -224,6 +228,15 @@ function AppContent() {
       action, module, details, timestamp: ts(),
     }
     setAuditLogs(l => [entry, ...l])
+
+    // Trigger notification for till/cash events
+    const appNotify = useAppStore.getState().addNotification
+    if (action.includes('Till') || action.includes('Cash')) {
+      const type = action.includes('Closed') || action.includes('Drop') ? 'warning' : 'success'
+      const icon = action.includes('Opened') ? '🟢' : action.includes('Closed') ? '🔴' : action.includes('Drop') ? '📤' : '📥'
+      appNotify(action, type, details, 'till', icon)
+    }
+
     if (isSupabaseConfigured()) {
       const uid = u?.id
       const isValidUuid = typeof uid === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(uid)
@@ -233,6 +246,26 @@ function AppContent() {
       }).then(() => { }).catch(() => { })
     }
   }, [])
+
+  // Low Stock Detection
+  useEffect(() => {
+    if (!products?.length) return
+    const lowItems = products.filter(p => (p.stock ?? 0) < 10)
+    if (lowItems.length > 0) {
+      const appNotify = useAppStore.getState().addNotification
+      // Check if low stock notification already exists to avoid spam
+      const existing = useAppStore.getState().notifications.find(n => n.category === 'stock' && !n.read)
+      if (!existing) {
+        appNotify(
+          'Low Stock Alert',
+          'error',
+          `${lowItems.length} items are running low on stock.`,
+          'stock',
+          '📦'
+        )
+      }
+    }
+  }, [products])
 
   const addGlobalNotif = useCallback(() => { }, [])
 
@@ -410,6 +443,21 @@ function AppContent() {
             <Route path="stocktake" element={
               <ProtectedRoute allowedRoles={['manager', 'admin']}>
                 <StocktakeManagement t={t} currentUser={currentUser} />
+              </ProtectedRoute>
+            } />
+            <Route path="order-history" element={
+              <ProtectedRoute allowedRoles={['manager', 'admin']}>
+                <OrderHistory settings={settings} t={t} />
+              </ProtectedRoute>
+            } />
+            <Route path="purchase-orders" element={
+              <ProtectedRoute allowedRoles={['manager', 'admin']}>
+                <PurchaseOrders t={t} currentUser={currentUser} />
+              </ProtectedRoute>
+            } />
+            <Route path="purchase-orders/new" element={
+              <ProtectedRoute allowedRoles={['manager', 'admin']}>
+                <CreatePurchaseOrder t={t} currentUser={currentUser} products={products} settings={settings} />
               </ProtectedRoute>
             } />
 

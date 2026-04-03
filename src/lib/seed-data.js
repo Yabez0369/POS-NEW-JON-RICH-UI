@@ -13,4 +13,10 @@ export const PRODUCT_IMAGES = {
   "Signed Jersey":"https://images.pexels.com/photos/918778/pexels-photo-918778.jpeg?auto=compress&cs=tinysrgb&w=300",
   "Stadium Print A3":"https://images.pexels.com/photos/46798/the-ball-stadion-football-the-pitch-46798.jpeg?auto=compress&cs=tinysrgb&w=300",
   "Mini Trophy Replica":"https://images.pexels.com/photos/1884577/pexels-photo-1884577.jpeg?auto=compress&cs=tinysrgb&w=300",
+  "Beanie Hat":"https://images.pexels.com/photos/1124465/pexels-photo-1124465.jpeg?auto=compress&cs=tinysrgb&w=300",
+  "Club Scarf":"https://images.pexels.com/photos/1884574/pexels-photo-1884574.jpeg?auto=compress&cs=tinysrgb&w=300",
+  "Water Bottle":"https://images.pexels.com/photos/1183266/pexels-photo-1183266.jpeg?auto=compress&cs=tinysrgb&w=300",
+  "Team Mug":"https://images.pexels.com/photos/227908/pexels-photo-227908.jpeg?auto=compress&cs=tinysrgb&w=300",
+  "Football Boots":"https://images.pexels.com/photos/1474132/pexels-photo-1474132.jpeg?auto=compress&cs=tinysrgb&w=300",
+  "Logo Tee":"https://images.pexels.com/photos/1311523/pexels-photo-1311523.jpeg?auto=compress&cs=tinysrgb&w=300"
 };

@@ -42,11 +42,11 @@ export function MainLayout() {
       </div>
       {sidebarOpen && (
         <div
+          className="sidebar-overlay"
           onClick={closeSidebar}
           style={{
             position: 'fixed',
             inset: 0,
-            background: 'rgba(0,0,0,.4)',
             zIndex: 290,
           }}
         />
@@ -54,7 +54,7 @@ export function MainLayout() {
       <div
         className={`main-content ${isPos ? 'pos-main-content' : ''}`}
         style={{
-          marginLeft: isPos ? 0 : 220,
+          marginLeft: isPos ? 0 : (sidebarOpen ? 80 : 220),
           minHeight: '100vh',
           display: 'flex',
           flexDirection: 'column',

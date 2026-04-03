@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Btn, Card, Modal, Badge } from '@/components/ui'
 import { notify } from '@/components/shared'
-import { fetchCategories, createCategory, updateCategory, deleteCategory, fetchSubCategories, createSubCategory, updateSubCategory, deleteSubCategory, fetchAttributes, createAttribute, saveSubCategoryAttributes } from '@/services/categories'
+import { fetchCategories, createCategory, updateCategory, deleteCategory, fetchSubCategories, createSubCategory, updateSubCategory, deleteSubCategory, fetchAttributes, createAttribute, saveSubCategoryAttributes, deleteAttribute } from '@/services/categories'
 
 // ─── common chip-tag input ────────────────────────────────────────────────────
 function ChipInput({ t, label, values = [], onChange, presets = [], placeholder }) {
@@ -102,6 +102,8 @@ const fieldLabel = (txt, t) => (
 const CategoryForm = ({ f, onChange, isEdit = false, target = null, t, allCats, attributes, setAllAttrs, submitting, handleSave, setShowAdd, setEditTarget }) => {
   const styles = iStyle(t)
   const [customAttr, setCustomAttr] = useState('')
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [deletedAttr, setDeletedAttr] = useState(null)
 
   const toggleAttr = (attrName) => {
     const next = f.attribute_config.includes(attrName)
@@ -143,18 +145,80 @@ const CategoryForm = ({ f, onChange, isEdit = false, target = null, t, allCats, 
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-        {fieldLabel('Attribute Options (Select to enable)', t)}
-        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          {fieldLabel('Attribute Options (Select to enable)', t)}
+          <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+            {deletedAttr && (
+              <button
+                type="button"
+                onClick={async () => {
+                  try {
+                    const restored = await createAttribute(deletedAttr.name)
+                    setAllAttrs(prev => [...prev, restored])
+                    setDeletedAttr(null)
+                    notify('Restored!', 'success')
+                  } catch (e) { notify('Undo failed: ' + e.message, 'error') }
+                }}
+                style={{ fontSize: 11, background: `${t.accent}20`, color: t.accent, border: `1px solid ${t.accent}40`, borderRadius: 12, padding: '2px 10px', cursor: 'pointer', fontWeight: 700 }}
+              >
+                ↩️ Undo Delete "{deletedAttr.name}"
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => setIsDeleting(!isDeleting)}
+              style={{
+                fontSize: 11, background: isDeleting ? t.red : `${t.text3}20`, color: isDeleting ? '#fff' : t.text3,
+                border: 'none', borderRadius: 12, padding: '2px 10px', cursor: 'pointer', fontWeight: 700,
+                transition: 'all 0.2s'
+              }}
+            >
+              {isDeleting ? 'Done' : '🗑️ Delete Mode'}
+            </button>
+          </div>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px 14px' }}>
           {finalPool.map(attrName => {
-            const isPredefined = (attributes || []).some(a => a.name === attrName)
+            const attrObj = (attributes || []).find(a => a.name === attrName)
+            const isPredefined = !!attrObj
             return (
-              <label key={attrName} style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: 13, color: isPredefined ? t.text : t.accent }}>
-                <input type="checkbox" checked={f.attribute_config.includes(attrName)} onChange={() => toggleAttr(attrName)} />
-                {attrName}
-              </label>
+              <div key={attrName} style={{ display: 'flex', alignItems: 'center', gap: 6, position: 'relative' }}>
+                {isDeleting ? (
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      if (attrObj) {
+                        try {
+                          await deleteAttribute(attrObj.id)
+                          setDeletedAttr(attrObj)
+                          setAllAttrs(prev => prev.filter(a => a.id !== attrObj.id))
+                          // Also remove from selection if selected
+                          if (f.attribute_config.includes(attrName)) toggleAttr(attrName)
+                          notify(`Deleted ${attrName}`, 'warning')
+                        } catch (e) { notify('Error deleting: ' + e.message, 'error') }
+                      }
+                    }}
+                    style={{ background: t.red + '20', color: t.red, border: 'none', borderRadius: 4, width: 22, height: 22, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12 }}
+                  >
+                    ×
+                  </button>
+                ) : (
+                  <input type="checkbox" checked={f.attribute_config.includes(attrName)} onChange={() => toggleAttr(attrName)} />
+                )}
+                <span
+                  onClick={() => !isDeleting && toggleAttr(attrName)}
+                  style={{
+                    fontSize: 13, cursor: isDeleting ? 'default' : 'pointer', color: isPredefined ? t.text : t.accent,
+                    maxWidth: 90, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'
+                  }}>
+                  {attrName}
+                </span>
+              </div>
             )
           })}
         </div>
+
         <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
           <input
             value={customAttr}
@@ -190,7 +254,16 @@ const CategoryForm = ({ f, onChange, isEdit = false, target = null, t, allCats, 
   )
 }
 
-export const CategoryManagement = ({ t, addAudit, currentUser }) => {
+export const CategoryManagement = ({ t: globalT, addAudit, currentUser }) => {
+  const blueT = {
+    ...globalT,
+    accent: '#3b82f6',
+    accent2: '#2563eb',
+    accentLight: 'rgba(59, 130, 246, 0.2)',
+    accentBorder: '#1e40af'
+  }
+  const t = blueT // Use blue theme for this component
+
   const [allCats, setAllCats] = useState([])
   const [allSubs, setAllSubs] = useState([])
   const [allAttrs, setAllAttrs] = useState([])
@@ -319,41 +392,74 @@ export const CategoryManagement = ({ t, addAudit, currentUser }) => {
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 24, margin: '0 20px' }}>
+    <div style={{
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 24,
+      padding: '24px 32px',
+      minHeight: '100%',
+      background: `radial-gradient(circle at top right, ${t.accent}15 0%, ${t.bg} 100%)`,
+      position: 'relative'
+    }}>
 
-
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 8 }}>
         <div>
-          <div style={{ fontSize: 22, fontWeight: 900, color: t.text }}>🗂️ Category Management</div>
-          <div style={{ fontSize: 13, color: t.text3, marginTop: 3 }}>View and manage product categories</div>
+          <div style={{
+            fontSize: 28,
+            fontWeight: 950,
+            color: t.text,
+            letterSpacing: '-0.5px',
+            textShadow: '0 2px 10px rgba(0,0,0,0.2)'
+          }}>🗂️ Category Management</div>
+          <div style={{ fontSize: 14, color: t.text2, marginTop: 4, opacity: 0.8 }}>View and manage product categories and their specific attributes</div>
         </div>
       </div>
 
-      <Card t={t} style={{ padding: 0 }}>
+      <Card t={t} style={{
+        padding: 0,
+        background: `${t.bg2}BF`,
+        backdropFilter: 'blur(12px)',
+        border: `1px solid ${t.border}40`,
+        boxShadow: '0 8px 32px rgba(0,0,0,0.24)',
+        overflow: 'hidden'
+      }}>
         <div style={{
-          padding: '14px 18px',
-          borderBottom: `1px solid ${t.border}`,
+          padding: '20px 24px',
+          borderBottom: `1px solid ${t.border}40`,
           display: 'flex',
           justifyContent: 'space-between',
-          alignItems: 'center'
+          alignItems: 'center',
+          background: `linear-gradient(to bottom, ${t.accent}10, transparent)`
         }}>
-          <div style={{ fontSize: 14, fontWeight: 800, color: t.text }}>📋 Existing Categories</div>
-          <Btn t={t} size="sm" onClick={() => setShowAdd(true)}>+ Add Category Entry</Btn>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div style={{ width: 4, height: 18, background: t.accent, borderRadius: 2 }} />
+            <div style={{ fontSize: 15, fontWeight: 850, color: t.text, letterSpacing: 0.3 }}>📋 Existing Categories</div>
+          </div>
+          <Btn t={t} size="sm" onClick={() => setShowAdd(true)} style={{
+            boxShadow: `0 4px 12px ${t.accent}30`,
+            transform: 'translateY(-1px)'
+          }}>+ Add Category Entry</Btn>
         </div>
 
         {loading ? (
-          <div style={{ textAlign: 'center', color: t.text3, padding: 30 }}>Loading…</div>
+          <div style={{ textAlign: 'center', color: t.text2, padding: 60, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
+            <div style={{ width: 30, height: 30, border: `3px solid ${t.border}`, borderTopColor: t.accent, borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+            <div style={{ fontSize: 14, fontWeight: 600 }}>Loading categories…</div>
+          </div>
         ) : allCats.length === 0 && allSubs.length === 0 ? (
-          <div style={{ textAlign: 'center', color: t.text3, padding: 30 }}>No categories found</div>
+          <div style={{ textAlign: 'center', color: t.text3, padding: 60 }}>
+            <div style={{ fontSize: 40, marginBottom: 12, opacity: 0.5 }}>📂</div>
+            <div style={{ fontSize: 14, fontWeight: 600 }}>No categories found</div>
+          </div>
         ) : (
           <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: 0 }}>
               <thead>
-                <tr style={{ background: t.bg2, borderBottom: `1px solid ${t.border}` }}>
-                  <th style={{ padding: '14px 18px', textAlign: 'left', fontSize: 11, fontWeight: 900, color: t.text3, textTransform: 'uppercase', letterSpacing: 0.8, whiteSpace: 'nowrap' }}>Categories</th>
-                  <th style={{ padding: '14px 18px', textAlign: 'left', fontSize: 11, fontWeight: 900, color: t.text3, textTransform: 'uppercase', letterSpacing: 0.8, whiteSpace: 'nowrap' }}>Sub category</th>
-                  <th style={{ padding: '14px 18px', textAlign: 'left', fontSize: 11, fontWeight: 900, color: t.text3, textTransform: 'uppercase', letterSpacing: 0.8, whiteSpace: 'nowrap' }}>Attributes</th>
-                  <th style={{ padding: '14px 18px', textAlign: 'right', fontSize: 11, fontWeight: 900, color: t.text3, textTransform: 'uppercase', letterSpacing: 0.8, whiteSpace: 'nowrap' }}>Actions</th>
+                <tr style={{ background: `${t.bg3}80`, backdropFilter: 'blur(4px)' }}>
+                  <th style={{ padding: '16px 24px', textAlign: 'left', fontSize: 11, fontWeight: 950, color: t.text2, textTransform: 'uppercase', letterSpacing: '1px', borderBottom: `1px solid ${t.border}` }}>Categories</th>
+                  <th style={{ padding: '16px 24px', textAlign: 'left', fontSize: 11, fontWeight: 950, color: t.text2, textTransform: 'uppercase', letterSpacing: '1px', borderBottom: `1px solid ${t.border}` }}>Sub category</th>
+                  <th style={{ padding: '16px 24px', textAlign: 'left', fontSize: 11, fontWeight: 950, color: t.text2, textTransform: 'uppercase', letterSpacing: '1px', borderBottom: `1px solid ${t.border}` }}>Attributes</th>
+                  <th style={{ padding: '16px 24px', textAlign: 'right', fontSize: 11, fontWeight: 950, color: t.text2, textTransform: 'uppercase', letterSpacing: '1px', borderBottom: `1px solid ${t.border}` }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -372,14 +478,14 @@ export const CategoryManagement = ({ t, addAudit, currentUser }) => {
 
                   const cellInputStyle = {
                     width: '100%',
-                    background: t.input,
-                    border: `1px solid ${t.border}`,
-                    borderRadius: 6,
-                    padding: '6px 10px',
+                    background: 'transparent',
+                    border: 'none',
+                    padding: '8px 4px',
                     color: t.text,
-                    fontSize: 12,
+                    fontSize: 13,
                     outline: 'none',
-                    fontFamily: 'inherit'
+                    fontFamily: 'inherit',
+                    transition: 'all 0.2s'
                   }
 
                   const formatAttrs = (r) => {
@@ -388,19 +494,42 @@ export const CategoryManagement = ({ t, addAudit, currentUser }) => {
                     return cfg.join(' | ')
                   }
 
-                  return rows.map(row => (
-                    <tr key={row.id} style={{ borderBottom: `1px solid ${t.border}` }}>
-                      <td style={{ padding: '10px 18px', width: '150px' }}>
-                        <input readOnly value={row.catName} style={{ ...cellInputStyle, fontWeight: 700, background: 'transparent', border: 'none' }} />
+                  return rows.map((row, idx) => (
+                    <tr key={row.id} style={{
+                      borderBottom: `1px solid ${t.border}20`,
+                      background: idx % 2 === 0 ? 'transparent' : `${t.bg3}20`,
+                      transition: 'background 0.2s'
+                    }}
+                      onMouseEnter={(e) => e.currentTarget.style.background = `${t.bg3}40`}
+                      onMouseLeave={(e) => e.currentTarget.style.background = idx % 2 === 0 ? 'transparent' : `${t.bg3}20`}
+                    >
+                      <td style={{ padding: '12px 24px', width: '150px' }}>
+                        <div style={{ fontWeight: 800, color: t.text, fontSize: 14 }}>{row.catName}</div>
                       </td>
-                      <td style={{ padding: '10px 18px', width: '150px' }}>
-                        <input readOnly value={row.subName} style={{ ...cellInputStyle, color: row.subName === '—' ? t.text3 : t.text }} />
+                      <td style={{ padding: '12px 24px', width: '150px' }}>
+                        <div style={{ color: row.subName === '—' ? t.text3 : t.text, fontSize: 13, fontWeight: 500 }}>
+                          {row.subName}
+                        </div>
                       </td>
-                      <td style={{ padding: '10px 18px' }}>
-                        <input readOnly value={formatAttrs(row.raw)} style={cellInputStyle} />
+                      <td style={{ padding: '12px 24px' }}>
+                        <div style={{
+                          padding: '6px 12px',
+                          background: `${t.bg3}60`,
+                          borderRadius: 8,
+                          fontSize: 12,
+                          color: t.text2,
+                          border: `1px solid ${t.border}40`,
+                          display: 'inline-block',
+                          maxWidth: '100%',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap'
+                        }}>
+                          {formatAttrs(row.raw)}
+                        </div>
                       </td>
-                      <td style={{ padding: '10px 18px', textAlign: 'right' }}>
-                        <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
+                      <td style={{ padding: '12px 24px', textAlign: 'right' }}>
+                        <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
                           <Btn t={t} variant="ghost" size="sm" onClick={() => {
                             const isSub = !!row.raw.category_id
                             setEditTarget(row.raw)
@@ -410,8 +539,12 @@ export const CategoryManagement = ({ t, addAudit, currentUser }) => {
                               attribute_config: row.raw.attribute_config || ['Size', 'Color', 'Material', 'Length'],
                               custom_attributes: row.raw.custom_attributes || {}
                             })
-                          }}>Edit</Btn>
-                          <Btn t={t} variant="danger" size="sm" onClick={() => setDeleteTarget(row.raw)}>Del</Btn>
+                          }} style={{ border: `1px solid ${t.border}`, padding: '6px 8px' }}>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" /></svg>
+                          </Btn>
+                          <Btn t={t} variant="danger" size="sm" onClick={() => setDeleteTarget(row.raw)} style={{ padding: '6px 8px' }}>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg>
+                          </Btn>
                         </div>
                       </td>
                     </tr>

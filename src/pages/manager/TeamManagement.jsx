@@ -5,7 +5,7 @@ import { fmt, ts } from '@/lib/utils'
 
 const TeamManagement = ({ users, setUsers, counters, orders, addAudit, currentUser, t, settings }) => {
   const [viewMode, setViewMode] = useState('all') // 'all', 'cashier', 'staff'
-  const [displayStyle, setDisplayStyle] = useState('grid') // 'grid', 'table'
+  const [displayStyle, setDisplayStyle] = useState('table') // 'grid', 'table'
   const [showAdd, setShowAdd] = useState(false)
   const [editMember, setEditMember] = useState(null)
   const [form, setForm] = useState({
@@ -120,41 +120,67 @@ const TeamManagement = ({ users, setUsers, counters, orders, addAudit, currentUs
       </div>
 
       {displayStyle === 'grid' ? (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 14 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 20 }}>
           {filteredTeam.map(m => (
-            <Card t={t} key={m.id} style={{ borderTop: `4px solid ${roleColors[m.role] || t.border}` }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 15 }}>
-                <div style={{ width: 48, height: 48, background: (roleColors[m.role] || t.accent) + '20', border: `2px solid ${(roleColors[m.role] || t.accent)}40`, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, fontWeight: 900, color: roleColors[m.role] || t.accent }}>{m.avatar}</div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 15, fontWeight: 800, color: t.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.name}</div>
-                  <div style={{ display: 'flex', gap: 6, marginTop: 4 }}>
-                    <Badge t={t} text={m.role} color={m.role === 'cashier' ? 'green' : 'teal'} />
-                    <Badge t={t} text={m.active ? 'Active' : 'Inactive'} color={m.active ? 'green' : 'red'} />
+            <Card t={t} key={m.id} style={{
+              padding: 0,
+              background: `${t.bg2}BF`,
+              backdropFilter: 'blur(12px)',
+              border: `1px solid ${t.border}40`,
+              borderRadius: 20,
+              overflow: 'hidden',
+              transition: 'transform 0.2s, box-shadow 0.2s'
+            }} hover>
+              <div style={{ height: 60, background: `linear-gradient(135deg, ${roleColors[m.role] || t.accent}40, transparent)`, borderBottom: `1px solid ${t.border}20` }} />
+              <div style={{ padding: '0 20px 20px', marginTop: -30 }}>
+                <div style={{ display: 'flex', alignItems: 'flex-end', gap: 12, marginBottom: 15 }}>
+                  <div style={{
+                    width: 64, height: 64,
+                    background: t.bg2,
+                    border: `3px solid ${roleColors[m.role] || t.accent}`,
+                    borderRadius: '50%',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: 20, fontWeight: 900,
+                    color: t.text,
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.3)'
+                  }}>
+                    {m.avatar}
+                  </div>
+                  <div style={{ flex: 1, paddingBottom: 5 }}>
+                    <div style={{ fontSize: 18, fontWeight: 900, color: t.text, letterSpacing: -0.3 }}>{m.name}</div>
+                    <div style={{ display: 'flex', gap: 6, marginTop: 4 }}>
+                      <Badge t={t} text={m.role} color={m.role === 'cashier' ? 'green' : 'teal'} />
+                      <Badge t={t} text={m.active ? 'Active' : 'Inactive'} color={m.active ? 'green' : 'red'} />
+                    </div>
                   </div>
                 </div>
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {[
-                  ['Email', m.email],
-                  ['Phone', m.phone || '—'],
-                  ['Counter', m.counter || 'Unassigned'],
-                  ['Joined', m.joinDate || '—'],
-                  ...(m.role === 'cashier' ? [['Revenue', fmt(orders.filter(o => o.cashierId === m.id).reduce((s, o) => s + o.total, 0), settings?.sym)]] : [])
-                ].map(([k, v]) => (
-                  <div key={k} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12 }}>
-                    <span style={{ color: t.text3 }}>{k}</span>
-                    <span style={{ color: t.text, fontWeight: 600 }}>{v}</span>
-                  </div>
-                ))}
-              </div>
-              <div style={{ display: 'flex', gap: 8, marginTop: 18 }}>
-                <Btn t={t} variant="secondary" size="sm" style={{ flex: 1 }} onClick={() => {
-                  setEditMember(m)
-                  setForm({ name: m.name, email: m.email, phone: m.phone || '', password: m.password || '', role: m.role, counter: m.counter || '' })
-                  setShowAdd(true)
-                }}>Edit</Btn>
-                <Btn t={t} variant={m.active ? 'danger' : 'success'} size="sm" style={{ flex: 1 }} onClick={() => handleToggleActive(m)}>{m.active ? 'Deactivate' : 'Activate'}</Btn>
-                <Btn t={t} variant="ghost" size="sm" onClick={() => handleRemove(m)}>🗑</Btn>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10, background: `${t.bg3}40`, padding: 16, borderRadius: 12, border: `1px solid ${t.border}20` }}>
+                  {[
+                    ['📧 Email', m.email],
+                    ['📞 Phone', m.phone || '—'],
+                    ['📍 Counter', m.counter || 'Unassigned'],
+                    ['📅 Joined', m.joinDate || '—'],
+                    ...(m.role === 'cashier' ? [['💰 Revenue', fmt(orders.filter(o => o.cashierId === m.id).reduce((s, o) => s + o.total, 0), settings?.sym)]] : [])
+                  ].map(([k, v]) => (
+                    <div key={k} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13 }}>
+                      <span style={{ color: t.text3, fontWeight: 600 }}>{k}</span>
+                      <span style={{ color: t.text, fontWeight: 700 }}>{v}</span>
+                    </div>
+                  ))}
+                </div>
+
+                <div style={{ display: 'flex', gap: 10, marginTop: 20 }}>
+                  <Btn t={t} variant="ghost" size="sm" style={{ flex: 1, border: `1px solid ${t.border}` }} onClick={() => {
+                    setEditMember(m)
+                    setForm({ name: m.name, email: m.email, phone: m.phone || '', password: m.password || '', role: m.role, counter: m.counter || '' })
+                    setShowAdd(true)
+                  }}>Edit</Btn>
+                  <Btn t={t} variant={m.active ? 'danger' : 'success'} size="sm" style={{ flex: 1 }} onClick={() => handleToggleActive(m)}>
+                    {m.active ? 'Deactivate' : 'Activate'}
+                  </Btn>
+                  <Btn t={t} variant="ghost" size="sm" onClick={() => handleRemove(m)} style={{ border: `1px solid ${t.border}` }}>🗑</Btn>
+                </div>
               </div>
             </Card>
           ))}

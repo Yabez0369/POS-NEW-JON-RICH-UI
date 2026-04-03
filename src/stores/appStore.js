@@ -10,10 +10,19 @@ export const useAppStore = create((set) => ({
   closeSidebar: () => set({ sidebarOpen: false }),
   openSidebar: () => set({ sidebarOpen: true }),
 
-  addNotification: (msg, type = 'info') => set(state => ({
+  addNotification: (msg, type = 'info', subtitle = '', category = 'general', icon = '') => set(state => ({
     notifications: [
-      { id: Date.now(), msg, type, read: false, time: new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) },
-      ...state.notifications.slice(0, 19)
+      { 
+        id: Date.now(), 
+        msg, 
+        type, 
+        subtitle, 
+        category, 
+        icon, 
+        read: false, 
+        time: new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) 
+      },
+      ...state.notifications.slice(0, 24)
     ]
   })),
 

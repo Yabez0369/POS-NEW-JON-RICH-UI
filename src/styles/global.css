@@ -28,6 +28,12 @@ body{margin:0;font-family:'Plus Jakarta Sans',system-ui,sans-serif;}
   .main-content{margin-left:60px!important;}
 }
 
+@media(min-width:1025px){
+  .sidebar-wrap.open{width:80px!important;overflow:hidden;}
+  .sidebar-wrap.open .sidebar-label{display:none!important;}
+  .sidebar-wrap.open ~ .main-content{margin-left:80px!important;}
+}
+
 @media(max-width:768px){
   .hide-mobile{display:none!important;}
   .sidebar-wrap{transform:translateX(-100%)!important;width:220px!important;z-index:300!important;}
@@ -61,3 +67,9 @@ body{margin:0;font-family:'Plus Jakarta Sans',system-ui,sans-serif;}
 }
 
 .main-content{overflow-x:hidden;}
+
+.sidebar-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.4); z-index: 290; }
+@media(min-width: 769px) {
+  .sidebar-overlay { display: none !important; }
+}
+

@@ -48,11 +48,11 @@ function ChipSelect({ t, label, values = [], onChange, presets = [] }) {
         ))}
       </div>
       <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
-        <input 
-          value={custom} onChange={e => setCustom(e.target.value)} 
+        <input
+          value={custom} onChange={e => setCustom(e.target.value)}
           placeholder={`Add custom ${label.toLowerCase()}...`}
           onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); if (custom.trim()) { toggle(custom.trim()); setCustom('') } } }}
-          style={{ flex: 1, background: t.input, border: `1px solid ${t.border}`, borderRadius: 8, padding: '7px 12px', color: t.text, fontSize: 12, outline: 'none' }} 
+          style={{ flex: 1, background: t.input, border: `1px solid ${t.border}`, borderRadius: 8, padding: '7px 12px', color: t.text, fontSize: 12, outline: 'none' }}
         />
         <Btn t={t} size="sm" onClick={() => { if (custom.trim()) { toggle(custom.trim()); setCustom('') } }}>+</Btn>
       </div>
@@ -60,7 +60,37 @@ function ChipSelect({ t, label, values = [], onChange, presets = [] }) {
   )
 }
 
-export const ProductManagement = ({ products, setProducts, addAudit, currentUser, t, settings }) => {
+const ActionBtn = ({ t, variant, onClick, children, disabled }) => {
+  const [hov, setHov] = useState(false)
+  return (
+    <Btn
+      t={t}
+      variant={variant}
+      size="sm"
+      onClick={onClick}
+      disabled={disabled}
+      onMouseEnter={() => setHov(true)}
+      onMouseLeave={() => setHov(false)}
+      style={{
+        padding: '6px 10px',
+        transform: hov ? 'translateY(-3px)' : 'translateY(0)',
+        transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+        boxShadow: hov ? `0 4px 12px ${variant === 'danger' ? t.red : t.accent}40` : 'none'
+      }}
+    >
+      {children}
+    </Btn>
+  )
+}
+
+export const ProductManagement = ({ products, setProducts, addAudit, currentUser, t: globalT, settings }) => {
+  const blueT = {
+    ...globalT,
+    accent: '#3b82f6',
+    accent2: '#2563eb',
+    accentLight: 'rgba(59, 130, 246, 0.2)'
+  }
+  const t = blueT
   const [search, setSearch] = useState('')
   const [cat, setCat] = useState('All')
   const [showForm, setShowForm] = useState(false)
@@ -99,9 +129,9 @@ export const ProductManagement = ({ products, setProducts, addAudit, currentUser
   const currentCategory = parentCats.find(c => c.name === form.category || c.id === form.category_id)
   const subCats = currentCategory ? allSubs.filter(s => s.category_id === currentCategory.id) : []
   const currentSub = subCats.find(s => s.name === form.subcategory || s.id === form.subcategory_id)
-  
+
   const activeConfig = currentSub?.attribute_config || currentCategory?.attribute_config || []
-  
+
   // Dynamic Presets from DB
   const getPresets = (name) => {
     const source = currentSub || currentCategory
@@ -236,8 +266,8 @@ export const ProductManagement = ({ products, setProducts, addAudit, currentUser
             </div>,
             <span style={{ fontWeight: 800, color: t.green }}>{fmt(p.price, settings?.sym)}</span>,
             <Badge t={t} text={String(p.stock || 0)} color={(p.stock || 0) < 10 ? 'red' : (p.stock || 0) < 20 ? 'yellow' : 'green'} />,
-            <div style={{ display: 'flex', gap: 5 }}>
-              <Btn t={t} variant="secondary" size="sm" onClick={() => {
+            <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+              <ActionBtn t={t} variant="ghost" onClick={() => {
                 setEditP(p)
                 setForm({
                   ...p,
@@ -264,8 +294,12 @@ export const ProductManagement = ({ products, setProducts, addAudit, currentUser
                   dynamic_attributes: p.dynamic_attributes || {}
                 })
                 setShowForm(true)
-              }}>Edit</Btn>
-              <Btn t={t} variant="danger" size="sm" onClick={() => handleDelete(p)} disabled={saving}>Del</Btn>
+              }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" /></svg>
+              </ActionBtn>
+              <ActionBtn t={t} variant="danger" onClick={() => handleDelete(p)} disabled={saving}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg>
+              </ActionBtn>
             </div>,
           ])}
         />
@@ -298,26 +332,26 @@ export const ProductManagement = ({ products, setProducts, addAudit, currentUser
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 13 }}>
-              <Select 
-                t={t} label="Category" 
-                value={form.category_id || form.category} 
+              <Select
+                t={t} label="Category"
+                value={form.category_id || form.category}
                 onChange={v => {
                   const c = allCats.find(x => x.id === v || x.name === v)
                   setForm(f => ({ ...f, category_id: c?.id, category: c?.name, subcategory_id: '', subcategory: '', dynamic_attributes: {} }))
-                }} 
+                }}
                 options={[
                   { value: '', label: 'Select Category' },
                   ...parentCats.map(c => ({ value: c.id, label: c.name }))
-                ]} 
+                ]}
               />
               {subCats.length > 0 && (
-                <Select 
-                  t={t} label="Subcategory" 
-                  value={form.subcategory_id || form.subcategory} 
+                <Select
+                  t={t} label="Subcategory"
+                  value={form.subcategory_id || form.subcategory}
                   onChange={v => {
                     const s = allSubs.find(x => x.id === v || x.name === v)
                     setForm(f => ({ ...f, subcategory_id: s?.id, subcategory: s?.name, dynamic_attributes: {} }))
-                  }} 
+                  }}
                   options={[
                     { value: '', label: 'Select Subcategory' },
                     ...subCats.map(s => ({ value: s.id, label: s.name }))
@@ -329,50 +363,50 @@ export const ProductManagement = ({ products, setProducts, addAudit, currentUser
             {activeConfig.length > 0 && (form.subcategory_id || (form.category_id && subCats.length === 0)) && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10, border: `1px solid ${t.border}`, borderRadius: 12, padding: 14, background: t.bg2 }}>
                 <div style={{ fontSize: 11, fontWeight: 800, color: t.text3, textTransform: 'uppercase', letterSpacing: 0.7, marginBottom: 5 }}>Dynamic Attributes</div>
-                
+
                 {activeConfig.includes('Size') && (
-                  <ChipSelect 
-                    t={t} label="Size" 
-                    values={form.dynamic_attributes?.Size || []} 
+                  <ChipSelect
+                    t={t} label="Size"
+                    values={form.dynamic_attributes?.Size || []}
                     presets={getPresets('Size')}
-                    onChange={v => setForm(f => ({ ...f, dynamic_attributes: { ...f.dynamic_attributes, Size: v } }))} 
+                    onChange={v => setForm(f => ({ ...f, dynamic_attributes: { ...f.dynamic_attributes, Size: v } }))}
                   />
                 )}
-                
+
                 {activeConfig.includes('Color') && (
-                  <ChipSelect 
-                    t={t} label="Color" 
-                    values={form.dynamic_attributes?.Color || []} 
+                  <ChipSelect
+                    t={t} label="Color"
+                    values={form.dynamic_attributes?.Color || []}
                     presets={getPresets('Color')}
-                    onChange={v => setForm(f => ({ ...f, dynamic_attributes: { ...f.dynamic_attributes, Color: v } }))} 
+                    onChange={v => setForm(f => ({ ...f, dynamic_attributes: { ...f.dynamic_attributes, Color: v } }))}
                   />
                 )}
-                
+
                 {activeConfig.includes('Material') && (
-                  <ChipSelect 
-                    t={t} label="Material" 
-                    values={form.dynamic_attributes?.Material || []} 
+                  <ChipSelect
+                    t={t} label="Material"
+                    values={form.dynamic_attributes?.Material || []}
                     presets={getPresets('Material')}
-                    onChange={v => setForm(f => ({ ...f, dynamic_attributes: { ...f.dynamic_attributes, Material: v } }))} 
+                    onChange={v => setForm(f => ({ ...f, dynamic_attributes: { ...f.dynamic_attributes, Material: v } }))}
                   />
                 )}
 
                 {activeConfig.includes('Length') && (
-                  <ChipSelect 
-                    t={t} label="Length" 
-                    values={form.dynamic_attributes?.Length || []} 
+                  <ChipSelect
+                    t={t} label="Length"
+                    values={form.dynamic_attributes?.Length || []}
                     presets={getPresets('Length')}
-                    onChange={v => setForm(f => ({ ...f, dynamic_attributes: { ...f.dynamic_attributes, Length: v } }))} 
+                    onChange={v => setForm(f => ({ ...f, dynamic_attributes: { ...f.dynamic_attributes, Length: v } }))}
                   />
                 )}
-                
+
                 {activeConfig.filter(a => !['Size', 'Color', 'Material', 'Length'].includes(a)).map(attr => (
-                  <ChipSelect 
+                  <ChipSelect
                     key={attr}
-                    t={t} label={attr} 
-                    values={form.dynamic_attributes?.[attr] || []} 
+                    t={t} label={attr}
+                    values={form.dynamic_attributes?.[attr] || []}
                     presets={[]}
-                    onChange={v => setForm(f => ({ ...f, dynamic_attributes: { ...f.dynamic_attributes, [attr]: v } }))} 
+                    onChange={v => setForm(f => ({ ...f, dynamic_attributes: { ...f.dynamic_attributes, [attr]: v } }))}
                   />
                 ))}
               </div>
