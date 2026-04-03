@@ -51,6 +51,8 @@ const StocktakeManagement = lazyRetry(() => import('@/pages/manager/StocktakeMan
 const OrderHistory = lazyRetry(() => import('@/pages/manager/OrderHistory'), 'OrderHistory')
 const PurchaseOrders = lazyRetry(() => import('@/pages/manager/PurchaseOrders'))
 const CreatePurchaseOrder = lazyRetry(() => import('@/pages/manager/CreatePurchaseOrder'))
+const TillManagement = lazyRetry(() => import('@/pages/manager/TillManagement'))
+const ReturnToSupplier = lazyRetry(() => import('@/pages/manager/ReturnToSupplier'))
 
 const POSTerminal = lazyRetry(() => import('@/pages/pos/POSTerminal'), 'POSTerminal')
 const CashierDashboard = lazyRetry(() => import('@/pages/cashier/CashierDashboard'), 'CashierDashboard')
@@ -448,6 +450,16 @@ function AppContent() {
             <Route path="order-history" element={
               <ProtectedRoute allowedRoles={['manager', 'admin']}>
                 <OrderHistory settings={settings} t={t} />
+              </ProtectedRoute>
+            } />
+            <Route path="till-management" element={
+              <ProtectedRoute allowedRoles={['manager', 'admin']}>
+                <TillManagement t={t} currentUser={currentUser} settings={settings} />
+              </ProtectedRoute>
+            } />
+            <Route path="return-to-supplier" element={
+              <ProtectedRoute allowedRoles={['manager', 'admin']}>
+                <ReturnToSupplier t={t} currentUser={currentUser} products={products} settings={settings} />
               </ProtectedRoute>
             } />
             <Route path="purchase-orders" element={

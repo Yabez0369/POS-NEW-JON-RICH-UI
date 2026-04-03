@@ -60,8 +60,8 @@ export const ReturnManagement = ({
       const searchLower = searchTerm.toLowerCase()
       const items = getReturnItems(r)
       const itemNames = items.map(i => i.name.toLowerCase()).join(' ')
-      
-      const matchesSearch = !searchTerm || 
+
+      const matchesSearch = !searchTerm ||
         (r.id || '').toLowerCase().includes(searchLower) ||
         (r.customer_name || r.customerName || '').toLowerCase().includes(searchLower) ||
         (r.order_id || r.orderId || '').toLowerCase().includes(searchLower) ||
@@ -93,61 +93,65 @@ export const ReturnManagement = ({
   })
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 24, paddingBottom: 40 }}>
+    <div style={{ 
+      background: 'linear-gradient(180deg, #C4E8E7 0%, #FFFFFF 100%)',
+      minHeight: '100%', padding: '32px', borderRadius: 24,
+      display: 'flex', flexDirection: 'column', gap: 24, boxSizing: 'border-box' 
+    }}>
       {selectedReturn && (
-        <Modal 
-          t={t} 
-          title="Return Details" 
+        <Modal
+          t={t}
+          title="Return Details"
           subtitle={`Details for return ${selectedReturn.id}`}
           onClose={() => setSelectedReturn(null)}
           width={650}
         >
           <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, background: 'rgba(255,255,255,0.03)', padding: 18, borderRadius: 16, border: '1px solid rgba(255,255,255,0.05)' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, background: '#f8fafc', padding: 18, borderRadius: 16, border: `1px solid ${t.border}` }}>
               <div>
-                <div style={{ fontSize: 11, color: t.text3, textTransform: 'uppercase', fontWeight: 800 }}>Customer Info</div>
-                <div style={{ fontSize: 15, fontWeight: 700, marginTop: 4 }}>{selectedReturn.customer_name || selectedReturn.customerName || 'Walk-in'}</div>
-                <div style={{ fontSize: 13, color: t.text2 }}>{selectedReturn.customer_email || 'No email provided'}</div>
+                <div style={{ fontSize: 11, color: '#64748B', textTransform: 'uppercase', fontWeight: 800 }}>Customer Info</div>
+                <div style={{ fontSize: 15, fontWeight: 700, marginTop: 4, color: '#1E293B' }}>{selectedReturn.customer_name || selectedReturn.customerName || 'Walk-in'}</div>
+                <div style={{ fontSize: 13, color: '#64748B' }}>{selectedReturn.customer_email || 'No email provided'}</div>
               </div>
               <div>
-                <div style={{ fontSize: 11, color: t.text3, textTransform: 'uppercase', fontWeight: 800 }}>Transaction Info</div>
-                <div style={{ fontSize: 14, fontWeight: 700, marginTop: 4 }}>Order ID: {selectedReturn.order_id || selectedReturn.orderId}</div>
-                <div style={{ fontSize: 12, color: t.text2 }}>Date: {dayjs(selectedReturn.created_at).format('DD MMM YYYY, HH:mm')}</div>
+                <div style={{ fontSize: 11, color: '#64748B', textTransform: 'uppercase', fontWeight: 800 }}>Transaction Info</div>
+                <div style={{ fontSize: 14, fontWeight: 700, marginTop: 4, color: '#1E293B' }}>Order ID: {selectedReturn.order_id || selectedReturn.orderId}</div>
+                <div style={{ fontSize: 12, color: '#64748B' }}>Date: {dayjs(selectedReturn.created_at).format('DD MMM YYYY, HH:mm')}</div>
               </div>
             </div>
 
             <div>
-              <div style={{ fontSize: 12, fontWeight: 800, color: t.text3, marginBottom: 12, textTransform: 'uppercase' }}>Items Being Returned</div>
+              <div style={{ fontSize: 12, fontWeight: 800, color: '#64748B', marginBottom: 12, textTransform: 'uppercase' }}>Items Being Returned</div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {getReturnItems(selectedReturn).map((it, idx) => (
-                  <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 14px', background: 'rgba(255,255,255,0.02)', borderRadius: 10, border: '1px solid rgba(255,255,255,0.04)' }}>
+                  <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 14px', background: '#fff', borderRadius: 10, border: `1px solid ${t.border}` }}>
                     <div>
-                      <div style={{ fontWeight: 700, fontSize: 14 }}>{it.name}</div>
-                      <div style={{ fontSize: 12, color: t.text3 }}>Qty: {it.qty} × {fmt(it.price, sym)}</div>
+                      <div style={{ fontWeight: 700, fontSize: 14, color: '#1E293B' }}>{it.name}</div>
+                      <div style={{ fontSize: 12, color: '#64748B' }}>Qty: {it.qty} × {fmt(it.price, sym)}</div>
                     </div>
-                    <div style={{ fontWeight: 800, color: t.text }}>{fmt((it.qty || 1) * (it.price || 0), sym)}</div>
+                    <div style={{ fontWeight: 800, color: '#1E293B' }}>{fmt((it.qty || 1) * (it.price || 0), sym)}</div>
                   </div>
                 ))}
               </div>
             </div>
 
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16 }}>
-              <div style={{ flex: 1, minWidth: 200, padding: 16, background: 'rgba(255,255,255,0.03)', borderRadius: 16 }}>
-                <div style={{ fontSize: 11, color: t.text3, fontWeight: 800, textTransform: 'uppercase' }}>Reason for Return</div>
-                <div style={{ fontSize: 13, color: t.text2, marginTop: 6, lineHeight: 1.5 }}>
+              <div style={{ flex: 1, minWidth: 200, padding: 16, background: '#f8fafc', borderRadius: 16, border: `1px solid ${t.border}` }}>
+                <div style={{ fontSize: 11, color: '#64748B', fontWeight: 800, textTransform: 'uppercase' }}>Reason for Return</div>
+                <div style={{ fontSize: 13, color: '#1E293B', marginTop: 6, lineHeight: 1.5 }}>
                   {selectedReturn.reason_code || selectedReturn.reason || 'No specific reason provided.'}
                 </div>
               </div>
-              <div style={{ width: 180, padding: 16, background: 'linear-gradient(135deg, rgba(34, 211, 238, 0.1), rgba(34, 211, 238, 0.05))', borderRadius: 16, border: '1px solid rgba(34, 211, 238, 0.2)', textAlign: 'right' }}>
-                <div style={{ fontSize: 11, color: '#22D3EE', fontWeight: 800, textTransform: 'uppercase' }}>Total Refund</div>
-                <div style={{ fontSize: 24, fontWeight: 900, color: '#22D3EE', marginTop: 4 }}>
+              <div style={{ width: 180, padding: 16, background: 'linear-gradient(135deg, #C4E8E7, #FFFFFF)', borderRadius: 16, border: '1px solid #C4E8E7', textAlign: 'right' }}>
+                <div style={{ fontSize: 11, color: '#0ea5e9', fontWeight: 800, textTransform: 'uppercase' }}>Total Refund</div>
+                <div style={{ fontSize: 24, fontWeight: 900, color: '#0ea5e9', marginTop: 4 }}>
                   {fmt(selectedReturn.refund_amount || selectedReturn.refundAmount, sym)}
                 </div>
               </div>
             </div>
 
             <div style={{ display: 'flex', gap: 12, marginTop: 10 }}>
-              <Btn variant="ghost" fullWidth onClick={() => setSelectedReturn(null)}>Close Details</Btn>
+              <Btn variant="secondary" fullWidth onClick={() => setSelectedReturn(null)}>Close Details</Btn>
               {selectedReturn.status === 'pending' && (
                 <Btn variant="primary" fullWidth onClick={() => { /* Logic to approve */ }}>Approve Refund</Btn>
               )}
@@ -158,8 +162,8 @@ export const ReturnManagement = ({
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
-          <div style={{ fontSize: 24, fontWeight: 900, color: '#fff', letterSpacing: -0.5 }}>Returns & Refunds</div>
-          <div style={{ fontSize: 13, color: '#94A3B8', marginTop: 2 }}>Manage customer returns and track refund history</div>
+          <div style={{ fontSize: 32, fontWeight: 950, color: '#1E293B', letterSpacing: -1 }}>Returns & Refunds</div>
+          <div style={{ fontSize: 15, color: '#64748B', marginTop: 4 }}>Manage customer returns and track refund history</div>
         </div>
       </div>
 
@@ -172,29 +176,29 @@ export const ReturnManagement = ({
       <Card t={t} style={{ padding: '20px' }}>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16, alignItems: 'center', marginBottom: 20 }}>
           <div style={{ flex: 1, minWidth: 200 }}>
-            <Input 
-              t={t} 
-              placeholder="Search by ID, name, or order..." 
-              value={searchTerm} 
-              onChange={e => setSearchTerm(e.target.value)} 
+            <Input
+              t={t}
+              placeholder="Search by ID, name, or order..."
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
               icon="🔍"
             />
           </div>
           <div style={{ width: 220 }}>
-            <Select 
-              t={t} 
-              value={statusFilter} 
+            <Select
+              t={t}
+              value={statusFilter}
               onChange={setStatusFilter}
-              options={STATUS_FILTERS} 
+              options={STATUS_FILTERS}
             />
           </div>
         </div>
 
-        <Table 
-          t={t} 
-          cols={columns} 
-          rows={rows} 
-          empty="No refund requests found matching your filters" 
+        <Table
+          t={t}
+          cols={columns}
+          rows={rows}
+          empty="No refund requests found matching your filters"
         />
       </Card>
     </div>

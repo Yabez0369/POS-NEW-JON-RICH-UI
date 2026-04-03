@@ -32,10 +32,10 @@ export const ReportsPage = ({ orders = [], users = [], products = [], t, setting
 
   // Card-aware colors: light text for dark manager cards, theme tokens for normal cards
   const c = isManager ? {
-    text: '#F0F4FF', text2: '#CBD5E1', text3: '#94A3B8', text4: '#64748B',
-    accent: '#22D3EE', border: 'rgba(255,255,255,0.08)', bg3: 'rgba(255,255,255,0.05)',
-    bg4: 'rgba(255,255,255,0.08)', green: '#22C55E', red: '#EF4444', yellow: '#F59E0B',
-    blue: '#3B82F6', input: 'rgba(255,255,255,0.08)',
+    text: '#0F172A', text2: '#334155', text3: '#64748B', text4: '#94A3B8',
+    accent: '#0D9488', border: 'rgba(0,0,0,0.06)', bg3: 'rgba(0,0,0,0.03)',
+    bg4: 'rgba(0,0,0,0.05)', green: '#10B981', red: '#EF4444', yellow: '#F59E0B',
+    blue: '#3B82F6', input: '#FFFFFF',
   } : {
     text: t.text, text2: t.text2, text3: t.text3, text4: t.text4,
     accent: t.accent, border: t.border, bg3: t.bg3, bg4: t.bg4,
@@ -157,7 +157,11 @@ export const ReportsPage = ({ orders = [], users = [], products = [], t, setting
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+    <div style={{
+      background: isManager ? 'linear-gradient(180deg, #C4E8E7 0%, #FFFFFF 100%)' : 'transparent',
+      minHeight: '100%', padding: '24px', borderRadius: 24,
+      display: 'flex', flexDirection: 'column', gap: 20
+    }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
         <div style={{ fontSize: 22, fontWeight: 900, color: t.text }}>Sales Reports & Analytics</div>
         <Btn t={t} onClick={handleExport}>⬇ Export CSV</Btn>

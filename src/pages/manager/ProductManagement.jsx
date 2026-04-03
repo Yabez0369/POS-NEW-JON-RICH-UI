@@ -233,7 +233,11 @@ export const ProductManagement = ({ products, setProducts, addAudit, currentUser
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+    <div style={{ 
+      background: 'linear-gradient(180deg, #C4E8E7 0%, #FFFFFF 100%)',
+      minHeight: '100%', padding: '32px', borderRadius: 24,
+      display: 'flex', flexDirection: 'column', gap: 20 
+    }}>
       <div style={{ fontSize: 22, fontWeight: 900, color: t.text }}>Product Management</div>
 
       <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>

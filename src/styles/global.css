@@ -11,8 +11,8 @@ body{margin:0;font-family:'Plus Jakarta Sans',system-ui,sans-serif;}
 @keyframes notif-progress{from{transform:scaleX(1);}to{transform:scaleX(0);}}
 .spin{animation:spin 1s linear infinite;}
 
-.sidebar-wrap{width:220px;position:fixed;left:0;top:0;height:100vh;z-index:200;transition:width .25s ease, transform .25s ease;}
-.main-content{margin-left:220px; transition: margin-left .25s ease;}
+.sidebar-wrap{width:260px;position:fixed;left:0;top:0;height:100vh;z-index:200;transition:width .25s ease, transform .25s ease;}
+.main-content{margin-left:260px; transition: margin-left .25s ease;}
 
 /* iPad Pro POS App Overrides */
 .is-pos .sidebar-wrap { display: none !important; }
@@ -36,7 +36,7 @@ body{margin:0;font-family:'Plus Jakarta Sans',system-ui,sans-serif;}
 
 @media(max-width:768px){
   .hide-mobile{display:none!important;}
-  .sidebar-wrap{transform:translateX(-100%)!important;width:220px!important;z-index:300!important;}
+  .sidebar-wrap{transform:translateX(-100%)!important;width:260px!important;z-index:300!important;}
   .sidebar-wrap.open{transform:translateX(0)!important;}
   .main-content{margin-left:0!important;}
   .pos-layout{flex-direction:column!important;height:auto!important;min-height:100vh;}

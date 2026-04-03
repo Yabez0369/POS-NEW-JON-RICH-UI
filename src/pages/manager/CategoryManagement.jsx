@@ -392,14 +392,10 @@ export const CategoryManagement = ({ t: globalT, addAudit, currentUser }) => {
   }
 
   return (
-    <div style={{
-      display: 'flex',
-      flexDirection: 'column',
-      gap: 24,
-      padding: '24px 32px',
-      minHeight: '100%',
-      background: `radial-gradient(circle at top right, ${t.accent}15 0%, ${t.bg} 100%)`,
-      position: 'relative'
+    <div style={{ 
+      background: 'linear-gradient(180deg, #C4E8E7 0%, #FFFFFF 100%)',
+      minHeight: '100%', padding: '32px', borderRadius: 24,
+      display: 'flex', flexDirection: 'column', gap: 24, position: 'relative' 
     }}>
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 8 }}>

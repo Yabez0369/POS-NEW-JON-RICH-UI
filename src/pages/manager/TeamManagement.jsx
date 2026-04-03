@@ -79,11 +79,15 @@ const TeamManagement = ({ users, setUsers, counters, orders, addAudit, currentUs
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+    <div style={{ 
+      background: 'linear-gradient(180deg, #C4E8E7 0%, #FFFFFF 100%)',
+      minHeight: '100%', padding: '32px', borderRadius: 24,
+      display: 'flex', flexDirection: 'column', gap: 20, boxSizing: 'border-box' 
+    }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
-          <div style={{ fontSize: 22, fontWeight: 900, color: t.text }}>Team Management</div>
-          <div style={{ fontSize: 13, color: t.text3 }}>Manage your store staff and cashiers</div>
+          <div style={{ fontSize: 24, fontWeight: 950, color: '#1E293B' }}>Team Management</div>
+          <div style={{ fontSize: 14, color: '#64748B', marginTop: 4 }}>Manage your store staff and cashiers</div>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
           <div style={{ background: t.bg3, padding: 4, borderRadius: 10, display: 'flex', border: `1px solid ${t.border}` }}>

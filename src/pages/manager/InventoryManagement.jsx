@@ -123,7 +123,11 @@ export function InventoryManagement({ products, setProducts, addAudit, currentUs
   )
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 20, padding: 'clamp(16px, 4vw, 28px)', maxWidth: 1400, margin: '0 auto', width: '100%', boxSizing: 'border-box' }}>
+    <div style={{ 
+      background: 'linear-gradient(180deg, #C4E8E7 0%, #FFFFFF 100%)',
+      minHeight: '100%', padding: '32px', borderRadius: 24,
+      display: 'flex', flexDirection: 'column', gap: 20, maxWidth: 1400, margin: '0 auto', width: '100%', boxSizing: 'border-box' 
+    }}>
       <InventoryHeader title="Inventory" t={t} activePage="inventory" onGoodsReceiving={() => setShowReceiving(true)} onSerialLookup={() => setShowSerialLookup(true)} />
 
       {/** 1. Stock overview */}
@@ -136,17 +140,17 @@ export function InventoryManagement({ products, setProducts, addAudit, currentUs
 
       {/** 7. Low stock alerts section */}
       {lowStockProducts.length > 0 && (
-        <Card t={t} style={{ padding: 16, borderLeft: `4px solid ${t.yellow}` }}>
-          <div style={{ fontSize: 14, fontWeight: 800, color: '#93c5fd', marginBottom: 12 }}>⚠️ Low Stock Alerts</div>
+        <Card t={t} style={{ padding: 16, borderLeft: `4px solid ${t.yellow}`, background: '#fff' }}>
+          <div style={{ fontSize: 14, fontWeight: 800, color: '#2563EB', marginBottom: 12 }}>⚠️ Low Stock Alerts</div>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
             {lowStockProducts.sort((a, b) => a.stock - b.stock).map(p => (
-              <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(255,255,255,0.05)', padding: '8px 12px', borderRadius: 8, border: `1px solid rgba(255,255,255,0.08)` }}>
+              <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 12, background: '#f8fafc', padding: '10px 16px', borderRadius: 12, border: `1px solid ${t.border}` }}>
                 {p.image_url || p.image ? (
-                  <img src={p.image_url || p.image} alt="" style={{ width: 24, height: 24, borderRadius: 4, objectFit: 'cover' }} />
+                  <img src={p.image_url || p.image} alt="" style={{ width: 32, height: 32, borderRadius: 6, objectFit: 'cover' }} />
                 ) : (
-                  <span style={{ fontSize: 16 }}>📦</span>
+                  <span style={{ fontSize: 18 }}>📦</span>
                 )}
-                <span style={{ fontWeight: 600, color: '#f0f4ff' }}>{p.name}</span>
+                <span style={{ fontWeight: 700, color: '#1E293B' }}>{p.name}</span>
                 <Badge t={t} text={`${p.stock} / ${getReorder(p)}`} color={p.stock === 0 ? 'red' : 'yellow'} />
                 <Btn t={t} variant="secondary" size="sm" onClick={() => { setEditStock(p); setNs(String(p.stock)); setAddQ('') }}>Update</Btn>
               </div>
@@ -162,11 +166,12 @@ export function InventoryManagement({ products, setProducts, addAudit, currentUs
           placeholder="🔍 Search by product name or SKU..."
           value={searchTerm}
           onChange={setSearchTerm}
+          style={{ color: '#1E293B' }}
         />
       </div>
 
       {/** 2. Product table */}
-      <Card t={t} style={{ padding: 0, overflow: 'hidden' }}>
+      <Card t={t} style={{ padding: 0, overflow: 'hidden', background: '#fff', border: `1px solid ${t.border}` }}>
         <Table
           t={t}
           cols={['Product', 'SKU', 'Stock', 'Reorder Point', 'Status', 'Action']}
@@ -179,11 +184,11 @@ export function InventoryManagement({ products, setProducts, addAudit, currentUs
                 ) : (
                   <div style={{ width: 32, height: 32, borderRadius: 6, background: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16 }}>📦</div>
                 )}
-                <span style={{ fontWeight: 600, color: t.text }}>{p.name}</span>
+                <span style={{ fontWeight: 700, color: '#1E293B' }}>{p.name}</span>
               </div>,
-              <span style={{ fontSize: 10, fontFamily: 'monospace', color: t.text4 }}>{p.sku}</span>,
-              <span style={{ fontWeight: 900, fontSize: 15, color: p.stock === 0 ? t.red : isLowStock(p) ? t.yellow : t.green }}>{p.stock}</span>,
-              <span style={{ fontSize: 13, color: t.text3 }}>{getReorder(p)}</span>,
+              <span style={{ fontSize: 11, fontFamily: 'monospace', color: '#64748B' }}>{p.sku}</span>,
+              <span style={{ fontWeight: 900, fontSize: 15, color: p.stock === 0 ? '#EF4444' : isLowStock(p) ? '#F59E0B' : '#10B981' }}>{p.stock}</span>,
+              <span style={{ fontSize: 13, color: '#64748B' }}>{getReorder(p)}</span>,
               <Badge t={t} text={sb.text} color={sb.color} />,
               <Btn t={t} variant="secondary" size="sm" onClick={() => { setEditStock(p); setNs(String(p.stock)); setAddQ('') }}>Update</Btn>,
             ]
@@ -192,8 +197,8 @@ export function InventoryManagement({ products, setProducts, addAudit, currentUs
       </Card>
 
       {/** 9. Movement audit trail */}
-      <Card t={t} style={{ padding: 16 }}>
-        <div style={{ fontSize: 14, fontWeight: 800, color: '#93c5fd', marginBottom: 12 }}>📜 Movement Audit Trail</div>
+      <Card t={t} style={{ padding: 16, background: '#fff', border: `1px solid ${t.border}` }}>
+        <div style={{ fontSize: 14, fontWeight: 800, color: '#2563EB', marginBottom: 12 }}>📜 Movement Audit Trail</div>
         {movements.length === 0 ? (
           <div style={{ color: '#94a3b8', fontSize: 13 }}>No movements recorded yet. Stock actions will appear here.</div>
         ) : (
@@ -202,10 +207,10 @@ export function InventoryManagement({ products, setProducts, addAudit, currentUs
             cols={['Type', 'Product', 'Quantity', 'User', 'Timestamp']}
             rows={movements.slice(0, 20).map(m => [
               <Badge t={t} text={m.type} color={m.type === 'Goods Received' ? 'green' : m.type === 'Damaged/Lost' ? 'red' : m.type === 'Stocktake Adjustment' ? 'blue' : 'teal'} />,
-              <span style={{ fontWeight: 600, color: '#f0f4ff' }}>{m.productName}</span>,
-              <span style={{ fontWeight: 700, color: m.quantity >= 0 ? t.green : t.red }}>{m.quantity >= 0 ? '+' : ''}{m.quantity}</span>,
-              <span style={{ fontSize: 12, color: '#94a3b8' }}>{m.user}</span>,
-              <span style={{ fontSize: 11, fontFamily: 'monospace', color: '#64748b' }}>{m.timestamp}</span>,
+              <span style={{ fontWeight: 700, color: '#1E293B' }}>{m.productName}</span>,
+              <span style={{ fontWeight: 800, color: m.quantity >= 0 ? t.green : t.red }}>{m.quantity >= 0 ? '+' : ''}{m.quantity}</span>,
+              <span style={{ fontSize: 12, color: t.text3 }}>{m.user}</span>,
+              <span style={{ fontSize: 11, fontFamily: 'monospace', color: t.text4 }}>{m.timestamp}</span>,
             ])}
           />
         )}
