@@ -24,11 +24,19 @@ export const StatCard = ({ title, value, sub, color, icon, t, trend }) => {
           <div style={{ width: 36, height: 36, borderRadius: 10, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 }}>{icon}</div>
         </div>
         {trend !== undefined && (
-          <div style={{ fontSize: 10, color: trend > 0 ? '#10B981' : '#EF4444', marginTop: 6, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4, position: 'relative', zIndex: 1 }}>
-            <span style={{ display: 'inline-block', padding: '1px 5px', background: trend > 0 ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)', borderRadius: 3 }}>
-              {trend > 0 ? "↑" : "↓"} {Math.abs(trend)}%
-            </span>
-            <span style={{ color: '#64748B', fontWeight: 500 }}>vs last week</span>
+          <div style={{ fontSize: 10, color: typeof trend === 'number' ? (trend > 0 ? '#10B981' : '#EF4444') : '#f59e0b', marginTop: 6, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4, position: 'relative', zIndex: 1 }}>
+            {typeof trend === 'number' ? (
+              <>
+                <span style={{ display: 'inline-block', padding: '1px 5px', background: trend > 0 ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)', borderRadius: 3 }}>
+                  {trend > 0 ? "↑" : "↓"} {Math.abs(trend)}%
+                </span>
+                <span style={{ color: '#64748B', fontWeight: 500 }}>vs last week</span>
+              </>
+            ) : (
+                <span style={{ display: 'inline-block', padding: '2px 6px', background: 'rgba(245, 158, 11, 0.1)', borderRadius: 4 }}>
+                  {trend}
+                </span>
+            )}
           </div>
         )}
       </Card>
@@ -43,7 +51,11 @@ export const StatCard = ({ title, value, sub, color, icon, t, trend }) => {
       </div>
       <div style={{ fontSize: 24, fontWeight: 900, color: color || theme.accent, letterSpacing: -0.5, marginBottom: 4 }}>{value}</div>
       {sub && <div style={{ fontSize: 12, color: theme.text4 }}>{sub}</div>}
-      {trend && <div style={{ fontSize: 12, color: trend > 0 ? theme.green : theme.red, marginTop: 4, fontWeight: 700 }}>{trend > 0 ? "↑" : "↓"} {Math.abs(trend)}% vs last week</div>}
+      {trend !== undefined && (
+        <div style={{ fontSize: 12, color: typeof trend === 'number' ? (trend > 0 ? theme.green : theme.red) : theme.yellow, marginTop: 4, fontWeight: 700 }}>
+          {typeof trend === 'number' ? `${trend > 0 ? "↑" : "↓"} ${Math.abs(trend)}% vs last week` : trend}
+        </div>
+      )}
     </Card>
   )
 }

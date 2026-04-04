@@ -306,7 +306,8 @@ export const ReceiptModal = ({ order, settings, onClose, onNewSale, t }) => {
                 <span>{fmt(order.total, settings?.sym)}</span>
               </div>
               <div style={{ borderBottom: '1px solid #000', margin: '5px 0' }} />
-              <div style={{ textAlign: 'center', marginTop: '10px' }}>{settings.receiptFooter || "Thank you!"}</div>
+              <div style={{ textAlign: 'center', marginTop: '10px', fontSize: '11px', whiteSpace: 'pre-wrap' }}>{settings.receiptFooter || "Thank you!"}</div>
+              {settings.returnPolicy && <div style={{ textAlign: 'center', marginTop: '8px', fontSize: '9px', fontStyle: 'italic', borderTop: '1px dotted #000', paddingTop: '8px', color: '#666' }}>Return Policy: {settings.returnPolicy}</div>}
            </div>
         </div>
       </div>

@@ -125,9 +125,9 @@ export const ProductManagement = ({ products, setProducts, addAudit, currentUser
 
   useEffect(() => { loadCats() }, [loadCats])
 
-  const parentCats = allCats
+  const parentCats = allCats.filter(c => c.status !== 'pending' || currentUser?.role === 'admin')
   const currentCategory = parentCats.find(c => c.name === form.category || c.id === form.category_id)
-  const subCats = currentCategory ? allSubs.filter(s => s.category_id === currentCategory.id) : []
+  const subCats = currentCategory ? allSubs.filter(s => s.category_id === currentCategory.id && (s.status !== 'pending' || currentUser?.role === 'admin')) : []
   const currentSub = subCats.find(s => s.name === form.subcategory || s.id === form.subcategory_id)
 
   const activeConfig = currentSub?.attribute_config || currentCategory?.attribute_config || []
