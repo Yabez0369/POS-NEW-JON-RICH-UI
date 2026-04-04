@@ -32,10 +32,10 @@ export const ReportsPage = ({ orders = [], users = [], products = [], t, setting
 
   // Card-aware colors: light text for dark manager cards, theme tokens for normal cards
   const c = isManager ? {
-    text: '#F0F4FF', text2: '#CBD5E1', text3: '#94A3B8', text4: '#64748B',
-    accent: '#22D3EE', border: 'rgba(255,255,255,0.08)', bg3: 'rgba(255,255,255,0.05)',
-    bg4: 'rgba(255,255,255,0.08)', green: '#22C55E', red: '#EF4444', yellow: '#F59E0B',
-    blue: '#3B82F6', input: 'rgba(255,255,255,0.08)',
+    text: '#0F172A', text2: '#334155', text3: '#64748B', text4: '#94A3B8',
+    accent: '#0D9488', border: 'rgba(0,0,0,0.06)', bg3: 'rgba(0,0,0,0.03)',
+    bg4: 'rgba(0,0,0,0.05)', green: '#10B981', red: '#EF4444', yellow: '#F59E0B',
+    blue: '#3B82F6', input: '#FFFFFF',
   } : {
     text: t.text, text2: t.text2, text3: t.text3, text4: t.text4,
     accent: t.accent, border: t.border, bg3: t.bg3, bg4: t.bg4,
@@ -165,29 +165,33 @@ export const ReportsPage = ({ orders = [], users = [], products = [], t, setting
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+    <div style={{
+      background: isManager ? 'linear-gradient(180deg, #C4E8E7 0%, #FFFFFF 100%)' : 'transparent',
+      minHeight: '100%', padding: '24px', borderRadius: 24,
+      display: 'flex', flexDirection: 'column', gap: 20
+    }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
-        <div style={{ fontSize: 22, fontWeight: 900, color: t.text }}>Sales Reports & Analytics</div>
+        <div style={{ fontSize: 26, fontWeight: 900, color: t.text }}>Sales Reports & Analytics</div>
         <Btn t={t} onClick={handleExport}>⬇ Export CSV</Btn>
       </div>
 
       <Card t={t}>
         <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'flex-end' }}>
           <div>
-            <label style={{ display: 'block', fontSize: 11, color: c.text3, fontWeight: 800, textTransform: 'uppercase', letterSpacing: 0.7, marginBottom: 4 }}>From</label>
-            <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} style={{ background: c.input, border: `1px solid ${c.border}`, borderRadius: 9, padding: '8px 12px', color: c.text, fontSize: 13, outline: 'none' }} />
+            <label style={{ display: 'block', fontSize: 15, color: c.text3, fontWeight: 800, textTransform: 'uppercase', letterSpacing: 0.7, marginBottom: 4 }}>From</label>
+            <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} style={{ background: c.input, border: `1px solid ${c.border}`, borderRadius: 9, padding: '8px 12px', color: c.text, fontSize: 17, outline: 'none' }} />
           </div>
           <div>
-            <label style={{ display: 'block', fontSize: 11, color: c.text3, fontWeight: 800, textTransform: 'uppercase', letterSpacing: 0.7, marginBottom: 4 }}>To</label>
-            <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} style={{ background: c.input, border: `1px solid ${c.border}`, borderRadius: 9, padding: '8px 12px', color: c.text, fontSize: 13, outline: 'none' }} />
+            <label style={{ display: 'block', fontSize: 15, color: c.text3, fontWeight: 800, textTransform: 'uppercase', letterSpacing: 0.7, marginBottom: 4 }}>To</label>
+            <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} style={{ background: c.input, border: `1px solid ${c.border}`, borderRadius: 9, padding: '8px 12px', color: c.text, fontSize: 17, outline: 'none' }} />
           </div>
-          <div style={{ fontSize: 12, color: c.text3, padding: '8px 0' }}>{filtered.length} orders · {fmt(totalRev, settings?.sym)} revenue</div>
+          <div style={{ fontSize: 16, color: c.text3, padding: '8px 0' }}>{filtered.length} orders · {fmt(totalRev, settings?.sym)} revenue</div>
         </div>
       </Card>
 
       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
         {reports.map(r => (
-          <button key={r.id} onClick={() => setActiveReport(r.id)} style={{ padding: '7px 14px', borderRadius: 20, border: `1px solid ${activeReport === r.id ? t.accent : t.border}`, background: activeReport === r.id ? t.accent + '15' : 'transparent', color: activeReport === r.id ? t.accent : t.text3, fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>
+          <button key={r.id} onClick={() => setActiveReport(r.id)} style={{ padding: '7px 14px', borderRadius: 20, border: `1px solid ${activeReport === r.id ? t.accent : t.border}`, background: activeReport === r.id ? t.accent + '15' : 'transparent', color: activeReport === r.id ? t.accent : t.text3, fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>
             {r.label}
           </button>
         ))}
@@ -197,7 +201,7 @@ export const ReportsPage = ({ orders = [], users = [], products = [], t, setting
         {activeReport === 'sales-category' && (
           <>
             <Card t={t}>
-              <div style={{ fontSize: 14, fontWeight: 800, color: c.text, marginBottom: 16 }}>Revenue by Category</div>
+              <div style={{ fontSize: 18, fontWeight: 800, color: c.text, marginBottom: 16 }}>Revenue by Category</div>
               <div style={{ display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap' }}>
                 <div style={{ position: 'relative', width: 120, height: 120, flexShrink: 0 }}>
                   <svg viewBox="0 0 42 42" style={{ width: '100%', height: '100%', transform: 'rotate(-90deg)' }}>
@@ -210,8 +214,8 @@ export const ReportsPage = ({ orders = [], users = [], products = [], t, setting
                     }, { offset: 0, els: [] }).els}
                   </svg>
                   <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column' }}>
-                    <div style={{ fontSize: 10, color: c.text3, fontWeight: 700 }}>TOTAL</div>
-                    <div style={{ fontSize: 11, fontWeight: 900, color: c.text }}>{fmt(totalCatRev, settings?.sym)}</div>
+                    <div style={{ fontSize: 14, color: c.text3, fontWeight: 700 }}>TOTAL</div>
+                    <div style={{ fontSize: 15, fontWeight: 900, color: c.text }}>{fmt(totalCatRev, settings?.sym)}</div>
                   </div>
                 </div>
                 <div style={{ flex: 1 }}>
@@ -219,7 +223,7 @@ export const ReportsPage = ({ orders = [], users = [], products = [], t, setting
                     <div key={cat} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
                       <div style={{ width: 10, height: 10, borderRadius: 3, background: colors[i % colors.length], flexShrink: 0 }} />
                       <div style={{ flex: 1 }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 2 }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 16, marginBottom: 2 }}>
                           <span style={{ color: c.text2 }}>{cat}</span>
                           <span style={{ fontWeight: 800, color: c.text }}>{fmt(rev, settings?.sym)}</span>
                         </div>
@@ -233,9 +237,9 @@ export const ReportsPage = ({ orders = [], users = [], products = [], t, setting
               </div>
             </Card>
             <Card t={t}>
-              <div style={{ fontSize: 14, fontWeight: 800, color: c.text, marginBottom: 16 }}>Category Breakdown</div>
+              <div style={{ fontSize: 18, fontWeight: 800, color: c.text, marginBottom: 16 }}>Category Breakdown</div>
               {Object.entries(catRev).sort((a, b) => b[1] - a[1]).map(([cat, rev], i) => (
-                <div key={cat} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: `1px solid ${c.border}`, fontSize: 13 }}>
+                <div key={cat} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: `1px solid ${c.border}`, fontSize: 17 }}>
                   <span style={{ color: c.text }}>{cat}</span>
                   <div style={{ display: 'flex', gap: 12 }}>
                     <span style={{ color: c.text3 }}>{totalCatRev > 0 ? (rev / totalCatRev * 100).toFixed(1) : 0}%</span>
@@ -250,22 +254,22 @@ export const ReportsPage = ({ orders = [], users = [], products = [], t, setting
         {activeReport === 'sales-product' && (
           <>
             <Card t={t}>
-              <div style={{ fontSize: 14, fontWeight: 800, color: c.text, marginBottom: 16 }}>🏆 Top Products by Revenue</div>
+              <div style={{ fontSize: 18, fontWeight: 800, color: c.text, marginBottom: 16 }}>🏆 Top Products by Revenue</div>
               {topProducts.slice(0, 10).map(([name, stats], i) => (
                 <div key={name} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 0', borderBottom: `1px solid ${c.border}` }}>
-                  <div style={{ width: 24, height: 24, borderRadius: '50%', background: i < 3 ? '#fef9c3' : c.bg3, border: `2px solid ${i < 3 ? '#f59e0b' : c.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 900, color: '#d97706', flexShrink: 0 }}>
+                  <div style={{ width: 24, height: 24, borderRadius: '50%', background: i < 3 ? '#fef9c3' : c.bg3, border: `2px solid ${i < 3 ? '#f59e0b' : c.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 900, color: '#d97706', flexShrink: 0 }}>
                     {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : i + 1}
                   </div>
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 12, fontWeight: 700, color: c.text }}>{name}</div>
-                    <div style={{ fontSize: 11, color: c.text3 }}>{stats.qty} sold</div>
+                    <div style={{ fontSize: 16, fontWeight: 700, color: c.text }}>{name}</div>
+                    <div style={{ fontSize: 15, color: c.text3 }}>{stats.qty} sold</div>
                   </div>
                   <span style={{ fontWeight: 800, color: c.accent }}>{fmt(stats.rev, settings?.sym)}</span>
                 </div>
               ))}
             </Card>
             <Card t={t}>
-              <div style={{ fontSize: 14, fontWeight: 800, color: c.text, marginBottom: 16 }}>Product Summary</div>
+              <div style={{ fontSize: 18, fontWeight: 800, color: c.text, marginBottom: 16 }}>Product Summary</div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                 <StatCard t={t} title="Unique Products Sold" value={topProducts.length} color={t.blue} icon="📦" />
                 <StatCard t={t} title="Total Units Sold" value={topProducts.reduce((s, [, st]) => s + st.qty, 0)} color={t.green} icon="🔢" />
@@ -280,21 +284,21 @@ export const ReportsPage = ({ orders = [], users = [], products = [], t, setting
               const pct = totalRev > 0 ? Math.round(stats.rev / totalRev * 100) : 0
               return (
                 <Card t={t} key={counter}>
-                  <div style={{ fontSize: 14, fontWeight: 800, color: c.text, marginBottom: 12 }}>🏪 {counter}</div>
+                  <div style={{ fontSize: 18, fontWeight: 800, color: c.text, marginBottom: 12 }}>🏪 {counter}</div>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 12 }}>
                     <div style={{ background: c.bg3, borderRadius: 8, padding: '10px 12px', textAlign: 'center' }}>
-                      <div style={{ fontSize: 20, fontWeight: 900, color: c.accent }}>{fmt(stats.rev, settings?.sym)}</div>
-                      <div style={{ fontSize: 10, color: c.text3 }}>Revenue</div>
+                      <div style={{ fontSize: 24, fontWeight: 900, color: c.accent }}>{fmt(stats.rev, settings?.sym)}</div>
+                      <div style={{ fontSize: 14, color: c.text3 }}>Revenue</div>
                     </div>
                     <div style={{ background: c.bg3, borderRadius: 8, padding: '10px 12px', textAlign: 'center' }}>
-                      <div style={{ fontSize: 20, fontWeight: 900, color: c.blue }}>{stats.orders}</div>
-                      <div style={{ fontSize: 10, color: c.text3 }}>Orders</div>
+                      <div style={{ fontSize: 24, fontWeight: 900, color: c.blue }}>{stats.orders}</div>
+                      <div style={{ fontSize: 14, color: c.text3 }}>Orders</div>
                     </div>
                   </div>
                   <div style={{ height: 6, background: c.bg4, borderRadius: 3 }}>
                     <div style={{ height: '100%', width: `${pct}%`, background: c.accent, borderRadius: 3 }} />
                   </div>
-                  <div style={{ fontSize: 10, color: c.text4, marginTop: 4 }}>{pct}% of total revenue</div>
+                  <div style={{ fontSize: 14, color: c.text4, marginTop: 4 }}>{pct}% of total revenue</div>
                 </Card>
               )
             })}
@@ -304,22 +308,22 @@ export const ReportsPage = ({ orders = [], users = [], products = [], t, setting
         {activeReport === 'sales-operator' && (
           <>
             <Card t={t}>
-              <div style={{ fontSize: 14, fontWeight: 800, color: c.text, marginBottom: 16 }}>🏆 Operator Leaderboard</div>
+              <div style={{ fontSize: 18, fontWeight: 800, color: c.text, marginBottom: 16 }}>🏆 Operator Leaderboard</div>
               {sortedOperators.map(([name, stats], i) => (
                 <div key={name} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0', borderBottom: `1px solid ${c.border}` }}>
-                  <div style={{ width: 28, height: 28, borderRadius: '50%', background: i === 0 ? '#fef9c3' : i === 1 ? '#f1f5f9' : c.bg3, border: `2px solid ${i === 0 ? '#f59e0b' : i === 1 ? '#9ca3af' : c.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 900, color: i === 0 ? '#d97706' : c.text3 }}>
+                  <div style={{ width: 28, height: 28, borderRadius: '50%', background: i === 0 ? '#fef9c3' : i === 1 ? '#f1f5f9' : c.bg3, border: `2px solid ${i === 0 ? '#f59e0b' : i === 1 ? '#9ca3af' : c.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 17, fontWeight: 900, color: i === 0 ? '#d97706' : c.text3 }}>
                     {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : i + 1}
                   </div>
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: c.text }}>{name}</div>
-                    <div style={{ fontSize: 11, color: c.text3 }}>{stats.orders} orders</div>
+                    <div style={{ fontSize: 17, fontWeight: 700, color: c.text }}>{name}</div>
+                    <div style={{ fontSize: 15, color: c.text3 }}>{stats.orders} orders</div>
                   </div>
-                  <div style={{ fontSize: 15, fontWeight: 900, color: c.accent }}>{fmt(stats.rev, settings?.sym)}</div>
+                  <div style={{ fontSize: 19, fontWeight: 900, color: c.accent }}>{fmt(stats.rev, settings?.sym)}</div>
                 </div>
               ))}
             </Card>
             <Card t={t}>
-              <div style={{ fontSize: 14, fontWeight: 800, color: c.text, marginBottom: 16 }}>Operator Stats</div>
+              <div style={{ fontSize: 18, fontWeight: 800, color: c.text, marginBottom: 16 }}>Operator Stats</div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                 <StatCard t={t} title="Operators" value={sortedOperators.length} color={t.blue} icon="👤" />
                 <StatCard t={t} title="Avg Revenue" value={fmt(sortedOperators.length > 0 ? totalRev / sortedOperators.length : 0, settings?.sym)} color={t.green} icon="📊" />
@@ -331,19 +335,19 @@ export const ReportsPage = ({ orders = [], users = [], products = [], t, setting
         {activeReport === 'returns' && (
           <>
             <Card t={t}>
-              <div style={{ fontSize: 14, fontWeight: 800, color: c.text, marginBottom: 16 }}>↩️ Returns Summary</div>
+              <div style={{ fontSize: 18, fontWeight: 800, color: c.text, marginBottom: 16 }}>↩️ Returns Summary</div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                 <StatCard t={t} title="Refunded Orders" value={returnOrders.length} color={t.red} icon="↩️" />
                 <StatCard t={t} title="Refund Total" value={fmt(returnOrders.reduce((s, o) => s + o.total, 0), settings?.sym)} color={t.yellow} icon="💸" />
               </div>
-              {returnOrders.length === 0 && <div style={{ color: c.text3, fontSize: 13, padding: '20px 0', textAlign: 'center' }}>No returns in this period</div>}
+              {returnOrders.length === 0 && <div style={{ color: c.text3, fontSize: 17, padding: '20px 0', textAlign: 'center' }}>No returns in this period</div>}
             </Card>
             <Card t={t}>
-              <div style={{ fontSize: 14, fontWeight: 800, color: c.text, marginBottom: 16 }}>Return Rate</div>
-              <div style={{ fontSize: 36, fontWeight: 900, color: c.accent, textAlign: 'center', padding: '20px 0' }}>
+              <div style={{ fontSize: 18, fontWeight: 800, color: c.text, marginBottom: 16 }}>Return Rate</div>
+              <div style={{ fontSize: 40, fontWeight: 900, color: c.accent, textAlign: 'center', padding: '20px 0' }}>
                 {filtered.length > 0 ? (returnOrders.length / filtered.length * 100).toFixed(1) : 0}%
               </div>
-              <div style={{ fontSize: 12, color: c.text3, textAlign: 'center' }}>of all orders returned</div>
+              <div style={{ fontSize: 16, color: c.text3, textAlign: 'center' }}>of all orders returned</div>
             </Card>
           </>
         )}
@@ -351,7 +355,7 @@ export const ReportsPage = ({ orders = [], users = [], products = [], t, setting
         {activeReport === 'stock' && (
           <>
             <Card t={t}>
-              <div style={{ fontSize: 14, fontWeight: 800, color: c.text, marginBottom: 16 }}>📦 Stock Overview</div>
+              <div style={{ fontSize: 18, fontWeight: 800, color: c.text, marginBottom: 16 }}>📦 Stock Overview</div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                 <StatCard t={t} title="Total Products" value={(products || []).length} color={t.blue} icon="📦" />
                 <StatCard t={t} title="Total Units" value={(products || []).reduce((s, p) => s + (p.stock ?? 0), 0)} color={t.green} icon="🔢" />
@@ -360,14 +364,14 @@ export const ReportsPage = ({ orders = [], users = [], products = [], t, setting
               </div>
             </Card>
             <Card t={t}>
-              <div style={{ fontSize: 14, fontWeight: 800, color: c.text, marginBottom: 16 }}>⚠️ Critical Stock Items</div>
+              <div style={{ fontSize: 18, fontWeight: 800, color: c.text, marginBottom: 16 }}>⚠️ Critical Stock Items</div>
               {(products || []).filter(p => (p.stock ?? 0) < 15).sort((a, b) => (a.stock ?? 0) - (b.stock ?? 0)).slice(0, 10).map(p => (
                 <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '7px 0', borderBottom: `1px solid ${c.border}` }}>
-                  <span style={{ fontSize: 13, color: c.text }}>{p.emoji} {p.name}</span>
+                  <span style={{ fontSize: 17, color: c.text }}>{p.emoji} {p.name}</span>
                   <Badge t={t} text={`${p.stock ?? 0} units`} color={(p.stock ?? 0) === 0 ? 'red' : (p.stock ?? 0) < 5 ? 'red' : 'yellow'} />
                 </div>
               ))}
-              {(products || []).filter(p => (p.stock ?? 0) < 15).length === 0 && <div style={{ color: c.green, fontSize: 13 }}>✅ All stock levels healthy</div>}
+              {(products || []).filter(p => (p.stock ?? 0) < 15).length === 0 && <div style={{ color: c.green, fontSize: 17 }}>✅ All stock levels healthy</div>}
             </Card>
           </>
         )}
@@ -375,7 +379,7 @@ export const ReportsPage = ({ orders = [], users = [], products = [], t, setting
         {activeReport === 'cash-recon' && (
           <>
             <Card t={t}>
-              <div style={{ fontSize: 14, fontWeight: 800, color: c.text, marginBottom: 16 }}>💰 Cash Reconciliation</div>
+              <div style={{ fontSize: 18, fontWeight: 800, color: c.text, marginBottom: 16 }}>💰 Cash Reconciliation</div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                 <StatCard t={t} title="Cash Sales" value={fmt(cashSales, settings?.sym)} color={t.green} icon="💵" />
                 <StatCard t={t} title="Cash Received" value={fmt(cashReceived, settings?.sym)} color={t.blue} icon="📥" />
@@ -385,13 +389,13 @@ export const ReportsPage = ({ orders = [], users = [], products = [], t, setting
               </div>
             </Card>
             <Card t={t}>
-              <div style={{ fontSize: 14, fontWeight: 800, color: c.text, marginBottom: 16 }}>Cash Transaction Summary</div>
+              <div style={{ fontSize: 18, fontWeight: 800, color: c.text, marginBottom: 16 }}>Cash Transaction Summary</div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: `1px solid ${c.border}`, fontSize: 13 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: `1px solid ${c.border}`, fontSize: 17 }}>
                   <span style={{ color: c.text }}>Cash & Split Orders</span>
                   <span style={{ fontWeight: 800, color: c.text }}>{cashOrders.length}</span>
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: `1px solid ${c.border}`, fontSize: 13 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: `1px solid ${c.border}`, fontSize: 17 }}>
                   <span style={{ color: c.text }}>Expected in Drawer</span>
                   <span style={{ fontWeight: 800, color: c.accent }}>{fmt(cashReceived - cashChangeGiven - cashRefunds, settings?.sym)}</span>
                 </div>
@@ -403,14 +407,14 @@ export const ReportsPage = ({ orders = [], users = [], products = [], t, setting
         {activeReport === 'discounts' && (
           <>
             <Card t={t}>
-              <div style={{ fontSize: 14, fontWeight: 800, color: c.text, marginBottom: 16 }}>🏷️ Discount/Coupon Usage</div>
+              <div style={{ fontSize: 18, fontWeight: 800, color: c.text, marginBottom: 16 }}>🏷️ Discount/Coupon Usage</div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                 <StatCard t={t} title="Discounted Orders" value={discountOrders.length} color={t.yellow} icon="🏷️" />
                 <StatCard t={t} title="Total Discounts" value={fmt(discountOrders.reduce((s, o) => s + (o.discountAmt || 0) + (o.couponDiscount || 0), 0), settings?.sym)} color={t.accent} icon="💸" />
               </div>
             </Card>
             <Card t={t}>
-              <div style={{ fontSize: 14, fontWeight: 800, color: c.text, marginBottom: 16 }}>Coupon Breakdown</div>
+              <div style={{ fontSize: 18, fontWeight: 800, color: c.text, marginBottom: 16 }}>Coupon Breakdown</div>
               {(() => {
                 const couponUse = {}
                 discountOrders.forEach(o => {
@@ -421,12 +425,12 @@ export const ReportsPage = ({ orders = [], users = [], products = [], t, setting
                   }
                 })
                 const entries = Object.entries(couponUse)
-                if (entries.length === 0) return <div style={{ color: c.text3, fontSize: 13, textAlign: 'center', padding: 20 }}>No coupon usage in this period</div>
+                if (entries.length === 0) return <div style={{ color: c.text3, fontSize: 17, textAlign: 'center', padding: 20 }}>No coupon usage in this period</div>
                 return entries.map(([code, s]) => (
-                  <div key={code} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: `1px solid ${c.border}`, fontSize: 13 }}>
+                  <div key={code} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: `1px solid ${c.border}`, fontSize: 17 }}>
                     <div>
                       <span style={{ fontWeight: 800, fontFamily: 'monospace', color: c.text }}>{code}</span>
-                      <span style={{ fontSize: 11, color: c.text3, marginLeft: 8 }}>Used {s.count}×</span>
+                      <span style={{ fontSize: 15, color: c.text3, marginLeft: 8 }}>Used {s.count}×</span>
                     </div>
                     <span style={{ fontWeight: 800, color: c.accent }}>{fmt(s.savings, settings?.sym)} saved</span>
                   </div>

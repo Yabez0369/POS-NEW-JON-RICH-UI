@@ -30,8 +30,12 @@ export const CashierManagement = ({ users, setUsers, counters, orders, addAudit,
   const toggle = (c2) => { setUsers(us => us.map(u => u.id === c2.id ? { ...u, active: !u.active } : u)); notify(c2.name + ' ' + (c2.active ? 'deactivated' : 'activated'), 'info') }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-      <div style={{ fontSize: 22, fontWeight: 900, color: t.text }}>Cashier Management</div>
+    <div style={{ 
+      background: 'linear-gradient(180deg, #C4E8E7 0%, #FFFFFF 100%)',
+      minHeight: '100%', padding: '32px', borderRadius: 24,
+      display: 'flex', flexDirection: 'column', gap: 20, boxSizing: 'border-box' 
+    }}>
+      <div style={{ fontSize: 24, fontWeight: 950, color: '#1E293B' }}>Cashier Management</div>
 
       <div style={{ display: 'flex', gap: 12, justifyContent: 'space-between', flexWrap: 'wrap', alignItems: 'center' }}>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(min(150px,45vw),1fr))', gap: 12, flex: 1 }}>

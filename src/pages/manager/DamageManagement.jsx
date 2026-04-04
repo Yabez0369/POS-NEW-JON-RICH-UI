@@ -2,7 +2,7 @@ import { useState, useCallback, useMemo, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTheme } from '@/context/ThemeContext'
 import { useAuth } from '@/context/AuthContext'
-import { Btn, Input, Badge, Card, Modal, Table, Select } from '@/components/ui'
+import { Btn, Input, Badge, Card, StatCard, Modal, Table, Select } from '@/components/ui'
 import { notify } from '@/components/shared'
 import { ts } from '@/lib/utils'
 import { damageLostService, productsService, sitesService, inventoryService } from '@/services'
@@ -149,15 +149,15 @@ export default function DamageManagement() {
       {entry.products?.image_url || entry.products?.image ? (
         <img src={entry.products?.image_url || entry.products?.image} alt="" style={{ width: 32, height: 32, borderRadius: 6, objectFit: 'cover' }} />
       ) : (
-        <div style={{ width: 32, height: 32, borderRadius: 6, background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16 }}>📦</div>
+        <div style={{ width: 32, height: 32, borderRadius: 6, background: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16 }}>📦</div>
       )}
-      <span style={{ fontWeight: 600, color: t.text }}>{entry.products?.name || 'Unknown'}</span>
+      <span style={{ fontWeight: 700, color: '#1E293B' }}>{entry.products?.name || 'Unknown'}</span>
     </div>,
-    <span key={entry.id} style={{ color: t.text2, fontWeight: 500 }}>{entry.quantity.toString()}</span>,
-    <Badge key={entry.id} text={entry.type} color={entry.type === 'Damage' ? t.red : '#f97316'} t={t} />,
-    <span key={entry.id} style={{ color: t.text4, fontSize: 12 }}>{new Date(entry.created_at).toLocaleDateString()}</span>,
-    <span key={entry.id} style={{ color: t.text3 }}>{entry.sites?.name || 'Unknown Store'}</span>,
-    <div key={entry.id} style={{ color: t.text4, fontSize: 12 }}>{entry.reason}</div>,
+    <span key={entry.id} style={{ color: '#1E293B', fontWeight: 600 }}>{entry.quantity.toString()}</span>,
+    <Badge key={entry.id} text={entry.type} color={entry.type === 'Damage' ? '#EF4444' : '#F59E0B'} t={t} />,
+    <span key={entry.id} style={{ color: '#64748B', fontSize: 12 }}>{new Date(entry.created_at).toLocaleDateString()}</span>,
+    <span key={entry.id} style={{ color: '#64748B' }}>{entry.sites?.name || 'Unknown Store'}</span>,
+    <div key={entry.id} style={{ color: '#64748B', fontSize: 12 }}>{entry.reason}</div>,
     <div key={entry.id} style={{ display: 'flex', gap: 8 }}>
       <button onClick={() => handleEdit(entry)} style={{
         background: t.bg3, border: `1px solid ${t.border}`, color: t.text3, cursor: 'pointer',
@@ -171,27 +171,19 @@ export default function DamageManagement() {
   ])
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 20, padding: 'clamp(16px, 4vw, 28px)', maxWidth: 1400, margin: '0 auto', width: '100%', boxSizing: 'border-box' }}>
-      <InventoryHeader title="🔴 Damaged/Lost" t={t} activePage="damage" />
+    <div style={{ 
+      background: 'linear-gradient(180deg, #C4E8E7 0%, #FFFFFF 100%)',
+      minHeight: '100%', padding: '32px', borderRadius: 24,
+      display: 'flex', flexDirection: 'column', gap: 20, maxWidth: 1400, margin: '0 auto', width: '100%', boxSizing: 'border-box' 
+    }}>
+      <InventoryHeader title="Damaged/Lost" t={t} activePage="damage" />
 
       {/* Stats Cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16, marginBottom: 28 }}>
-        <Card t={t} style={{ padding: 16 }}>
-          <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', fontWeight: 800, letterSpacing: 0.7, marginBottom: 8 }}>Total Entries</div>
-          <div style={{ fontSize: 28, fontWeight: 900, color: '#fff' }}>{damageEntries.length}</div>
-        </Card>
-        <Card t={t} style={{ padding: 16 }}>
-          <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', fontWeight: 800, letterSpacing: 0.7, marginBottom: 8 }}>Damaged Items</div>
-          <div style={{ fontSize: 28, fontWeight: 900, color: '#ef4444' }}>{damageEntries.filter(e => e.type === 'Damage').length}</div>
-        </Card>
-        <Card t={t} style={{ padding: 16 }}>
-          <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', fontWeight: 800, letterSpacing: 0.7, marginBottom: 8 }}>Lost Items</div>
-          <div style={{ fontSize: 28, fontWeight: 900, color: '#f97316' }}>{damageEntries.filter(e => e.type === 'Lost').length}</div>
-        </Card>
-        <Card t={t} style={{ padding: 16 }}>
-          <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', fontWeight: 800, letterSpacing: 0.7, marginBottom: 8 }}>Total Units</div>
-          <div style={{ fontSize: 28, fontWeight: 900, color: '#fff' }}>{damageEntries.reduce((sum, e) => sum + e.quantity, 0)}</div>
-        </Card>
+        <StatCard t={t} title="Total Entries" value={damageEntries.length} icon="📋" />
+        <StatCard t={t} title="Damaged Items" value={damageEntries.filter(e => e.type === 'Damage').length} color="#ef4444" icon="🔴" />
+        <StatCard t={t} title="Lost Items" value={damageEntries.filter(e => e.type === 'Lost').length} color="#f97316" icon="🟠" />
+        <StatCard t={t} title="Total Units" value={damageEntries.reduce((sum, e) => sum + e.quantity, 0)} icon="📦" />
       </div>
 
       {/* Controls */}

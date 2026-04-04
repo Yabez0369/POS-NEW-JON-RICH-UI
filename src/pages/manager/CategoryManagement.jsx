@@ -16,7 +16,7 @@ function ChipInput({ t, label, values = [], onChange, presets = [], placeholder 
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-      <label style={{ fontSize: 11, fontWeight: 800, color: t.text3, textTransform: 'uppercase', letterSpacing: 0.7 }}>{label}</label>
+      <label style={{ fontSize: 15, fontWeight: 800, color: t.text3, textTransform: 'uppercase', letterSpacing: 0.7 }}>{label}</label>
       {presets.length > 0 && (
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
           {presets.map(p => {
@@ -25,7 +25,7 @@ function ChipInput({ t, label, values = [], onChange, presets = [], placeholder 
               <button key={p} type="button"
                 onClick={() => sel ? remove(p) : onChange([...values, p])}
                 style={{
-                  padding: '4px 10px', borderRadius: 20, fontSize: 10, fontWeight: 700, cursor: 'pointer',
+                  padding: '4px 10px', borderRadius: 20, fontSize: 14, fontWeight: 700, cursor: 'pointer',
                   border: `1px solid ${sel ? t.accent : t.border}`,
                   background: sel ? t.accent + '20' : 'transparent',
                   color: sel ? t.accent : t.text3,
@@ -44,11 +44,11 @@ function ChipInput({ t, label, values = [], onChange, presets = [], placeholder 
           placeholder={placeholder || `Type & press Enter…`}
           style={{
             flex: 1, background: t.input, border: `1px solid ${t.border}`,
-            borderRadius: 8, padding: '8px 12px', color: t.text, fontSize: 13, outline: 'none'
+            borderRadius: 8, padding: '8px 12px', color: t.text, fontSize: 17, outline: 'none'
           }}
         />
         <button type="button" onClick={() => add(draft)}
-          style={{ background: t.accent, color: '#fff', border: 'none', borderRadius: 8, padding: '0 14px', cursor: 'pointer', fontSize: 13, fontWeight: 700 }}>
+          style={{ background: t.accent, color: '#fff', border: 'none', borderRadius: 8, padding: '0 14px', cursor: 'pointer', fontSize: 17, fontWeight: 700 }}>
           +
         </button>
       </div>
@@ -58,11 +58,11 @@ function ChipInput({ t, label, values = [], onChange, presets = [], placeholder 
             <div key={v} style={{
               display: 'flex', alignItems: 'center', gap: 5,
               background: t.bg3, border: `1px solid ${t.border}`,
-              borderRadius: 16, padding: '3px 10px', fontSize: 11, color: t.text
+              borderRadius: 16, padding: '3px 10px', fontSize: 15, color: t.text
             }}>
               {v}
               <button type="button" onClick={() => remove(v)}
-                style={{ background: 'none', border: 'none', color: t.red, cursor: 'pointer', fontSize: 13, padding: 0, lineHeight: 1 }}>
+                style={{ background: 'none', border: 'none', color: t.red, cursor: 'pointer', fontSize: 17, padding: 0, lineHeight: 1 }}>
                 ×
               </button>
             </div>
@@ -92,11 +92,11 @@ function buildCombinedTree(cats, subs) {
 
 const iStyle = (t) => ({
   width: '100%', boxSizing: 'border-box', background: t.input, border: `1px solid ${t.border}`,
-  borderRadius: 9, padding: '10px 14px', color: t.text, fontSize: 13, outline: 'none', fontFamily: 'inherit'
+  borderRadius: 9, padding: '10px 14px', color: t.text, fontSize: 17, outline: 'none', fontFamily: 'inherit'
 })
 
 const fieldLabel = (txt, t) => (
-  <label style={{ fontSize: 11, fontWeight: 800, color: t.text3, textTransform: 'uppercase', letterSpacing: 0.7, display: 'block', marginBottom: 5 }}>{txt}</label>
+  <label style={{ fontSize: 15, fontWeight: 800, color: t.text3, textTransform: 'uppercase', letterSpacing: 0.7, display: 'block', marginBottom: 5 }}>{txt}</label>
 )
 
 const CategoryForm = ({ f, onChange, isEdit = false, target = null, t, allCats, attributes, setAllAttrs, submitting, handleSave, setShowAdd, setEditTarget }) => {
@@ -159,7 +159,7 @@ const CategoryForm = ({ f, onChange, isEdit = false, target = null, t, allCats, 
                     notify('Restored!', 'success')
                   } catch (e) { notify('Undo failed: ' + e.message, 'error') }
                 }}
-                style={{ fontSize: 11, background: `${t.accent}20`, color: t.accent, border: `1px solid ${t.accent}40`, borderRadius: 12, padding: '2px 10px', cursor: 'pointer', fontWeight: 700 }}
+                style={{ fontSize: 15, background: `${t.accent}20`, color: t.accent, border: `1px solid ${t.accent}40`, borderRadius: 12, padding: '2px 10px', cursor: 'pointer', fontWeight: 700 }}
               >
                 ↩️ Undo Delete "{deletedAttr.name}"
               </button>
@@ -168,7 +168,7 @@ const CategoryForm = ({ f, onChange, isEdit = false, target = null, t, allCats, 
               type="button"
               onClick={() => setIsDeleting(!isDeleting)}
               style={{
-                fontSize: 11, background: isDeleting ? t.red : `${t.text3}20`, color: isDeleting ? '#fff' : t.text3,
+                fontSize: 15, background: isDeleting ? t.red : `${t.text3}20`, color: isDeleting ? '#fff' : t.text3,
                 border: 'none', borderRadius: 12, padding: '2px 10px', cursor: 'pointer', fontWeight: 700,
                 transition: 'all 0.2s'
               }}
@@ -199,7 +199,7 @@ const CategoryForm = ({ f, onChange, isEdit = false, target = null, t, allCats, 
                         } catch (e) { notify('Error deleting: ' + e.message, 'error') }
                       }
                     }}
-                    style={{ background: t.red + '20', color: t.red, border: 'none', borderRadius: 4, width: 22, height: 22, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12 }}
+                    style={{ background: t.red + '20', color: t.red, border: 'none', borderRadius: 4, width: 22, height: 22, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16 }}
                   >
                     ×
                   </button>
@@ -209,7 +209,7 @@ const CategoryForm = ({ f, onChange, isEdit = false, target = null, t, allCats, 
                 <span
                   onClick={() => !isDeleting && toggleAttr(attrName)}
                   style={{
-                    fontSize: 13, cursor: isDeleting ? 'default' : 'pointer', color: isPredefined ? t.text : t.accent,
+                    fontSize: 17, cursor: isDeleting ? 'default' : 'pointer', color: isPredefined ? t.text : t.accent,
                     maxWidth: 90, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'
                   }}>
                   {attrName}
@@ -415,26 +415,22 @@ export const CategoryManagement = ({ t: globalT, addAudit, currentUser }) => {
   }
 
   return (
-    <div style={{
-      display: 'flex',
-      flexDirection: 'column',
-      gap: 24,
-      padding: '24px 32px',
-      minHeight: '100%',
-      background: `radial-gradient(circle at top right, ${t.accent}15 0%, ${t.bg} 100%)`,
-      position: 'relative'
+    <div style={{ 
+      background: 'linear-gradient(180deg, #C4E8E7 0%, #FFFFFF 100%)',
+      minHeight: '100%', padding: '32px', borderRadius: 24,
+      display: 'flex', flexDirection: 'column', gap: 24, position: 'relative' 
     }}>
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 8 }}>
         <div>
           <div style={{
-            fontSize: 28,
+            fontSize: 32,
             fontWeight: 950,
             color: t.text,
             letterSpacing: '-0.5px',
             textShadow: '0 2px 10px rgba(0,0,0,0.2)'
           }}>🗂️ Category Management</div>
-          <div style={{ fontSize: 14, color: t.text2, marginTop: 4, opacity: 0.8 }}>View and manage product categories and their specific attributes</div>
+          <div style={{ fontSize: 18, color: t.text2, marginTop: 4, opacity: 0.8 }}>View and manage product categories and their specific attributes</div>
         </div>
       </div>
 
@@ -456,7 +452,7 @@ export const CategoryManagement = ({ t: globalT, addAudit, currentUser }) => {
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <div style={{ width: 4, height: 18, background: t.accent, borderRadius: 2 }} />
-            <div style={{ fontSize: 15, fontWeight: 850, color: t.text, letterSpacing: 0.3 }}>📋 Existing Categories</div>
+            <div style={{ fontSize: 19, fontWeight: 850, color: t.text, letterSpacing: 0.3 }}>📋 Existing Categories</div>
           </div>
           <Btn t={t} size="sm" onClick={() => setShowAdd(true)} style={{
             boxShadow: `0 4px 12px ${t.accent}30`,
@@ -467,23 +463,22 @@ export const CategoryManagement = ({ t: globalT, addAudit, currentUser }) => {
         {loading ? (
           <div style={{ textAlign: 'center', color: t.text2, padding: 60, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
             <div style={{ width: 30, height: 30, border: `3px solid ${t.border}`, borderTopColor: t.accent, borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
-            <div style={{ fontSize: 14, fontWeight: 600 }}>Loading categories…</div>
+            <div style={{ fontSize: 18, fontWeight: 600 }}>Loading categories…</div>
           </div>
         ) : allCats.length === 0 && allSubs.length === 0 ? (
           <div style={{ textAlign: 'center', color: t.text3, padding: 60 }}>
-            <div style={{ fontSize: 40, marginBottom: 12, opacity: 0.5 }}>📂</div>
-            <div style={{ fontSize: 14, fontWeight: 600 }}>No categories found</div>
+            <div style={{ fontSize: 44, marginBottom: 12, opacity: 0.5 }}>📂</div>
+            <div style={{ fontSize: 18, fontWeight: 600 }}>No categories found</div>
           </div>
         ) : (
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: 0 }}>
               <thead>
                 <tr style={{ background: `${t.bg3}80`, backdropFilter: 'blur(4px)' }}>
-                  <th style={{ padding: '16px 24px', textAlign: 'left', fontSize: 11, fontWeight: 950, color: t.text2, textTransform: 'uppercase', letterSpacing: '1px', borderBottom: `1px solid ${t.border}` }}>Categories</th>
-                  <th style={{ padding: '16px 24px', textAlign: 'left', fontSize: 11, fontWeight: 950, color: t.text2, textTransform: 'uppercase', letterSpacing: '1px', borderBottom: `1px solid ${t.border}` }}>Sub category</th>
-                  <th style={{ padding: '16px 24px', textAlign: 'left', fontSize: 11, fontWeight: 950, color: t.text2, textTransform: 'uppercase', letterSpacing: '1px', borderBottom: `1px solid ${t.border}` }}>Attributes</th>
-                  <th style={{ padding: '16px 24px', textAlign: 'center', fontSize: 11, fontWeight: 950, color: t.text2, textTransform: 'uppercase', letterSpacing: '1px', borderBottom: `1px solid ${t.border}` }}>Status</th>
-                  <th style={{ padding: '16px 24px', textAlign: 'right', fontSize: 11, fontWeight: 950, color: t.text2, textTransform: 'uppercase', letterSpacing: '1px', borderBottom: `1px solid ${t.border}` }}>Actions</th>
+                  <th style={{ padding: '16px 24px', textAlign: 'left', fontSize: 15, fontWeight: 950, color: t.text2, textTransform: 'uppercase', letterSpacing: '1px', borderBottom: `1px solid ${t.border}` }}>Categories</th>
+                  <th style={{ padding: '16px 24px', textAlign: 'left', fontSize: 15, fontWeight: 950, color: t.text2, textTransform: 'uppercase', letterSpacing: '1px', borderBottom: `1px solid ${t.border}` }}>Sub category</th>
+                  <th style={{ padding: '16px 24px', textAlign: 'left', fontSize: 15, fontWeight: 950, color: t.text2, textTransform: 'uppercase', letterSpacing: '1px', borderBottom: `1px solid ${t.border}` }}>Attributes</th>
+                  <th style={{ padding: '16px 24px', textAlign: 'right', fontSize: 15, fontWeight: 950, color: t.text2, textTransform: 'uppercase', letterSpacing: '1px', borderBottom: `1px solid ${t.border}` }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -506,7 +501,7 @@ export const CategoryManagement = ({ t: globalT, addAudit, currentUser }) => {
                     border: 'none',
                     padding: '8px 4px',
                     color: t.text,
-                    fontSize: 13,
+                    fontSize: 17,
                     outline: 'none',
                     fontFamily: 'inherit',
                     transition: 'all 0.2s'
@@ -528,10 +523,10 @@ export const CategoryManagement = ({ t: globalT, addAudit, currentUser }) => {
                       onMouseLeave={(e) => e.currentTarget.style.background = idx % 2 === 0 ? 'transparent' : `${t.bg3}20`}
                     >
                       <td style={{ padding: '12px 24px', width: '150px' }}>
-                        <div style={{ fontWeight: 800, color: t.text, fontSize: 14 }}>{row.catName}</div>
+                        <div style={{ fontWeight: 800, color: t.text, fontSize: 18 }}>{row.catName}</div>
                       </td>
                       <td style={{ padding: '12px 24px', width: '150px' }}>
-                        <div style={{ color: row.subName === '—' ? t.text3 : t.text, fontSize: 13, fontWeight: 500 }}>
+                        <div style={{ color: row.subName === '—' ? t.text3 : t.text, fontSize: 17, fontWeight: 500 }}>
                           {row.subName}
                         </div>
                       </td>
@@ -540,7 +535,7 @@ export const CategoryManagement = ({ t: globalT, addAudit, currentUser }) => {
                           padding: '6px 12px',
                           background: `${t.bg3}60`,
                           borderRadius: 8,
-                          fontSize: 12,
+                          fontSize: 16,
                           color: t.text2,
                           border: `1px solid ${t.border}40`,
                           display: 'inline-block',
@@ -631,7 +626,7 @@ export const CategoryManagement = ({ t: globalT, addAudit, currentUser }) => {
       {/* Delete Modal */}
       {deleteTarget && (
         <Modal t={t} title="Confirm Delete" onClose={() => setDeleteTarget(null)}>
-          <div style={{ fontSize: 14, color: t.text, marginBottom: 16 }}>Delete <strong>{deleteTarget.name}</strong>? {!deleteTarget.category_id && "This will delete all subcategories too."}</div>
+          <div style={{ fontSize: 18, color: t.text, marginBottom: 16 }}>Delete <strong>{deleteTarget.name}</strong>? {!deleteTarget.category_id && "This will delete all subcategories too."}</div>
           <div style={{ display: 'flex', gap: 10 }}>
             <Btn t={t} variant="ghost" onClick={() => setDeleteTarget(null)} style={{ flex: 1 }}>Cancel</Btn>
             <Btn t={t} variant="danger" onClick={confirmDelete} style={{ flex: 1 }}>Delete</Btn>
