@@ -69,7 +69,7 @@ export function ManagerSidebar() {
     }}>
       <div style={{ padding: '24px', borderBottom: '1px solid rgba(0,0,0,0.05)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div style={{ width: 36, height: 36, borderRadius: 10, background: 'linear-gradient(135deg, #22D3EE, #14B8A6)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' }}>
+          <div style={{ width: 40, height: 40, borderRadius: 12, background: 'linear-gradient(135deg, #22D3EE, #14B8A6)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: 18 }}>
             M
           </div>
           <div className="sidebar-label">
@@ -79,10 +79,10 @@ export function ManagerSidebar() {
         </div>
       </div>
 
-      <div style={{ flex: 1, overflowY: 'auto', padding: '20px 14px' }}>
+      <div style={{ flex: 1, overflowY: 'auto', padding: '20px 16px' }}>
         {managerNav.map((item, i) => {
           if (item.type === 'group') {
-            return <div key={i} className="sidebar-label" style={{ fontSize: 11, fontWeight: 600, color: '#64748B', letterSpacing: 0.5, textTransform: 'uppercase', marginTop: i === 0 ? 0 : 24, marginBottom: 8, paddingLeft: 10 }}>{item.l}</div>
+            return <div key={i} className="sidebar-label" style={{ fontSize: 11, fontWeight: 600, color: '#64748B', letterSpacing: 0.5, textTransform: 'uppercase', marginTop: i === 0 ? 0 : 24, marginBottom: 8, paddingLeft: 12 }}>{item.l}</div>
           }
           const active = isActive(item.key)
           const isHovered = hovered === item.key
@@ -114,10 +114,10 @@ export function ManagerSidebar() {
       <div style={{ padding: '20px', borderTop: '1px solid rgba(0,0,0,0.05)' }}>
         <button onClick={logout} style={{
           display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '12px 14px',
-          background: 'transparent', border: 'none', color: '#F87171', fontSize: 13, fontWeight: 600,
+          background: 'transparent', border: 'none', color: '#F87171', fontSize: 14, fontWeight: 600,
           cursor: 'pointer', marginTop: 16, borderRadius: 12, transition: 'all 0.2s',
         }} onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(248, 113, 113, 0.1)' }} onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
           <span className="sidebar-label">Sign Out</span>
         </button>
       </div>

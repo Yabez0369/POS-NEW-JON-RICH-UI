@@ -5,18 +5,19 @@ import { useAppStore } from '@/stores/appStore'
 
 const navByRole = {
   admin: [
-    { type: 'group', l: 'Overview' },
+    { type: 'group', l: 'Management' },
     { key: 'dashboard', l: 'Dashboard', i: '📊' },
-    { key: 'analytics', l: 'Analytics', i: '📈' },
-    { type: 'group', l: 'Commerce' },
-    { key: 'customers', l: 'Customers', i: '👥' },
-    { key: 'zreport', l: 'Z-Report', i: '📑' },
-    { key: 'coupons', l: 'Coupons', i: '🎟️' },
-    { type: 'group', l: 'System' },
-    { key: 'venues', l: 'Venues & Sites', i: '🏟️' },
+    { key: 'sales', l: 'Sales Hub', i: '💰' },
+    { key: 'inventory', l: 'Inventory', i: '📦' },
+    { key: 'users', l: 'User RBAC', i: '👥' },
+    { key: 'customers', l: 'Customers', i: '🧑‍🤝‍🧑' },
+    { key: 'reports', l: 'Reports', i: '📈' },
+    { type: 'group', l: 'Marketing' },
     { key: 'banners', l: 'Banners', i: '🖼️' },
-    { key: 'users', l: 'User Access', i: '🔑' },
-    { key: 'audit', l: 'Audit Logs', i: '📋' },
+    { key: 'coupons', l: 'Coupon Codes', i: '🎟️' },
+    { type: 'group', l: 'System' },
+    { key: 'audit', l: 'Audit Logs', i: '🛡️' },
+    { key: 'venues', l: 'Venues', i: '🏟️' },
     { key: 'settings', l: 'Settings', i: '⚙️' },
   ],
   manager: [
@@ -110,18 +111,18 @@ export function Sidebar() {
         boxShadow: theme.shadowMd,
       }}
     >
-      <div style={{ padding: '18px 16px 14px', borderBottom: `1px solid ${theme.border}` }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+      <div style={{ padding: '24px 16px 16px', borderBottom: `1px solid ${theme.border}` }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <div
             style={{
-              width: 38,
-              height: 38,
+              width: 40,
+              height: 40,
               background: `linear-gradient(135deg,${theme.accent},${theme.accent2})`,
               borderRadius: 12,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              fontSize: 16,
+              fontSize: 18,
               fontWeight: 900,
               color: '#fff',
               flexShrink: 0,
@@ -130,24 +131,24 @@ export function Sidebar() {
             S
           </div>
           <div className="sidebar-label">
-            <div style={{ fontSize: 13, fontWeight: 900, color: theme.text, letterSpacing: -0.3 }}>SCSTix</div>
-            <div style={{ fontSize: 10, color: theme.text4, fontWeight: 600 }}>EPOS v1.0</div>
+            <div style={{ fontSize: 16, fontWeight: 900, color: theme.text, letterSpacing: -0.3 }}>SCSTix</div>
+            <div style={{ fontSize: 11, color: theme.text4, fontWeight: 700 }}>EPOS v1.0</div>
           </div>
         </div>
       </div>
-      <div style={{ padding: '12px 14px', borderBottom: `1px solid ${theme.border}` }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+      <div style={{ padding: '16px 16px', borderBottom: `1px solid ${theme.border}` }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <div
             style={{
-              width: 38,
-              height: 38,
+              width: 40,
+              height: 40,
               background: col + '20',
               border: `2px solid ${col}50`,
               borderRadius: '50%',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              fontSize: 12,
+              fontSize: 14,
               fontWeight: 900,
               color: col,
               flexShrink: 0,
@@ -158,7 +159,7 @@ export function Sidebar() {
           <div className="sidebar-label" style={{ flex: 1, minWidth: 0 }}>
             <div
               style={{
-                fontSize: 12,
+                fontSize: 14,
                 fontWeight: 800,
                 color: theme.text,
                 overflow: 'hidden',
@@ -168,7 +169,7 @@ export function Sidebar() {
             >
               {currentUser.name}
             </div>
-            <div style={{ fontSize: 10, color: col, textTransform: 'capitalize', fontWeight: 700 }}>
+            <div style={{ fontSize: 11, color: col, textTransform: 'capitalize', fontWeight: 700 }}>
               {currentUser.role}
             </div>
           </div>
@@ -224,19 +225,19 @@ export function Sidebar() {
           </div>
         )}
       </div>
-      <nav style={{ flex: 1, padding: '8px 8px', overflowY: 'auto' }}>
+      <nav style={{ flex: 1, padding: '12px 12px', overflowY: 'auto' }}>
         {nav.map((item, idx) => {
           if (item.type === 'group') {
             return (
               <div
                 key={`grp-${idx}`}
                 style={{
-                  fontSize: 10,
+                  fontSize: 11,
                   fontWeight: 800,
                   color: theme.text4,
                   textTransform: 'uppercase',
                   letterSpacing: '0.05em',
-                  padding: '16px 12px 6px',
+                  padding: '20px 16px 8px',
                   marginTop: idx === 0 ? 0 : 4,
                 }}
               >
@@ -253,49 +254,50 @@ export function Sidebar() {
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: 8,
+                gap: 12,
                 width: '100%',
-                padding: '8px 10px',
-                borderRadius: 9,
+                padding: '10px 12px',
+                borderRadius: 12,
                 border: active ? `1px solid ${col}35` : '1px solid transparent',
-                background: active ? col + '15' : 'transparent',
+                background: active ? col + '12' : 'transparent',
                 color: active ? col : theme.text3,
                 cursor: 'pointer',
-                marginBottom: 2,
+                marginBottom: 4,
                 textAlign: 'left',
                 fontWeight: active ? 800 : 500,
-                fontSize: 12,
-                transition: 'all 0.12s',
+                fontSize: 14,
+                transition: 'all 0.15s cubic-bezier(0.4, 0, 0.2, 1)',
                 fontFamily: 'inherit',
               }}
             >
-              <span style={{ fontSize: 14, minWidth: 20, textAlign: 'center' }}>{item.i}</span>
+              <span style={{ fontSize: 16, minWidth: 24, textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{item.i}</span>
               <span className="sidebar-label">{item.l}</span>
             </button>
           )
         })}
       </nav>
-      <div style={{ padding: '8px 8px', borderTop: `1px solid ${theme.border}` }}>
+      <div style={{ padding: '12px 12px', borderTop: `1px solid ${theme.border}`, background: theme.bg2 }}>
         <button
           onClick={() => handleNav({ key: 'profile' })}
           style={{
             display: 'flex',
             alignItems: 'center',
-            gap: 8,
+            gap: 12,
             width: '100%',
-            padding: '8px 10px',
-            borderRadius: 9,
+            padding: '10px 12px',
+            borderRadius: 12,
             border: 'none',
             background: 'transparent',
             color: theme.text3,
             cursor: 'pointer',
-            fontSize: 12,
+            fontSize: 14,
             fontWeight: 500,
             fontFamily: 'inherit',
             marginBottom: 4,
+            transition: 'all 0.15s',
           }}
         >
-          <span style={{ fontSize: 14, minWidth: 20, textAlign: 'center' }}>👤</span>
+          <span style={{ fontSize: 16, minWidth: 24, textAlign: 'center' }}>👤</span>
           <span className="sidebar-label">My Profile</span>
         </button>
         <button
@@ -303,20 +305,21 @@ export function Sidebar() {
           style={{
             display: 'flex',
             alignItems: 'center',
-            gap: 8,
+            gap: 12,
             width: '100%',
-            padding: '8px 10px',
-            borderRadius: 9,
+            padding: '10px 12px',
+            borderRadius: 12,
             border: 'none',
             background: 'transparent',
             color: theme.red,
             cursor: 'pointer',
-            fontSize: 12,
+            fontSize: 14,
             fontWeight: 700,
             fontFamily: 'inherit',
+            transition: 'all 0.15s',
           }}
         >
-          <span style={{ fontSize: 14, minWidth: 20, textAlign: 'center' }}>🚪</span>
+          <span style={{ fontSize: 16, minWidth: 24, textAlign: 'center' }}>🚪</span>
           <span className="sidebar-label">Sign Out</span>
         </button>
       </div>

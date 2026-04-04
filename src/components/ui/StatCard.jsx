@@ -81,7 +81,11 @@ export const StatCard = ({ title, value, sub, color, icon, t, trend, centered, s
       </div>
       <div style={{ fontSize: 24, fontWeight: 900, color: color || theme.accent, letterSpacing: -0.5, marginBottom: 4 }}>{value}</div>
       {sub && <div style={{ fontSize: 12, color: theme.text4 }}>{sub}</div>}
-      {trend && <div style={{ fontSize: 12, color: trend > 0 ? theme.green : theme.red, marginTop: 4, fontWeight: 700 }}>{trend > 0 ? "↑" : "↓"} {Math.abs(trend)}% vs last week</div>}
+      {trend !== undefined && (
+        <div style={{ fontSize: 12, color: typeof trend === 'number' ? (trend > 0 ? theme.green : theme.red) : theme.yellow, marginTop: 4, fontWeight: 700 }}>
+          {typeof trend === 'number' ? `${trend > 0 ? "↑" : "↓"} ${Math.abs(trend)}% vs last week` : trend}
+        </div>
+      )}
     </Card>
   )
 }
