@@ -254,6 +254,9 @@ const CategoryForm = ({ f, onChange, isEdit = false, target = null, t, allCats, 
   )
 }
 
+const CheckIcon = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+const ClockIcon = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+
 export const CategoryManagement = ({ t: globalT, addAudit, currentUser }) => {
   const blueT = {
     ...globalT,
@@ -331,10 +334,13 @@ export const CategoryManagement = ({ t: globalT, addAudit, currentUser }) => {
       } else {
         // Add mode
         let parent = allCats.find(c => c.name.toLowerCase() === f.category.trim().toLowerCase())
+        const targetStatus = currentUser?.role === 'admin' ? 'approved' : 'pending'
+
         if (!parent) {
           parent = await createCategory({
             name: f.category.trim(),
             attribute_config: f.attribute_config,
+            status: targetStatus
           })
           setAllCats(prev => [...prev, parent])
         }
@@ -344,6 +350,7 @@ export const CategoryManagement = ({ t: globalT, addAudit, currentUser }) => {
             name: f.subcategory.trim(),
             category_id: parent.id,
             attribute_config: f.attribute_config,
+            status: targetStatus
           })
 
           // Handle normalized attributes
@@ -351,7 +358,7 @@ export const CategoryManagement = ({ t: globalT, addAudit, currentUser }) => {
           await saveSubCategoryAttributes(sub.id, selectedAttrIds)
 
           setAllSubs(prev => [...prev, sub])
-          addAudit?.(currentUser, 'Subcategory Created', 'Categories', `${f.subcategory.trim()} under ${f.category.trim()}`)
+          addAudit?.(currentUser, 'Subcategory Created', 'Categories', `${f.subcategory.trim()} under ${f.category.trim()} (${targetStatus})`)
         } else {
           // If no subcategory, update parent with selected attributes
           const updated = await updateCategory(parent.id, {
@@ -360,7 +367,7 @@ export const CategoryManagement = ({ t: globalT, addAudit, currentUser }) => {
           setAllCats(prev => prev.map(c => c.id === parent.id ? { ...c, ...updated } : c))
           addAudit?.(currentUser, 'Category Updated', 'Categories', f.category.trim())
         }
-        notify('Saved successfully!', 'success')
+        notify(targetStatus === 'pending' ? 'Sent for admin approval!' : 'Saved successfully!', 'success')
         // Preserve attribute selection for next addition as requested
         setAddForm(prev => ({ ...blank, attribute_config: prev.attribute_config }))
         setShowAdd(false)
@@ -388,6 +395,22 @@ export const CategoryManagement = ({ t: globalT, addAudit, currentUser }) => {
       setDeleteTarget(null)
     } catch (e) {
       notify('Error: ' + (e.message || e), 'error')
+    }
+  }
+
+  const handleApprove = async (item, isSub) => {
+    try {
+      if (isSub) {
+        const updated = await updateSubCategory(item.id, { status: 'approved' })
+        setAllSubs(prev => prev.map(s => s.id === item.id ? { ...s, ...updated } : s))
+      } else {
+        const updated = await updateCategory(item.id, { status: 'approved' })
+        setAllCats(prev => prev.map(c => c.id === item.id ? { ...c, ...updated } : c))
+      }
+      notify('Category approved', 'success')
+      addAudit?.(currentUser, 'Category Approved', 'Categories', item.name)
+    } catch (e) {
+      notify('Error approving: ' + (e.message || e), 'error')
     }
   }
 
@@ -459,6 +482,7 @@ export const CategoryManagement = ({ t: globalT, addAudit, currentUser }) => {
                   <th style={{ padding: '16px 24px', textAlign: 'left', fontSize: 11, fontWeight: 950, color: t.text2, textTransform: 'uppercase', letterSpacing: '1px', borderBottom: `1px solid ${t.border}` }}>Categories</th>
                   <th style={{ padding: '16px 24px', textAlign: 'left', fontSize: 11, fontWeight: 950, color: t.text2, textTransform: 'uppercase', letterSpacing: '1px', borderBottom: `1px solid ${t.border}` }}>Sub category</th>
                   <th style={{ padding: '16px 24px', textAlign: 'left', fontSize: 11, fontWeight: 950, color: t.text2, textTransform: 'uppercase', letterSpacing: '1px', borderBottom: `1px solid ${t.border}` }}>Attributes</th>
+                  <th style={{ padding: '16px 24px', textAlign: 'center', fontSize: 11, fontWeight: 950, color: t.text2, textTransform: 'uppercase', letterSpacing: '1px', borderBottom: `1px solid ${t.border}` }}>Status</th>
                   <th style={{ padding: '16px 24px', textAlign: 'right', fontSize: 11, fontWeight: 950, color: t.text2, textTransform: 'uppercase', letterSpacing: '1px', borderBottom: `1px solid ${t.border}` }}>Actions</th>
                 </tr>
               </thead>
@@ -528,8 +552,20 @@ export const CategoryManagement = ({ t: globalT, addAudit, currentUser }) => {
                           {formatAttrs(row.raw)}
                         </div>
                       </td>
+                      <td style={{ padding: '12px 24px', textAlign: 'center' }}>
+                        {row.raw.status === 'pending' ? (
+                          <Badge t={t} text="Pending" color="yellow" icon={<ClockIcon />} />
+                        ) : (
+                          <Badge t={t} text="Approved" color="green" icon={<CheckIcon />} />
+                        )}
+                      </td>
                       <td style={{ padding: '12px 24px', textAlign: 'right' }}>
                         <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+                          {row.raw.status === 'pending' && currentUser?.role === 'admin' && (
+                            <Btn t={t} variant="success" size="sm" onClick={() => handleApprove(row.raw, !!row.raw.category_id)} style={{ padding: '6px 8px' }}>
+                              <CheckIcon />
+                            </Btn>
+                          )}
                           <Btn t={t} variant="ghost" size="sm" onClick={() => {
                             const isSub = !!row.raw.category_id
                             setEditTarget(row.raw)

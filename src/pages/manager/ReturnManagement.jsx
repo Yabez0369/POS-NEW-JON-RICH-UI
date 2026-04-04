@@ -161,6 +161,10 @@ export const ReturnManagement = ({
           <div style={{ fontSize: 24, fontWeight: 900, color: '#fff', letterSpacing: -0.5 }}>Returns & Refunds</div>
           <div style={{ fontSize: 13, color: '#94A3B8', marginTop: 2 }}>Manage customer returns and track refund history</div>
         </div>
+        <div style={{ padding: '8px 16px', background: 'rgba(255,255,255,0.05)', borderRadius: 12, border: '1px solid rgba(255,255,255,0.1)', maxWidth: 300 }}>
+           <div style={{ fontSize: 10, fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase', marginBottom: 4 }}>Current Return Policy</div>
+           <div style={{ fontSize: 11, color: '#CBD5E1', lineHeight: 1.4 }}>{settings?.returnPolicy || "Standard return policy applies."}</div>
+        </div>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16 }}>

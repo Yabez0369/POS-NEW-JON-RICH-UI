@@ -3,7 +3,8 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { useTheme } from '@/context/ThemeContext'
 import { useAuth } from '@/context/AuthContext'
 import { Btn, Input, Badge, Card, StatCard, Modal, Table, Select } from '@/components/ui'
-import { notify } from '@/components/shared'
+import { notify, ImgWithFallback } from '@/components/shared'
+import { PRODUCT_IMAGES } from '@/lib/seed-data'
 import { fmt, ts } from '@/lib/utils'
 import { inventoryService, serialsService } from '@/services'
 import { isSupabaseConfigured } from '@/lib/supabase'
@@ -11,7 +12,7 @@ import { InventoryHeader } from '@/components/inventory/InventoryHeader'
 
 const DEFAULT_REORDER = 10
 
-export function InventoryManagement({ products, setProducts, addAudit, currentUser, t: tProp, siteId }) {
+export function InventoryManagement({ products, setProducts, addAudit, currentUser, settings, t: tProp, siteId }) {
   const navigate = useNavigate()
   const { t: tTheme } = useTheme()
   const { currentUser: authUser } = useAuth()
@@ -141,11 +142,9 @@ export function InventoryManagement({ products, setProducts, addAudit, currentUs
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
             {lowStockProducts.sort((a, b) => a.stock - b.stock).map(p => (
               <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(255,255,255,0.05)', padding: '8px 12px', borderRadius: 8, border: `1px solid rgba(255,255,255,0.08)` }}>
-                {p.image_url || p.image ? (
-                  <img src={p.image_url || p.image} alt="" style={{ width: 24, height: 24, borderRadius: 4, objectFit: 'cover' }} />
-                ) : (
-                  <span style={{ fontSize: 16 }}>📦</span>
-                )}
+                <div style={{ width: 28, height: 28, borderRadius: 6, overflow: 'hidden', background: t.bg3, border: `1px solid ${t.border}`, flexShrink: 0 }}>
+                  <ImgWithFallback src={p.image || PRODUCT_IMAGES[p.name]} alt={p.name} emoji={p.emoji} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                </div>
                 <span style={{ fontWeight: 600, color: '#f0f4ff' }}>{p.name}</span>
                 <Badge t={t} text={`${p.stock} / ${getReorder(p)}`} color={p.stock === 0 ? 'red' : 'yellow'} />
                 <Btn t={t} variant="secondary" size="sm" onClick={() => { setEditStock(p); setNs(String(p.stock)); setAddQ('') }}>Update</Btn>
@@ -174,11 +173,9 @@ export function InventoryManagement({ products, setProducts, addAudit, currentUs
             const sb = getStatusBadge(p)
             return [
               <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                {p.image_url || p.image ? (
-                  <img src={p.image_url || p.image} alt="" style={{ width: 32, height: 32, borderRadius: 6, objectFit: 'cover', background: '#f8fafc' }} />
-                ) : (
-                  <div style={{ width: 32, height: 32, borderRadius: 6, background: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16 }}>📦</div>
-                )}
+                <div style={{ width: 36, height: 36, borderRadius: 8, overflow: 'hidden', background: t.bg3, border: `1px solid ${t.border}`, flexShrink: 0 }}>
+                  <ImgWithFallback src={p.image || PRODUCT_IMAGES[p.name]} alt={p.name} emoji={p.emoji} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                </div>
                 <span style={{ fontWeight: 600, color: t.text }}>{p.name}</span>
               </div>,
               <span style={{ fontSize: 10, fontFamily: 'monospace', color: t.text4 }}>{p.sku}</span>,
