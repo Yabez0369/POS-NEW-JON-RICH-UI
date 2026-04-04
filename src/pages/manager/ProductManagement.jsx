@@ -19,14 +19,14 @@ function ChipSelect({ t, label, values = [], onChange, presets = [] }) {
   }
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 10 }}>
-      <label style={{ fontSize: 11, fontWeight: 800, color: t.text3, textTransform: 'uppercase', letterSpacing: 0.7 }}>{label}</label>
+      <label style={{ fontSize: 15, fontWeight: 800, color: t.text3, textTransform: 'uppercase', letterSpacing: 0.7 }}>{label}</label>
       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
         {presets.map(p => {
           const sel = values.includes(p)
           return (
             <button key={p} type="button" onClick={() => toggle(p)}
               style={{
-                padding: '4px 10px', borderRadius: 20, fontSize: 10, fontWeight: 700, cursor: 'pointer',
+                padding: '4px 10px', borderRadius: 20, fontSize: 14, fontWeight: 700, cursor: 'pointer',
                 border: `1px solid ${sel ? t.accent : t.border}`,
                 background: sel ? t.accent + '20' : 'transparent',
                 color: sel ? t.accent : t.text,
@@ -38,7 +38,7 @@ function ChipSelect({ t, label, values = [], onChange, presets = [] }) {
         {values.filter(v => !presets.includes(v)).map(v => (
           <button key={v} type="button" onClick={() => toggle(v)}
             style={{
-              padding: '4px 10px', borderRadius: 20, fontSize: 10, fontWeight: 700, cursor: 'pointer',
+              padding: '4px 10px', borderRadius: 20, fontSize: 14, fontWeight: 700, cursor: 'pointer',
               border: `1px solid ${t.accent}`,
               background: t.accent + '20',
               color: t.accent,
@@ -52,7 +52,7 @@ function ChipSelect({ t, label, values = [], onChange, presets = [] }) {
           value={custom} onChange={e => setCustom(e.target.value)}
           placeholder={`Add custom ${label.toLowerCase()}...`}
           onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); if (custom.trim()) { toggle(custom.trim()); setCustom('') } } }}
-          style={{ flex: 1, background: t.input, border: `1px solid ${t.border}`, borderRadius: 8, padding: '7px 12px', color: t.text, fontSize: 12, outline: 'none' }}
+          style={{ flex: 1, background: t.input, border: `1px solid ${t.border}`, borderRadius: 8, padding: '7px 12px', color: t.text, fontSize: 16, outline: 'none' }}
         />
         <Btn t={t} size="sm" onClick={() => { if (custom.trim()) { toggle(custom.trim()); setCustom('') } }}>+</Btn>
       </div>
@@ -238,17 +238,17 @@ export const ProductManagement = ({ products, setProducts, addAudit, currentUser
       minHeight: '100%', padding: '32px', borderRadius: 24,
       display: 'flex', flexDirection: 'column', gap: 20 
     }}>
-      <div style={{ fontSize: 22, fontWeight: 900, color: t.text }}>Product Management</div>
+      <div style={{ fontSize: 26, fontWeight: 900, color: t.text }}>Product Management</div>
 
       <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
         <input
           value={search} onChange={e => setSearch(e.target.value)} placeholder="Search..."
-          style={{ flex: 1, minWidth: 180, background: t.input, border: `1px solid ${t.border}`, borderRadius: 9, padding: '9px 14px', color: t.text, fontSize: 13, outline: 'none' }}
+          style={{ flex: 1, minWidth: 180, background: t.input, border: `1px solid ${t.border}`, borderRadius: 9, padding: '9px 14px', color: t.text, fontSize: 17, outline: 'none' }}
         />
         <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
-          <button onClick={() => setCat('All')} style={{ padding: '7px 13px', borderRadius: 20, border: `1px solid ${cat === 'All' ? t.accent : t.border}`, background: cat === 'All' ? t.accent + '15' : 'transparent', color: cat === 'All' ? t.accent : t.text3, fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>All</button>
+          <button onClick={() => setCat('All')} style={{ padding: '7px 13px', borderRadius: 20, border: `1px solid ${cat === 'All' ? t.accent : t.border}`, background: cat === 'All' ? t.accent + '15' : 'transparent', color: cat === 'All' ? t.accent : t.text3, fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>All</button>
           {parentCats.map(c => (
-            <button key={c.id} onClick={() => setCat(c.name)} style={{ padding: '7px 13px', borderRadius: 20, border: `1px solid ${cat === c.name ? t.accent : t.border}`, background: cat === c.name ? t.accent + '15' : 'transparent', color: cat === c.name ? t.accent : t.text3, fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>{c.name}</button>
+            <button key={c.id} onClick={() => setCat(c.name)} style={{ padding: '7px 13px', borderRadius: 20, border: `1px solid ${cat === c.name ? t.accent : t.border}`, background: cat === c.name ? t.accent + '15' : 'transparent', color: cat === c.name ? t.accent : t.text3, fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>{c.name}</button>
           ))}
         </div>
         <Btn t={t} onClick={() => { setEditP(null); setForm(empty); setShowForm(true) }}>+ Add</Btn>
@@ -263,10 +263,10 @@ export const ProductManagement = ({ products, setProducts, addAudit, currentUser
               <ImgWithFallback src={p.image || PRODUCT_IMAGES[p.name]} alt={p.name} emoji={p.emoji} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
             </div>,
             <span style={{ fontWeight: 700, color: t.text }}>{p.name}</span>,
-            <span style={{ fontSize: 10, fontFamily: 'monospace', color: t.text3 }}>{p.sku}</span>,
+            <span style={{ fontSize: 14, fontFamily: 'monospace', color: t.text3 }}>{p.sku}</span>,
             <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
               <Badge t={t} text={p.category} color="blue" />
-              {p.subcategory && <span style={{ fontSize: 10, color: t.text3 }}>{p.subcategory}</span>}
+              {p.subcategory && <span style={{ fontSize: 14, color: t.text3 }}>{p.subcategory}</span>}
             </div>,
             <span style={{ fontWeight: 800, color: t.green }}>{fmt(p.price, settings?.sym)}</span>,
             <Badge t={t} text={String(p.stock || 0)} color={(p.stock || 0) < 10 ? 'red' : (p.stock || 0) < 20 ? 'yellow' : 'green'} />,
@@ -316,15 +316,15 @@ export const ProductManagement = ({ products, setProducts, addAudit, currentUser
               <Input t={t} label="Name" value={form.name} onChange={v => setForm(f => ({ ...f, name: v }))} required />
               <Input t={t} label="SKU / Item Code" value={form.sku} onChange={v => setForm(f => ({ ...f, sku: v }))} />
               <div style={{ gridColumn: '1 / -1' }}>
-                <div style={{ fontSize: 11, fontWeight: 800, color: t.text3, textTransform: 'uppercase', letterSpacing: 0.7, marginBottom: 6 }}>Barcodes</div>
+                <div style={{ fontSize: 15, fontWeight: 800, color: t.text3, textTransform: 'uppercase', letterSpacing: 0.7, marginBottom: 6 }}>Barcodes</div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                   {(form.barcodes || []).map((bc, i) => (
                     <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                      <input value={bc} onChange={e => setForm(f => ({ ...f, barcodes: f.barcodes.map((b, j) => j === i ? e.target.value : b) }))} placeholder="Barcode" style={{ flex: 1, background: t.input, border: `1px solid ${t.border}`, borderRadius: 8, padding: '8px 12px', color: t.text, fontSize: 12, outline: 'none' }} />
-                      <button type="button" onClick={() => setForm(f => ({ ...f, barcodes: f.barcodes.filter((_, j) => j !== i) }))} style={{ padding: '6px 12px', background: t.redBg || '#fef2f2', border: `1px solid ${t.redBorder || '#fecaca'}`, borderRadius: 8, color: t.red || '#dc2626', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>Remove</button>
+                      <input value={bc} onChange={e => setForm(f => ({ ...f, barcodes: f.barcodes.map((b, j) => j === i ? e.target.value : b) }))} placeholder="Barcode" style={{ flex: 1, background: t.input, border: `1px solid ${t.border}`, borderRadius: 8, padding: '8px 12px', color: t.text, fontSize: 16, outline: 'none' }} />
+                      <button type="button" onClick={() => setForm(f => ({ ...f, barcodes: f.barcodes.filter((_, j) => j !== i) }))} style={{ padding: '6px 12px', background: t.redBg || '#fef2f2', border: `1px solid ${t.redBorder || '#fecaca'}`, borderRadius: 8, color: t.red || '#dc2626', fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>Remove</button>
                     </div>
                   ))}
-                  <button type="button" onClick={() => setForm(f => ({ ...f, barcodes: [...(f.barcodes || []), ''] }))} style={{ padding: '8px 12px', background: t.accent + '20', border: `1px solid ${t.accent}`, borderRadius: 8, color: t.accent, fontSize: 12, fontWeight: 700, cursor: 'pointer', alignSelf: 'flex-start' }}>+ Add barcode</button>
+                  <button type="button" onClick={() => setForm(f => ({ ...f, barcodes: [...(f.barcodes || []), ''] }))} style={{ padding: '8px 12px', background: t.accent + '20', border: `1px solid ${t.accent}`, borderRadius: 8, color: t.accent, fontSize: 16, fontWeight: 700, cursor: 'pointer', alignSelf: 'flex-start' }}>+ Add barcode</button>
                 </div>
               </div>
               <div style={{ display: 'flex', gap: 13 }}>
@@ -366,7 +366,7 @@ export const ProductManagement = ({ products, setProducts, addAudit, currentUser
 
             {activeConfig.length > 0 && (form.subcategory_id || (form.category_id && subCats.length === 0)) && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10, border: `1px solid ${t.border}`, borderRadius: 12, padding: 14, background: t.bg2 }}>
-                <div style={{ fontSize: 11, fontWeight: 800, color: t.text3, textTransform: 'uppercase', letterSpacing: 0.7, marginBottom: 5 }}>Dynamic Attributes</div>
+                <div style={{ fontSize: 15, fontWeight: 800, color: t.text3, textTransform: 'uppercase', letterSpacing: 0.7, marginBottom: 5 }}>Dynamic Attributes</div>
 
                 {activeConfig.includes('Size') && (
                   <ChipSelect
@@ -429,29 +429,29 @@ export const ProductManagement = ({ products, setProducts, addAudit, currentUser
               placeholder="Long Description..."
               value={form.longDescription}
               onChange={e => setForm(f => ({ ...f, longDescription: e.target.value }))}
-              style={{ width: '100%', background: t.input, border: `1px solid ${t.border}`, borderRadius: 9, padding: '12px 14px', color: t.text, fontSize: 13, outline: 'none', minHeight: 80, fontFamily: 'inherit' }}
+              style={{ width: '100%', background: t.input, border: `1px solid ${t.border}`, borderRadius: 9, padding: '12px 14px', color: t.text, fontSize: 17, outline: 'none', minHeight: 80, fontFamily: 'inherit' }}
             />
 
             <Input t={t} label="Tax %" type="number" value={form.taxPct} onChange={v => setForm(f => ({ ...f, taxPct: v }))} placeholder="20" />
 
             <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
-              <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: 13, color: t.text }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: 17, color: t.text }}>
                 <input type="checkbox" checked={!!form.returnable} onChange={e => setForm(f => ({ ...f, returnable: e.target.checked }))} />
                 Returnable
               </label>
-              <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: 13, color: t.text }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: 17, color: t.text }}>
                 <input type="checkbox" checked={!!form.isSeasonal} onChange={e => setForm(f => ({ ...f, isSeasonal: e.target.checked }))} />
                 Seasonal / Limited Edition
               </label>
-              <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: 13, color: t.text }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: 17, color: t.text }}>
                 <input type="checkbox" checked={!!form.track_serial} onChange={e => setForm(f => ({ ...f, track_serial: e.target.checked }))} />
                 Track serial numbers (high-value items)
               </label>
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-              <label style={{ fontSize: 11, color: t.text3, fontWeight: 800, textTransform: 'uppercase', letterSpacing: 0.7 }}>Product Image</label>
-              <input type="file" accept="image/*" onChange={handleImageUpload} style={{ background: t.input, border: `1px solid ${t.border}`, borderRadius: 9, padding: '10px 14px', color: t.text, fontSize: 13, outline: 'none' }} />
+              <label style={{ fontSize: 15, color: t.text3, fontWeight: 800, textTransform: 'uppercase', letterSpacing: 0.7 }}>Product Image</label>
+              <input type="file" accept="image/*" onChange={handleImageUpload} style={{ background: t.input, border: `1px solid ${t.border}`, borderRadius: 9, padding: '10px 14px', color: t.text, fontSize: 17, outline: 'none' }} />
               {form.image && (
                 <div style={{ width: 80, height: 80, borderRadius: 8, overflow: 'hidden', border: `1px solid ${t.border}` }}>
                   <img src={form.image} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
