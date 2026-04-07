@@ -25,7 +25,7 @@ export const INITIAL_PRODUCTS = [
 // TODO: Remove when Supabase Auth is wired
 export const INITIAL_USERS = [
   { id: "00000000-0000-0000-0000-000000000001", name: "Alex Rivera", email: "admin@fanstore.com", password: "admin123", role: "admin", avatar: "AR", phone: "07700900001", active: true, joinDate: "2023-01-01", loyaltyPoints: 0, tier: "N/A" },
-  { id: "00000000-0000-0000-0000-000000000002", name: "Sam Chen", email: "manager@fanstore.com", password: "mgr123", role: "manager", avatar: "SC", phone: "07700900002", active: true, joinDate: "2023-01-15", loyaltyPoints: 0, tier: "N/A", venue_id: "VEN-001", site_id: "SITE-001" },
+  { id: "00000000-0000-0000-0000-000000000002", name: "Sam Chen", email: "manager@fanstore.com", password: "mgr123", role: "manager", avatar: "SC", phone: "07700900002", active: true, joinDate: "2023-01-15", loyaltyPoints: 0, tier: "N/A" },
   { id: "00000000-0000-0000-0000-000000000003", name: "Jordan Lee", email: "cashier@fanstore.com", password: "cash123", role: "cashier", counter: "Counter 1", avatar: "JL", phone: "07700900003", active: true, joinDate: "2023-03-01", loyaltyPoints: 0, tier: "N/A" },
   { id: "00000000-0000-0000-0000-000000000004", name: "Morgan Blake", email: "cashier2@fanstore.com", password: "cash456", role: "cashier", counter: "Counter 2", avatar: "MB", phone: "07700900004", active: true, joinDate: "2023-04-01", loyaltyPoints: 0, tier: "N/A" },
   { id: "00000000-0000-0000-0000-000000000005", name: "Taylor Smith", email: "customer@fanstore.com", password: "cust123", role: "customer", avatar: "TS", phone: "07700900005", active: true, joinDate: "2023-06-01", loyaltyPoints: 320, tier: "Silver", pointsExpiry: "2025-06-01", totalSpent: 1240 },
@@ -44,9 +44,6 @@ export const INITIAL_ORDERS = [
   { id: "ORD-0002", customerId: "00000000-0000-0000-0000-000000000006", customerName: "Chris Johnson", cashierId: "00000000-0000-0000-0000-000000000004", cashierName: "Morgan Blake", items: [{ productId: "99999999-9999-9999-9999-999999999999", name: "Match Ball Official", qty: 1, price: 129.99, discount: 0 }], subtotal: 129.99, tax: 26.00, discountAmt: 0, loyaltyDiscount: 0, deliveryCharge: 0, total: 155.99, payment: "Cash", cashGiven: 160, cashChange: 4.01, date: "2024-01-15 11:45", counter: "Counter 2", status: "completed", orderType: "in-store", loyaltyEarned: 155, loyaltyUsed: 0 },
   { id: "ORD-0003", customerId: null, customerName: "Walk-in", cashierId: "00000000-0000-0000-0000-000000000003", cashierName: "Jordan Lee", items: [{ productId: "44444444-4444-4444-4444-444444444444", name: "Training Jacket", qty: 1, price: 64.99, discount: 0 }, { productId: "77777777-7777-7777-7777-777777777777", name: "Team Cap", qty: 1, price: 24.99, discount: 0 }], subtotal: 89.98, tax: 18.00, discountAmt: 0, loyaltyDiscount: 0, deliveryCharge: 0, total: 107.98, payment: "Card", cardLast4: "1234", date: "2024-01-15 13:12", counter: "Counter 1", status: "completed", orderType: "in-store", loyaltyEarned: 0, loyaltyUsed: 0 },
   { id: "ORD-0004", customerId: "00000000-0000-0000-0000-000000000005", customerName: "Taylor Smith", cashierId: "00000000-0000-0000-0000-000000000003", cashierName: "Jordan Lee", items: [{ productId: "cccccccc-cccc-cccc-cccc-cccccccccccc", name: "Signed Jersey", qty: 1, price: 249.99, discount: 0 }], subtotal: 249.99, tax: 50.00, discountAmt: 0, loyaltyDiscount: 0, deliveryCharge: 5.99, total: 305.98, payment: "QR", date: "2024-01-14 14:05", counter: "Counter 1", status: "completed", orderType: "delivery", deliveryAddress: "123 Stadium Road, London", deliveryStatus: "delivered", loyaltyEarned: 305, loyaltyUsed: 0 },
-  { id: "ORD-0005", customerId: "00000000-0000-0000-0000-000000000009", customerName: "Sarah Jenkins", cashierId: "00000000-0000-0000-0000-000000000003", cashierName: "Jordan Lee", items: [{ productId: "11111111-1111-1111-1111-111111111111", name: "Home Jersey 2024", qty: 1, price: 89.99, discount: 0 }], subtotal: 89.99, tax: 18.00, discountAmt: 0, loyaltyDiscount: 0, deliveryCharge: 0, total: 107.99, payment: "Card", date: "2024-01-16 09:12", counter: "Counter 1", status: "pending", orderType: "online", loyaltyEarned: 108, loyaltyUsed: 0 },
-  { id: "ORD-0006", customerId: "00000000-0000-0000-0000-000000000010", customerName: "Mike Ross", cashierId: "00000000-0000-0000-0000-000000000004", cashierName: "Morgan Blake", items: [{ productId: "99999999-9999-9999-9999-999999999999", name: "Match Ball Official", qty: 2, price: 129.99, discount: 0 }], subtotal: 259.98, tax: 52.00, discountAmt: 0, loyaltyDiscount: 0, deliveryCharge: 0, total: 311.98, payment: "Cash", date: "2024-01-16 10:45", counter: "Counter 2", status: "pending", orderType: "in-store", loyaltyEarned: 312, loyaltyUsed: 0 },
-  { id: "ORD-0007", customerId: "00000000-0000-0000-0000-000000000012", customerName: "David Baker", cashierId: "", cashierName: "Online", items: [{ productId: "11111111-1111-1111-1111-111111111111", name: "Home Jersey 2024", qty: 1, price: 89.99, discount: 0 }], subtotal: 89.99, tax: 18.00, discountAmt: 0, loyaltyDiscount: 0, deliveryCharge: 5.99, total: 113.98, payment: "online", date: "2024-01-17 14:00", counter: "Online", status: "completed", orderType: "delivery", deliveryAddress: "Online Address 1", deliveryStatus: "delivered", loyaltyEarned: 155, loyaltyUsed: 0 },
 ];
 
 export const INITIAL_RETURNS = [
@@ -71,7 +68,6 @@ export const INITIAL_SETTINGS = {
   loyaltyValue: 0.05,
   receiptFooter: "Thank you for shopping with SCSTix!",
   returnDays: 28,
-  returnPolicy: "Items must be in original condition with tags attached. Returns accepted within 28 days of purchase with a valid receipt.",
   logoUrl: "/logo-dark.png"
 };
 
@@ -85,34 +81,6 @@ export const INITIAL_COUPONS = [
   { id: 1, code: "FANDAY10", description: "10% off for Fan Day", type: "percent", value: 10, minOrder: 0, uses: 45, maxUses: 100, active: true, expiry: "2026-12-31" },
   { id: 2, code: "WELCOME20", description: "£20 off for new members", type: "fixed", value: 20, minOrder: 100, uses: 12, maxUses: 50, active: true, expiry: "2026-12-31" },
   { id: 3, code: "FREESHIP", description: "Free shipping on orders over £50", type: "delivery", value: 0, minOrder: 50, uses: 89, maxUses: 500, active: true, expiry: "2026-12-31" },
-];
-
-export const INITIAL_VENUES = [
-  { id: 'VEN-001', name: 'Central Arena', address: '123 High Street, London EC1A 1BB', type: 'Arena', sites: [
-    { id: 'SITE-001', name: 'Main Hall', capacity: 5000, status: 'active' },
-    { id: 'SITE-002', name: 'VIP Lounge', capacity: 200, status: 'active' },
-  ]},
-  { id: 'VEN-002', name: 'Riverside Theatre', address: '45 River Walk, Manchester M1 2AB', type: 'Theatre', sites: [
-    { id: 'SITE-003', name: 'Stage 1', capacity: 800, status: 'active' },
-  ]},
-];
-
-export const INITIAL_AUDIT_LOGS = [
-  { id: 'LOG-001', user: 'Alex Rivera', role: 'admin', action: 'Login', module: 'auth', details: 'Admin logged in from 192.168.1.1', timestamp: '2024-01-15 09:00:12' },
-  { id: 'LOG-002', user: 'Jordan Lee', role: 'cashier', action: 'Login', module: 'auth', details: 'Cashier logged in — Counter 1', timestamp: '2024-01-15 09:15:44' },
-  { id: 'LOG-003', user: 'Jordan Lee', role: 'cashier', action: 'Till Opened', module: 'cash', details: 'Counter 1 till opened with £200.00 float', timestamp: '2024-01-15 09:16:02' },
-  { id: 'LOG-004', user: 'Jordan Lee', role: 'cashier', action: 'Sale Created', module: 'orders', details: 'ORD-0001 — Taylor Smith — £155.96', timestamp: '2024-01-15 10:23:05' },
-  { id: 'LOG-005', user: 'Morgan Blake', role: 'cashier', action: 'Login', module: 'auth', details: 'Cashier logged in — Counter 2', timestamp: '2024-01-15 10:50:00' },
-  { id: 'LOG-006', user: 'Morgan Blake', role: 'cashier', action: 'Sale Created', module: 'orders', details: 'ORD-0002 — Chris Johnson — £155.99', timestamp: '2024-01-15 11:45:22' },
-  { id: 'LOG-007', user: 'Alex Rivera', role: 'admin', action: 'Product Updated', module: 'inventory', details: 'Home Jersey 2024 — stock adjusted from 40 to 45', timestamp: '2024-01-15 12:30:00' },
-  { id: 'LOG-008', user: 'Sam Chen', role: 'manager', action: 'Login', module: 'auth', details: 'Manager logged in', timestamp: '2024-01-15 13:00:00' },
-  { id: 'LOG-009', user: 'Jordan Lee', role: 'cashier', action: 'Return Processed', module: 'returns', details: 'RET-002 — Football Scarf — £19.99 refunded', timestamp: '2024-01-16 14:30:00' },
-  { id: 'LOG-010', user: 'Alex Rivera', role: 'admin', action: 'User Created', module: 'users', details: 'New cashier account created — staff2@fanstore.com', timestamp: '2024-01-16 15:00:00' },
-  { id: 'LOG-011', user: 'Alex Rivera', role: 'admin', action: 'Banner Created', module: 'banners', details: 'Match Day Special! banner added', timestamp: '2024-01-16 15:30:00' },
-  { id: 'LOG-012', user: 'Jordan Lee', role: 'cashier', action: 'Till Closed', module: 'cash', details: 'Counter 1 till closed — total: £418.93', timestamp: '2024-01-15 18:00:00' },
-  { id: 'LOG-013', user: 'Sam Chen', role: 'manager', action: 'Report Exported', module: 'reports', details: 'Monthly sales report exported to PDF', timestamp: '2024-01-15 17:45:00' },
-  { id: 'LOG-014', user: 'Alex Rivera', role: 'admin', action: 'Coupon Created', module: 'coupons', details: 'FANDAY10 coupon created — 10% off', timestamp: '2024-01-14 10:00:00' },
-  { id: 'LOG-015', user: 'System', role: 'system', action: 'Low Stock Alert', module: 'inventory', details: '3 products below threshold: Goalkeeper Gloves, Signed Jersey, Match Ball', timestamp: '2024-01-15 08:00:00' },
 ];
 
 // ── UTILS ──

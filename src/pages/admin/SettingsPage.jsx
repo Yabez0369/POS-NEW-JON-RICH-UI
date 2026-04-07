@@ -1,22 +1,19 @@
 import { useState } from 'react'
 import { Btn, Input, Card, Toggle, Select } from '@/components/ui'
 import { notify } from '@/components/shared'
-import { genId } from '@/lib/utils'
 import { isOptimoEnabled, syncUsers, syncVenues, syncSites } from '@/services/optimo'
 import { upsertSetting } from '@/services/settings'
-import { supabase, isSupabaseConfigured } from '@/lib/supabase'
+import { isSupabaseConfigured } from '@/lib/supabase'
 import { useVenueStore } from '@/stores/venueStore'
 
 const DEFAULT_VENUE_ID = 'a0000000-0000-0000-0000-000000000001'
 const DEFAULT_SITE_ID = 'b0000000-0000-0000-0000-000000000001'
 
-export const SettingsPage = ({ settings, setSettings, addAudit, currentUser, darkMode, setDarkMode, t, venues = [], setVenues }) => {
+export const SettingsPage = ({ settings, setSettings, addAudit, currentUser, darkMode, setDarkMode, t }) => {
   const [form, setForm] = useState({ ...settings })
   const [saved, setSaved] = useState(false)
   const [saving, setSaving] = useState(false)
   const [optimoSyncing, setOptimoSyncing] = useState(false)
-  const [isAddingOutlet, setIsAddingOutlet] = useState(false)
-  const [newOutletName, setNewOutletName] = useState('')
   const { selectedVenueId, selectedSiteId } = useVenueStore()
 
   const venueId = selectedVenueId || currentUser?.venue_id || currentUser?.venueId || DEFAULT_VENUE_ID
@@ -26,7 +23,6 @@ export const SettingsPage = ({ settings, setSettings, addAudit, currentUser, dar
     { title: 'Store Info', fields: [['Store Name', 'storeName'], ['Address', 'storeAddress'], ['Phone', 'storePhone'], ['Email', 'storeEmail']] },
     { title: 'Financial', fields: [['Currency Symbol', 'sym', 'select', [{ value: '£', label: '£ (GBP)' }, { value: '$', label: '$ (USD)' }, { value: '€', label: '€ (EUR)' }]], [`Loyalty Rate (pts/${form.sym || '£'})`, 'loyaltyRate', 'number'], [`Point Value (${form.sym || '£'}/pt)`, 'loyaltyValue', 'number']] },
     { title: 'Receipt', fields: [['Footer Text', 'receiptFooter'], ['Return Days', 'returnDays', 'number']] },
-    { title: 'Policies', fields: [['Return Policy', 'returnPolicy', 'textarea']] },
   ]
 
   const handleSave = async () => {
@@ -64,45 +60,6 @@ export const SettingsPage = ({ settings, setSettings, addAudit, currentUser, dar
     }
   }
 
-  const handleAddOutlet = async () => {
-    if (!newOutletName.trim()) { notify('Please enter an outlet name', 'error'); return }
-    const ns = { id: genId('SITE'), name: newOutletName, capacity: 500, status: 'active', venue_id: venueId, type: 'retail' }
-    
-    try {
-      if (isSupabaseConfigured()) {
-         const { error } = await supabase.from('sites').insert({
-            id: ns.id, venue_id: ns.venue_id, name: ns.name, type: ns.type, capacity: ns.capacity, status: ns.status
-         })
-         if (error) throw error
-      }
-      setVenues(vs => vs.map(v => v.id === venueId ? { ...v, sites: [...(v.sites || []), ns] } : v))
-      addAudit(currentUser, 'Outlet Added', 'Settings', `New outlet: ${newOutletName}`)
-      notify(`Outlet "${newOutletName}" added`, 'success')
-      setNewOutletName('')
-      setIsAddingOutlet(false)
-    } catch (err) {
-      console.error(err)
-      notify('Failed to add outlet to database', 'error')
-    }
-  }
-
-  const handleDeleteOutlet = async (sid, sname) => {
-    try {
-      if (isSupabaseConfigured()) {
-         const { error } = await supabase.from('sites').delete().eq('id', sid)
-         if (error) throw error
-      }
-      setVenues(vs => vs.map(v => v.id === venueId ? { ...v, sites: v.sites.filter(s => s.id !== sid) } : v))
-      addAudit(currentUser, 'Outlet Deleted', 'Settings', `Removed outlet: ${sname}`)
-      notify(`Outlet "${sname}" removed`, 'success')
-    } catch (err) {
-      console.error(err)
-      notify('Failed to delete outlet from database', 'error')
-    }
-  }
-
-  const activeVenue = venues.find(v => v.id === venueId) || venues[0]
-
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
       <div style={{ fontSize: 22, fontWeight: 900, color: t.text }}>System Settings</div>
@@ -122,19 +79,6 @@ export const SettingsPage = ({ settings, setSettings, addAudit, currentUser, dar
                     onChange={v => setForm(f => ({ ...f, [key]: v }))}
                     options={options}
                   />
-                ) : type === 'textarea' ? (
-                  <div key={key} style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-                    <label style={{ fontSize: 11, color: t.text3, fontWeight: 800, textTransform: 'uppercase', letterSpacing: 0.7 }}>{label}</label>
-                    <textarea
-                      value={form[key] || ''}
-                      onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}
-                      style={{ 
-                        background: t.input, border: `1px solid ${t.border}`, borderRadius: 9, 
-                        padding: '10px 14px', color: t.text, fontSize: 13, outline: 'none', 
-                        width: '100%', boxSizing: 'border-box', fontFamily: 'inherit', minHeight: 80, resize: 'vertical'
-                      }} 
-                    />
-                  </div>
                 ) : (
                   <Input
                     key={key}
@@ -150,55 +94,6 @@ export const SettingsPage = ({ settings, setSettings, addAudit, currentUser, dar
           </Card>
         ))}
       </div>
-
-      <Card t={t}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
-          <div style={{ fontSize: 14, fontWeight: 800, color: t.text }}>Outlets & Stations</div>
-          {!isAddingOutlet && (
-            <Btn t={t} size="sm" variant="secondary" onClick={() => setIsAddingOutlet(true)}>+ Add Outlet</Btn>
-          )}
-        </div>
-        
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          {(activeVenue?.sites || []).map(s => (
-            <div key={s.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 12px', background: t.bg3, borderRadius: 12, border: `1px solid ${t.border}` }}>
-              <div>
-                <div style={{ fontSize: 13, fontWeight: 700, color: t.text }}>{s.name}</div>
-                <div style={{ fontSize: 11, color: t.text4 }}>Ref: {s.id}</div>
-              </div>
-              <button 
-                onClick={() => handleDeleteOutlet(s.id, s.name)}
-                style={{ padding: 6, color: t.red, background: 'transparent', border: 'none', cursor: 'pointer', opacity: 0.7, fontSize: 14 }}
-              >
-                🗑️
-              </button>
-            </div>
-          ))}
-
-          {isAddingOutlet && (
-            <div style={{ marginTop: 6, padding: 12, background: t.bg4, borderRadius: 12, border: `1px dashed ${t.accent}` }}>
-              <Input 
-                t={t} 
-                label="New Outlet Name" 
-                placeholder="e.g. North Gate Bar" 
-                value={newOutletName} 
-                onChange={setNewOutletName} 
-                autoFocus
-              />
-              <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
-                <Btn t={t} variant="ghost" fullWidth onClick={() => setIsAddingOutlet(false)}>Cancel</Btn>
-                <Btn t={t} fullWidth onClick={handleAddOutlet}>Save Outlet</Btn>
-              </div>
-            </div>
-          )}
-
-          {(!activeVenue?.sites || activeVenue.sites.length === 0) && !isAddingOutlet && (
-            <div style={{ textAlign: 'center', padding: '20px 0', color: t.text4, fontSize: 13 }}>
-              No outlets configured for this venue.
-            </div>
-          )}
-        </div>
-      </Card>
 
       <Card t={t}>
         <div style={{ fontSize: 14, fontWeight: 800, color: t.text, marginBottom: 14 }}>Optimo Integration</div>

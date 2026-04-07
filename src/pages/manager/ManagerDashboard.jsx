@@ -1,6 +1,4 @@
 import { Card, StatCard, Badge, Table } from '@/components/ui'
-import { ImgWithFallback } from '@/components/shared'
-import { PRODUCT_IMAGES } from '@/lib/seed-data'
 import { fmt } from '@/lib/utils'
 import { useNavigate } from 'react-router-dom'
 
@@ -17,23 +15,11 @@ function toItemQty(i) {
   return i?.quantity ?? i?.qty ?? 0
 }
 
-export const ManagerDashboard = ({ orders = [], products = [], users = [], counters = [], t, settings, currentUser }) => {
+export const ManagerDashboard = ({ orders = [], products = [], users = [], counters = [], t, settings }) => {
   const navigate = useNavigate()
-  
-  // Filter core data by manager's assigned venue and site (if any)
-  const venueId = currentUser?.venue_id
-  const siteId = currentUser?.site_id
-  
-  const storeOrders = (Array.isArray(orders) ? orders : []).filter(o => 
-    (!venueId || o.venue_id === venueId) && (!siteId || o.site_id === siteId)
-  )
+  const storeOrders = Array.isArray(orders) ? orders : []
   const todayRevenue = storeOrders.reduce((s, o) => s + (o.total ?? 0), 0)
-  const staffCount = (users || []).filter(u => 
-    u.role === 'cashier' && (!venueId || u.venue_id === venueId) && (!siteId || u.site_id === siteId)
-  ).length
-  const activeCounters = (counters || []).filter(c => 
-    (!venueId || c.venue_id === venueId) && (!siteId || c.site_id === siteId)
-  )
+  const staffCount = (users || []).filter(u => u.role === 'cashier').length
   const lowStock = (products || []).filter(p => (p.stock ?? 0) < 10).length
 
   const topP = {}
@@ -283,7 +269,7 @@ export const ManagerDashboard = ({ orders = [], products = [], users = [], count
           <div style={{ background: '#fff', borderRadius: 24, padding: 24, boxShadow: '0 4px 20px rgba(0,0,0,0.03)', border: '1px solid rgba(0,0,0,0.04)' }}>
             <div style={{ fontSize: 20, fontWeight: 700, color: '#1E293B', marginBottom: 20 }}>Counter Connectivity</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-              {activeCounters.slice(0, 4).map(c => {
+              {(counters || []).slice(0, 4).map(c => {
                 const isActive = c.active === true || c.status === 'active';
                 return (
                   <div key={c.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>

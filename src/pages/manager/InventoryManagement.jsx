@@ -3,8 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { useTheme } from '@/context/ThemeContext'
 import { useAuth } from '@/context/AuthContext'
 import { Btn, Input, Badge, Card, StatCard, Modal, Table, Select } from '@/components/ui'
-import { notify, ImgWithFallback } from '@/components/shared'
-import { PRODUCT_IMAGES } from '@/lib/seed-data'
+import { notify } from '@/components/shared'
 import { fmt, ts } from '@/lib/utils'
 import { inventoryService, serialsService } from '@/services'
 import { isSupabaseConfigured } from '@/lib/supabase'
@@ -12,7 +11,7 @@ import { InventoryHeader } from '@/components/inventory/InventoryHeader'
 
 const DEFAULT_REORDER = 10
 
-export function InventoryManagement({ products, setProducts, addAudit, currentUser, settings, t: tProp, siteId }) {
+export function InventoryManagement({ products, setProducts, addAudit, currentUser, t: tProp, siteId }) {
   const navigate = useNavigate()
   const { t: tTheme } = useTheme()
   const { currentUser: authUser } = useAuth()

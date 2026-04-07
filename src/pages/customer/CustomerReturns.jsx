@@ -142,21 +142,6 @@ export const CustomerReturns = ({ orders, returns, setReturns, products, setProd
         <Btn t={t} onClick={() => setShowForm(true)} disabled={!allowReturns}>📦 New Return Request</Btn>
       </div>
 
-      <Card t={t} style={{ background: `${t.accent}08`, border: `1px dashed ${t.accent}30`, padding: '16px 20px', borderRadius: 16 }}>
-        <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-          <div style={{ fontSize: 20 }}>📜</div>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 14, fontWeight: 800, color: t.text, marginBottom: 4 }}>Return Policy</div>
-            <div style={{ fontSize: 12, color: t.text2, lineHeight: 1.5 }}>
-              {settings?.returnPolicy || "Standard return policy applies. Please contact support for details."}
-            </div>
-            <div style={{ fontSize: 11, color: t.text3, marginTop: 8, fontWeight: 700 }}>
-              WINDOW: {returnDays} DAYS · STATUS: {allowReturns ? 'ACTIVE' : 'PAUSED'}
-            </div>
-          </div>
-        </div>
-      </Card>
-
       {!allowReturns && (
         <Card t={t} style={{ background: t.bg3, border: `1px solid ${t.border}` }}>
           <div style={{ fontSize: 14, color: t.text2 }}>Returns are currently disabled.</div>

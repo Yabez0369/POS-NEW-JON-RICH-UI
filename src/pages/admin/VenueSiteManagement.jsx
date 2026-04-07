@@ -3,11 +3,18 @@ import { useTheme } from '@/context/ThemeContext'
 import { useAuth } from '@/context/AuthContext'
 import { Btn, Input, Badge, Card, Modal, Table } from '@/components/ui'
 import { notify } from '@/components/shared'
-import { genId, ts, fmt } from '@/lib/utils'
+import { genId, ts } from '@/lib/utils'
 import { syncVenues, syncSites } from '@/services/optimo'
-import { Building2, MapPin, Users, Activity, RefreshCw, Plus, Globe, Settings } from 'lucide-react'
 
-import { INITIAL_VENUES } from '@/core'
+const INITIAL_VENUES = [
+  { id: 'VEN-001', name: 'Central Arena', address: '123 High Street, London EC1A 1BB', type: 'Arena', sites: [
+    { id: 'SITE-001', name: 'Main Hall', capacity: 5000, status: 'active' },
+    { id: 'SITE-002', name: 'VIP Lounge', capacity: 200, status: 'active' },
+  ]},
+  { id: 'VEN-002', name: 'Riverside Theatre', address: '45 River Walk, Manchester M1 2AB', type: 'Theatre', sites: [
+    { id: 'SITE-003', name: 'Stage 1', capacity: 800, status: 'active' },
+  ]},
+]
 
 export const VenueSiteManagement = ({ t: tProp }) => {
   const { t: tCtx } = useTheme()
@@ -115,54 +122,26 @@ export const VenueSiteManagement = ({ t: tProp }) => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10 }}>
         <div>
-          <h1 style={{ fontSize: 26, fontWeight: 900, color: t.text, margin: 0, display: 'flex', alignItems: 'center', gap: 10 }}>
-            <Globe size={26} color={t.accent} /> Venue Infrastructure
-          </h1>
-          <p style={{ fontSize: 13, color: t.text3, marginTop: 4 }}>Manage multi-site venues and synchronize metadata with Optimo.</p>
+          <div style={{ fontSize: 22, fontWeight: 900, color: t.text }}>Venue & Site Management</div>
+          <div style={{ fontSize: 13, color: t.text3, marginTop: 2 }}>{venues.length} venue{venues.length !== 1 ? 's' : ''} · {venues.reduce((s, v) => s + v.sites.length, 0)} sites</div>
         </div>
-        <Btn t={t} onClick={openVenueAdd} style={{ background: t.accent, color: '#fff', borderRadius: 12, padding: '10px 24px', fontWeight: 800 }}>
-          <Plus size={18} style={{ marginRight: 8 }} /> Add Venue
-        </Btn>
+        <Btn t={t} onClick={openVenueAdd}>+ Add Venue</Btn>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 14 }}>
-          {[
-              { label: 'Total Venues', value: venues.length, color: t.accent, icon: <Building2 size={18} /> },
-              { label: 'Primary Sites', value: venues.reduce((s, v) => s + v.sites.length, 0), color: t.purple, icon: <Activity size={18} /> },
-              { label: 'Total Capacity', value: venues.reduce((s, v) => s + v.sites.reduce((ss, sss) => ss + (sss.capacity || 0), 0), 0).toLocaleString(), color: t.green, icon: <Users size={18} /> },
-              { label: 'Sync Status', value: 'Live', color: t.blue, icon: <RefreshCw size={18} /> },
-          ].map(({ label, value, color, icon }) => (
-              <Card key={label} t={t} style={{ padding: '14px 18px', borderRadius: 16, display: 'flex', alignItems: 'center', gap: 14 }}>
-                <div style={{ width: 40, height: 40, borderRadius: 12, background: `${color}15`, display: 'flex', alignItems: 'center', justifyContent: 'center', color, flexShrink: 0 }}>
-                    {icon}
-                </div>
-                <div>
-                    <div style={{ fontSize: 11, fontWeight: 800, color: t.text4, textTransform: 'uppercase' }}>{label}</div>
-                    <div style={{ fontSize: 20, fontWeight: 1000, color }}>{value}</div>
-                </div>
-              </Card>
-          ))}
-      </div>
-
-      <Card t={t} style={{ padding: '16px 20px', borderRadius: 18, border: `1px solid ${t.border}` }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-            <div style={{ fontSize: 14, fontWeight: 900, color: t.text, display: 'flex', alignItems: 'center', gap: 8 }}>
-                <Settings size={16} /> Optimo Production Integration
-            </div>
-            {lastOptimoSync && <div style={{ fontSize: 11, color: t.text4 }}>Last updated: {lastOptimoSync.toLocaleTimeString()}</div>}
-        </div>
-        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 20 }}>
+      <Card t={t}>
+        <div style={{ fontSize: 14, fontWeight: 800, color: t.text, marginBottom: 12 }}>Optimo Integration</div>
+        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 12 }}>
           <div style={{ flex: 1, minWidth: 200 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <div style={{ width: 8, height: 8, borderRadius: '50%', background: t.red }} />
-                <div style={{ fontSize: 13, color: t.text2, fontWeight: 700 }}>Legacy Connection: <span style={{ color: t.red }}>Disconnected</span></div>
+            <div style={{ fontSize: 12, color: t.text3, marginBottom: 4 }}>Status: <strong style={{ color: t.red }}>Not Connected</strong></div>
+            <div style={{ fontSize: 12, color: t.text3 }}>Last sync: <strong>{lastOptimoSync ? lastOptimoSync.toLocaleString() : 'Never'}</strong></div>
+            <div style={{ fontSize: 12, color: t.text3, marginTop: 4 }}>
+              {venues.length} venue{venues.length !== 1 ? 's' : ''} · {venues.reduce((s, v) => s + v.sites.length, 0)} sites
             </div>
-            <div style={{ fontSize: 12, color: t.text4, marginTop: 4 }}>Sync venue metadata, floorplans, and station mappings from the Optimo cloud.</div>
           </div>
-          <Btn t={t} variant={optimoSyncing ? 'ghost' : 'outline'} onClick={handleOptimoSyncNow} disabled={optimoSyncing} style={{ borderRadius: 12, padding: '10px 20px' }}>
-            {optimoSyncing ? <><RefreshCw size={14} className="spin" /> Syncing Network...</> : <><RefreshCw size={14} /> Synchronize All Data</>}
+          <Btn t={t} variant="secondary" onClick={handleOptimoSyncNow} disabled={optimoSyncing}>
+            {optimoSyncing ? '⏳ Syncing...' : 'Sync Now'}
           </Btn>
         </div>
       </Card>
@@ -194,15 +173,11 @@ export const VenueSiteManagement = ({ t: tProp }) => {
                   <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexShrink: 0 }}>
                     <Badge t={t} text={venue.type} color="blue" />
                     <Badge t={t} text={`${venue.sites.length} site${venue.sites.length !== 1 ? 's' : ''}`} color="purple" />
-                  <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexShrink: 0 }}>
-                    <Badge t={t} text={venue.type} color="blue" />
-                    <Badge t={t} text={`${venue.sites.length} Areas`} color="purple" />
-                    <Btn t={t} variant="ghost" size="sm" onClick={() => syncVenue(venue.id)} disabled={sync === 'syncing'} style={{ color: t.accent }}>
-                      {sync === 'syncing' ? <RefreshCw size={14} className="spin" /> : <RefreshCw size={14} />}
+                    <Btn t={t} variant="secondary" size="sm" onClick={() => syncVenue(venue.id)} disabled={sync === 'syncing'}>
+                      {sync === 'syncing' ? '⏳ Syncing...' : '🔄 Sync'}
                     </Btn>
-                    <Btn t={t} variant="ghost" size="sm" onClick={() => openVenueEdit(venue)} style={{ color: t.text3 }}>✏️</Btn>
-                    <Btn t={t} variant="ghost" size="sm" onClick={() => deleteVenue(venue.id)} style={{ color: t.red }}>🗑️</Btn>
-                  </div>
+                    <Btn t={t} variant="secondary" size="sm" onClick={() => openVenueEdit(venue)}>✏️</Btn>
+                    <Btn t={t} variant="danger" size="sm" onClick={() => deleteVenue(venue.id)}>🗑️</Btn>
                   </div>
                 </div>
 
