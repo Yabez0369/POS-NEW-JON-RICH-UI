@@ -146,9 +146,14 @@ const TeamManagement = ({ users, setUsers, counters, orders, addAudit, currentUs
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     fontSize: 20, fontWeight: 900,
                     color: t.text,
-                    boxShadow: '0 4px 12px rgba(0,0,0,0.3)'
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+                    overflow: 'hidden'
                   }}>
-                    {m.avatar}
+                    {m.avatar?.startsWith('http') || m.avatar?.startsWith('data:') || m.avatar?.startsWith('/') ? (
+                      <img src={m.avatar} alt={m.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    ) : (
+                      m.avatar?.length <= 3 ? m.avatar : m.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
+                    )}
                   </div>
                   <div style={{ flex: 1, paddingBottom: 5 }}>
                     <div style={{ fontSize: 18, fontWeight: 900, color: t.text, letterSpacing: -0.3 }}>{m.name}</div>
@@ -196,8 +201,14 @@ const TeamManagement = ({ users, setUsers, counters, orders, addAudit, currentUs
             cols={['Member', 'Role', 'Status', 'Counter', 'Email', 'Joined', 'Actions']}
             rows={filteredTeam.map(m => [
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <div style={{ width: 32, height: 32, background: (roleColors[m.role] || t.accent) + '20', border: `1px solid ${(roleColors[m.role] || t.accent)}40`, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 900, color: roleColors[m.role] || t.accent }}>{m.avatar}</div>
-                <span style={{ fontWeight: 700, color: t.text }}>{m.name}</span>
+                <div style={{ width: 32, height: 32, minWidth: 32, background: (roleColors[m.role] || t.accent) + '20', border: `1px solid ${(roleColors[m.role] || t.accent)}40`, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 900, color: roleColors[m.role] || t.accent, overflow: 'hidden' }}>
+                    {m.avatar?.startsWith('http') || m.avatar?.startsWith('data:') || m.avatar?.startsWith('/') ? (
+                      <img src={m.avatar} alt={m.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    ) : (
+                      m.avatar?.length <= 3 ? m.avatar : m.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
+                    )}
+                </div>
+                <span style={{ fontWeight: 700, color: t.text, whiteSpace: 'nowrap' }}>{m.name}</span>
               </div>,
               <Badge t={t} text={m.role} color={m.role === 'cashier' ? 'green' : 'teal'} />,
               <Badge t={t} text={m.active ? 'Active' : 'Inactive'} color={m.active ? 'green' : 'red'} />,

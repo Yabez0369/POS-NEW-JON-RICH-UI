@@ -25,6 +25,7 @@ import { GuestHomePage } from '@/pages/guest/GuestHomePage'
 import { GuestShopPage } from '@/pages/guest/GuestShopPage'
 import { GuestProductDetail } from '@/pages/guest/GuestProductDetail'
 import { ProfilePage } from '@/pages/shared/ProfilePage'
+import { CustomerDisplay } from '@/pages/shared/CustomerDisplay'
 
 const AdminDashboard = lazyRetry(() => import('@/pages/admin/AdminDashboard'), 'AdminDashboard')
 const AdminAnalytics = lazyRetry(() => import('@/pages/admin/AdminAnalytics'), 'AdminAnalytics')
@@ -72,6 +73,7 @@ const PickupOrders = lazyRetry(() => import('@/pages/staff/PickupOrders'), 'Pick
 import {
   INITIAL_PRODUCTS, INITIAL_USERS, INITIAL_ORDERS, INITIAL_RETURNS,
   INITIAL_BANNERS, INITIAL_COUPONS, INITIAL_COUNTERS, INITIAL_SETTINGS,
+  INITIAL_VENUES,
 } from '@/core'
 import { supabase } from '@/lib/supabase'
 import { ts } from '@/lib/utils'
@@ -188,7 +190,11 @@ function useSupabaseSync(setter, table, seedData, fetchFn) {
       const error = res?.error
       if (!cancelled && !error && data?.length > 0) {
         setter(data)
+      } else if (error) {
+        console.warn(`Supabase sync failed for ${table}:`, error)
       }
+    }).catch(err => {
+      console.warn(`Supabase sync error for ${table}:`, err)
     })
     return () => { cancelled = true }
   }, [])
@@ -202,18 +208,18 @@ function RealtimeWatcher() {
   return null
 }
 
-function AppContent() {
+function AppContent({ users, setUsers }) {
   const { t, darkMode, setDarkMode } = useTheme()
   const { currentUser, isDemoMode } = useAuth()
-
   const [products, setProducts] = useState(() => isSupabaseConfigured() ? [] : INITIAL_PRODUCTS)
   const [orders, setOrders] = useState(() => isSupabaseConfigured() ? [] : INITIAL_ORDERS)
   const [returns, setReturns] = useState(() => isSupabaseConfigured() ? [] : INITIAL_RETURNS)
-  const [users, setUsers] = useState(INITIAL_USERS)
+  // const [users, setUsers] = useState(INITIAL_USERS) // Managed by parent
   const [counters, setCounters] = useState(() => isSupabaseConfigured() ? [] : INITIAL_COUNTERS)
   const [settings, setSettings] = useState(INITIAL_SETTINGS)
   const [banners, setBanners] = useState(() => isSupabaseConfigured() ? [] : INITIAL_BANNERS)
   const [coupons, setCoupons] = useState(() => isSupabaseConfigured() ? [] : INITIAL_COUPONS)
+  const [venues, setVenues] = useState(() => isSupabaseConfigured() ? [] : INITIAL_VENUES)
   const [auditLogs, setAuditLogs] = useState([])
 
   useSupabaseSync(setProducts, 'products', INITIAL_PRODUCTS, productsService.fetchProducts)
@@ -222,6 +228,23 @@ function AppContent() {
   useSupabaseSync(setCounters, 'counters', INITIAL_COUNTERS)
   useSupabaseSync(setBanners, 'banners', INITIAL_BANNERS)
   useSupabaseSync(setCoupons, 'coupons', INITIAL_COUPONS)
+  useSupabaseSync(setVenues, 'venues', INITIAL_VENUES, () => import('@/services').then(m => m.venuesService.fetchVenuesWithSites()))
+  // User sync moved to App
+  useSupabaseSync(setAuditLogs, 'audit_logs', [], () =>
+    supabase.from('audit_logs').select('id,user_id,action,module,details,created_at').order('created_at', { ascending: false }).limit(200)
+      .then(({ data, error }) => ({
+        data: (data || []).map(l => ({
+          id: l.id,
+          user: l.user_id || 'System',
+          role: l.role || 'system',
+          action: l.action,
+          module: l.module,
+          details: l.details,
+          timestamp: l.created_at,
+        })),
+        error
+      }))
+  )
   useSettingsSync(setSettings)
 
   const addAudit = useCallback((u, action, module, details = '') => {
@@ -276,8 +299,8 @@ function AppContent() {
     users, setUsers, counters, setCounters, settings, setSettings,
     banners, setBanners, coupons, setCoupons,
     auditLogs, addAudit, addGlobalNotif,
-    currentUser, t, darkMode, setDarkMode,
-    siteId: currentUser?.site_id || DEFAULT_SITE_ID,
+    currentUser, siteId: currentUser?.site_id || DEFAULT_SITE_ID,
+    t, darkMode, setDarkMode
   }
 
   return (
@@ -503,6 +526,11 @@ function AppContent() {
 
             {/* Shared */}
             <Route path="profile" element={<ProfilePage settings={settings} />} />
+            <Route path="customer-display" element={
+              <ProtectedRoute allowedRoles={['admin', 'manager']}>
+                <CustomerDisplay banners={banners} settings={settings} />
+              </ProtectedRoute>
+            } />
           </Route>
 
           {/* Catch all */}
@@ -516,13 +544,30 @@ function AppContent() {
 export default function App() {
   const [users, setUsers] = useState(INITIAL_USERS)
 
+  useSupabaseSync(setUsers, 'profiles', INITIAL_USERS, () => import('@/services').then(m => m.usersService.fetchProfiles().then(res => {
+    return res && res.length > 0 ? res.map(u => ({
+      id: u.id,
+      name: u.display_name || u.name,
+      email: u.email || '',
+      role: u.role || 'customer',
+      avatar: (u.display_name || u.name || 'U').charAt(0).toUpperCase(),
+      phone: u.phone,
+      active: u.active ?? true,
+      joinDate: u.created_at ? new Date(u.created_at).toISOString().slice(0, 10) : '2024-01-01',
+      venue_id: u.venue_id,
+      site_id: u.site_id,
+      loyaltyPoints: u.loyalty_points || 0,
+      totalSpent: u.total_spent || 0,
+    })) : INITIAL_USERS
+  })))
+
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
         <BrowserRouter>
           <ThemeProvider>
             <AuthProvider allUsers={users} onUsersChange={setUsers}>
-              <AppContent />
+              <AppContent users={users} setUsers={setUsers} />
             </AuthProvider>
           </ThemeProvider>
         </BrowserRouter>

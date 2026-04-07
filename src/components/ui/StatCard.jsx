@@ -12,7 +12,7 @@ export const StatCard = ({ title, value, sub, color, icon, t, trend, centered, s
   } catch (e) { }
 
   if (isManager) {
-    const isCentered = true; 
+    const isCentered = true;
     return (
       <Card t={t} style={{
         position: 'relative',
@@ -25,7 +25,7 @@ export const StatCard = ({ title, value, sub, color, icon, t, trend, centered, s
         height: '100%',
         background: 'linear-gradient(135deg, #C4E8E7 0%, #FFFFFF 100%)',
         border: '1px solid #B0E0DF',
-        minHeight: 160, 
+        minHeight: 160,
         justifyContent: 'center',
         ...style
       }}>
@@ -40,10 +40,10 @@ export const StatCard = ({ title, value, sub, color, icon, t, trend, centered, s
           width: '100%',
           gap: 12
         }}>
-          <div style={{ 
-            width: 44, height: 44, borderRadius: 14, 
-            background: 'rgba(0,0,0,0.04)', 
-            display: "flex", alignItems: "center", justifyContent: "center", 
+          <div style={{
+            width: 44, height: 44, borderRadius: 14,
+            background: 'rgba(0,0,0,0.04)',
+            display: "flex", alignItems: "center", justifyContent: "center",
             fontSize: 22, color: color
           }}>{icon}</div>
 
@@ -54,15 +54,15 @@ export const StatCard = ({ title, value, sub, color, icon, t, trend, centered, s
           </div>
         </div>
         {trend !== undefined && (
-          <div style={{ 
-            fontSize: 11, color: trend > 0 ? '#10B981' : '#EF4444', 
-            marginTop: 10, fontWeight: 700, display: 'flex', 
-            alignItems: 'center', gap: 6, position: 'relative', zIndex: 2 
+          <div style={{
+            fontSize: 11, color: trend > 0 ? '#10B981' : '#EF4444',
+            marginTop: 10, fontWeight: 700, display: 'flex',
+            alignItems: 'center', gap: 6, position: 'relative', zIndex: 2
           }}>
-            <span style={{ 
-              display: 'inline-block', padding: '2px 6px', 
-              background: trend > 0 ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)', 
-              borderRadius: 4 
+            <span style={{
+              display: 'inline-block', padding: '2px 6px',
+              background: trend > 0 ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+              borderRadius: 4
             }}>
               {trend > 0 ? "↑" : "↓"} {Math.abs(trend)}%
             </span>

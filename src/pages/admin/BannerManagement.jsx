@@ -11,6 +11,7 @@ export const BannerManagement = ({ banners, setBanners, addAudit, currentUser, t
     grad: 'linear-gradient(135deg,#dc2626,#7f1d1d)', emoji: '⚽', active: true,
     offerType: 'none', offerTarget: '', offerDiscount: 0,
     startDate: new Date().toISOString().slice(0, 16), endDate: '2026-12-31T23:59', image: '',
+    themeStyle: 'minimal', transitionType: 'fade', duration: 6000
   }
   const [form, setForm] = useState(empty)
 
@@ -24,8 +25,161 @@ export const BannerManagement = ({ banners, setBanners, addAudit, currentUser, t
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 24, animation: 'fadeIn 0.4s ease-out' }}>
+      
+      {showAdd ? (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 9999, background: t.bg,
+          display: 'flex', flexDirection: 'column', overflow: 'hidden'
+        }}>
+          {/* Studio Header */}
+          <div style={{ height: 70, borderBottom: `1px solid ${t.border}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 32px', background: t.bg2 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+              <div style={{ width: 40, height: 40, background: `${t.accent}20`, borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Monitor size={20} color={t.accent} />
+              </div>
+              <div>
+                <h2 style={{ margin: 0, fontSize: 18, fontWeight: 900, color: t.text }}>Creative Studio</h2>
+                <div style={{ fontSize: 12, color: t.text4 }}>Design for Customer Display</div>
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: 12 }}>
+              <Btn t={t} variant="outline" onClick={() => { setShowAdd(false); setForm(empty); }}>Cancel</Btn>
+              <Btn t={t} onClick={handleAdd} disabled={!form.title} style={{ background: t.accent, color: '#fff', padding: '10px 24px' }}>
+                <Plus size={16} style={{ marginRight: 8 }} /> Publish to Display
+              </Btn>
+            </div>
+          </div>
+
+          <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
+            {/* Left: Designer Tools */}
+            <div style={{ width: 450, borderRight: `1px solid ${t.border}`, background: t.bg, overflowY: 'auto', padding: 32, paddingBottom: 100 }}>
+              <h3 style={{ fontSize: 14, fontWeight: 800, textTransform: 'uppercase', color: t.text4, marginBottom: 20 }}>Content Settings</h3>
+              
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginBottom: 32 }}>
+                <Input t={t} label="Headline *" value={form.title} onChange={v => setForm(f => ({ ...f, title: v }))} placeholder="e.g. New Arrivals" required />
+                <Input t={t} label="Sub-headline" value={form.subtitle} onChange={v => setForm(f => ({ ...f, subtitle: v }))} placeholder="Wait till you see these..." />
+                <Input t={t} label="Button Text" value={form.cta} onChange={v => setForm(f => ({ ...f, cta: v }))} placeholder="Shop Now" />
+              </div>
+
+              <h3 style={{ fontSize: 14, fontWeight: 800, textTransform: 'uppercase', color: t.text4, marginBottom: 20 }}>Visual Style</h3>
+              
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginBottom: 32 }}>
+                <Select t={t} label="Design Theme" value={form.themeStyle} onChange={v => setForm(f => ({ ...f, themeStyle: v }))}
+                  options={[
+                    { value: 'minimal', label: 'Minimalist (Clean & Flat)' },
+                    { value: 'glass', label: 'Glassmorphism (Frosted)' },
+                    { value: 'cyberpunk', label: 'Cyberpunk (Neon & High Contrast)' }
+                  ]} />
+                
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  <label style={{ fontSize: 11, color: t.text3, fontWeight: 800, textTransform: 'uppercase' }}>Background Image</label>
+                  <input type="file" accept="image/*" onChange={handleImageUpload}
+                    style={{ border: `1px solid ${t.border}`, borderRadius: 9, padding: '8px 12px', color: t.text, fontSize: 12, background: t.bg2 }} />
+                </div>
+
+                <div style={{ display: 'flex', gap: 12 }}>
+                  <div style={{ flex: 1 }}>
+                    <label style={{ display: 'block', fontSize: 11, color: t.text3, fontWeight: 800, textTransform: 'uppercase', marginBottom: 8 }}>Brand Color</label>
+                    <input type="color" value={form.color} onChange={e => {
+                      const c = e.target.value;
+                      setForm(f => ({ ...f, color: c, grad: `linear-gradient(135deg,${c},#000000)` }))
+                    }} style={{ width: '100%', height: 42, border: 'none', borderRadius: 8, cursor: 'pointer' }} />
+                  </div>
+                </div>
+              </div>
+
+              <h3 style={{ fontSize: 14, fontWeight: 800, textTransform: 'uppercase', color: t.text4, marginBottom: 20 }}>Display Logic</h3>
+              
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                <div style={{ display: 'flex', gap: 12 }}>
+                  <div style={{ flex: 1 }}>
+                     <Select t={t} label="Transition Effect" value={form.transitionType} onChange={v => setForm(f => ({ ...f, transitionType: v }))}
+                        options={[{ value: 'fade', label: 'Fade' }, { value: 'slide', label: 'Slide Right' }, { value: 'zoom', label: 'Zoom In' }]} />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                     <Input t={t} label="Duration (ms)" value={form.duration} onChange={v => setForm(f => ({ ...f, duration: +v }))} type="number" />
+                  </div>
+                </div>
+                
+                <Select t={t} label="Promotion Integration" value={form.offerType} onChange={v => setForm(f => ({ ...f, offerType: v }))}
+                  options={[{ value: 'none', label: 'None (Standard Ad)' }, { value: 'category', label: 'Category Discount' }]} />
+                  
+                {form.offerType === 'category' && (
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                    <Select t={t} label="Category" value={form.offerTarget} onChange={v => setForm(f => ({ ...f, offerTarget: v }))}
+                      options={(categories.length > 0 ? categories : []).map(c => ({ value: c, label: c }))} />
+                    <Input t={t} label="Discount %" value={form.offerDiscount} onChange={v => setForm(f => ({ ...f, offerDiscount: +v }))} type="number" />
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Right: Live Customer Display Preview */}
+            <div style={{ flex: 1, background: '#111', position: 'relative', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 40 }}>
+              <div style={{ 
+                width: '100%', 
+                height: '100%', 
+                background: form.grad || form.color,
+                borderRadius: 24, 
+                position: 'relative', 
+                overflow: 'hidden',
+                boxShadow: '0 40px 100px rgba(0,0,0,0.8)'
+              }}>
+                {form.image && (
+                  <img src={form.image} style={{ 
+                    position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover',
+                    opacity: form.themeStyle === 'cyberpunk' ? 0.9 : 1,
+                    filter: form.themeStyle === 'cyberpunk' ? 'saturate(1.5) contrast(1.2)' : 'none'
+                  }} />
+                )}
+                <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to right, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.2) 60%, transparent 100%)' }} />
+                
+                <div style={{ position: 'relative', height: '100%', padding: '0 8%', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                  <div style={{ maxWidth: 800 }}>
+                    {form.offerDiscount > 0 && (
+                      <div style={{ display: 'inline-flex', padding: '6px 20px', background: t.accent, color: '#fff', borderRadius: 30, fontSize: 16, fontWeight: 900, marginBottom: 20 }}>
+                        🔥 {form.offerDiscount}% OFF {form.offerTarget?.toUpperCase()}
+                      </div>
+                    )}
+                    <h1 style={{ 
+                      fontSize: 72, fontWeight: 900, color: '#fff', lineHeight: 1.1, marginBottom: 16, letterSpacing: -2,
+                      textShadow: form.themeStyle === 'cyberpunk' ? `0 0 20px ${t.accent}, 0 0 40px ${t.accent}` : '0 10px 30px rgba(0,0,0,0.5)'
+                    }}>
+                      {form.title || 'Your Title Here'}
+                    </h1>
+                    <p style={{ fontSize: 24, color: 'rgba(255,255,255,0.9)', fontWeight: 600, marginBottom: 32, textShadow: '0 4px 10px rgba(0,0,0,0.5)' }}>
+                      {form.subtitle || 'Add a compelling subtitle to capture attention.'}
+                    </p>
+                    <div style={{ 
+                      display: 'inline-flex', 
+                      background: form.themeStyle === 'glass' ? 'rgba(255,255,255,0.2)' : '#fff', 
+                      color: form.themeStyle === 'glass' ? '#fff' : (form.color || t.accent), 
+                      padding: '16px 36px', 
+                      borderRadius: 16, 
+                      fontSize: 20, 
+                      fontWeight: 900,
+                      backdropFilter: form.themeStyle === 'glass' ? 'blur(20px)' : 'none',
+                      border: form.themeStyle === 'glass' ? '2px solid rgba(255,255,255,0.5)' : 'none',
+                    }}>
+                      {form.cta || 'Shop Now'}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Resolution Label */}
+              <div style={{ position: 'absolute', bottom: 20, right: 30, color: 'rgba(255,255,255,0.4)', fontSize: 12, fontWeight: 800, letterSpacing: 2 }}>
+                LIVE PREVIEW: 1920x1080 DISPLAY
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : (
+      <>
+
+      {/* Header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 16 }}>
         <div>
           <div style={{ fontSize: 22, fontWeight: 900, color: t.text }}>🖼️ Banner & Offer Management</div>
           <div style={{ fontSize: 13, color: t.text3, marginTop: 3 }}>Active banners display on the login & guest pages</div>
@@ -52,84 +206,47 @@ export const BannerManagement = ({ banners, setBanners, addAudit, currentUser, t
                     <div style={{ fontSize: 12, opacity: 0.8 }}>{b.subtitle}</div>
                   </div>
                 </div>
-              </div>
-              {b.offerType !== 'none' && (
-                <div style={{ background: t.greenBg, border: `1px solid ${t.greenBorder}`, borderRadius: 8, padding: '8px 12px', marginBottom: 10, fontSize: 12, color: t.green, fontWeight: 700 }}>
-                  🎁 Offer: {b.offerDiscount}% off {b.offerTarget}
-                </div>
-              )}
-              <div style={{ fontSize: 12, color: t.text3, marginBottom: 10 }}>
-                <div>📅 Start: {b.startDate}</div>
-                <div>📅 End: {b.endDate}</div>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Badge t={t} text={active ? 'Live Now' : b.active ? 'Scheduled' : 'Hidden'} color={active ? 'green' : b.active ? 'yellow' : 'red'} />
-                <div style={{ display: 'flex', gap: 8 }}>
-                  <Toggle t={t} value={b.active} onChange={v => { setBanners(bs => bs.map(x => x.id === b.id ? { ...x, active: v } : x)); notify(`Banner ${v ? 'activated' : 'hidden'}`, 'info') }} />
-                  <Btn t={t} variant="danger" size="sm" onClick={() => { setBanners(bs => bs.filter(x => x.id !== b.id)); notify('Banner deleted', 'warning') }}>Del</Btn>
-                </div>
-              </div>
-            </Card>
-          )
-        })}
-      </div>
 
-      {showAdd && (
-        <Modal t={t} title="Add New Banner" onClose={() => setShowAdd(false)} width={600}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
-              <Input t={t} label="Title" value={form.title} onChange={v => setForm(f => ({ ...f, title: v }))} required />
-              <Input t={t} label="Subtitle" value={form.subtitle} onChange={v => setForm(f => ({ ...f, subtitle: v }))} />
-              <Input t={t} label="CTA Text" value={form.cta} onChange={v => setForm(f => ({ ...f, cta: v }))} />
-              <Input t={t} label="Emoji" value={form.emoji} onChange={v => setForm(f => ({ ...f, emoji: v }))} />
-              <Input t={t} label="Image URL" value={form.image} onChange={v => setForm(f => ({ ...f, image: v }))} placeholder="https://..." />
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-                <label style={{ fontSize: 11, color: t.text3, fontWeight: 800, textTransform: 'uppercase', letterSpacing: 0.7 }}>Upload Image</label>
-                <input type="file" accept="image/*" onChange={handleImageUpload} style={{ background: t.input, border: `1px solid ${t.border}`, borderRadius: 9, padding: '10px 14px', color: t.text, fontSize: 13, outline: 'none' }} />
-                {form.image && (
-                  <div style={{ width: 80, height: 80, borderRadius: 8, overflow: 'hidden', border: `1px solid ${t.border}` }}>
-                    <img src={form.image} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                {/* Card Body */}
+                <div style={{ padding: '14px 16px' }}>
+                  {b.offerType !== 'none' && (
+                    <div style={{ background: `${t.green}10`, border: `1px solid ${t.green}30`, borderRadius: 8, padding: '6px 10px', marginBottom: 10, fontSize: 12, color: t.green, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <Tag size={12} /> {b.offerDiscount}% off {b.offerTarget}
+                    </div>
+                  )}
+                  <div style={{ display: 'flex', gap: 8, fontSize: 11, color: t.text4, marginBottom: 8 }}>
+                    <span><Calendar size={11} style={{ marginRight: 3 }} />{b.startDate?.slice(0, 10)}</span>
+                    <span>→</span>
+                    <span>{b.endDate?.slice(0, 10)}</span>
                   </div>
-                )}
-              </div>
-              <Input t={t} label="Start Date & Time" value={form.startDate} onChange={v => setForm(f => ({ ...f, startDate: v }))} type="datetime-local" />
-              <Input t={t} label="End Date & Time" value={form.endDate} onChange={v => setForm(f => ({ ...f, endDate: v }))} type="datetime-local" />
-            </div>
-            <Select t={t} label="Offer Type" value={form.offerType} onChange={v => setForm(f => ({ ...f, offerType: v }))} options={[{ value: 'none', label: 'No Offer' }, { value: 'category', label: 'Category Discount' }]} />
-            {form.offerType === 'category' && (
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
-                <Select t={t} label="Category" value={form.offerTarget} onChange={v => setForm(f => ({ ...f, offerTarget: v }))} options={CATEGORIES.filter(c => c !== 'All').map(c => ({ value: c, label: c }))} />
-                <Input t={t} label="Discount %" value={form.offerDiscount} onChange={v => setForm(f => ({ ...f, offerDiscount: +v }))} type="number" />
-              </div>
-            )}
-            {form.title && (
-              <div style={{ position: 'relative', height: 120, borderRadius: 10, overflow: 'hidden', marginTop: 10 }}>
-                {form.image ? (
-                  <img src={form.image} alt={form.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                ) : (
-                  <div style={{ background: form.grad, width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <span style={{ fontSize: 32 }}>{form.emoji}</span>
-                  </div>
-                )}
-                <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <div style={{ color: '#fff', textAlign: 'center' }}>
-                    <div style={{ fontSize: 16, fontWeight: 900 }}>{form.title}</div>
-                    <div style={{ fontSize: 13, opacity: 0.8 }}>{form.subtitle}</div>
+
+                  {/* Progress Bar */}
+                  {active && (
+                    <div style={{ height: 4, background: t.bg4, borderRadius: 2, overflow: 'hidden', marginBottom: 12 }}>
+                      <div style={{ height: '100%', width: `${getProgress(b)}%`, background: t.green, borderRadius: 2 }} />
+                    </div>
+                  )}
+
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                      <Toggle t={t} value={b.active} onChange={v => handleToggle(b.id, v, b.title)} />
+                      <Btn t={t} variant="ghost" style={{ padding: 6, color: t.text3 }} onClick={() => handleDuplicate(b)}>
+                        <Copy size={14} />
+                      </Btn>
+                    </div>
+                    <Btn t={t} variant="ghost" style={{ color: t.red, padding: '4px 10px', fontSize: 12 }} onClick={() => handleDelete(b.id, b.title)}>
+                      <Trash2 size={14} /> Delete
+                    </Btn>
                   </div>
                 </div>
-              </div>
-            )}
-            <Btn t={t} onClick={() => {
-              setBanners(bs => [...bs, { id: Date.now(), ...form }])
-              addAudit(currentUser, 'Banner Created', 'Banners', `${form.title} banner added`)
-              notify('Banner added!', 'success')
-              setShowAdd(false)
-              setForm(empty)
-            }} disabled={!form.title}>
-              Add Banner
-            </Btn>
-          </div>
-        </Modal>
+                </div>
+              </Card>
+            )
+          })}
+        </div>
+      )
+
+      </>
       )}
     </div>
   )

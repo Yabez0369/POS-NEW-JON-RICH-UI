@@ -55,110 +55,309 @@ export const AdminCustomers = ({ users, orders, t, settings }) => {
   })
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-      <div style={{ fontSize: 22, fontWeight: 900, color: t.text }}>👥 Customer Management</div>
+    <div style={{ 
+      display: 'flex', 
+      flexDirection: 'column', 
+      gap: 32,
+      background: '#f8fafc',
+      margin: '-24px',
+      padding: '32px',
+      minHeight: 'calc(100vh - 64px)',
+      animation: 'fadeIn 0.5s ease-out' 
+    }}>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(170px,1fr))', gap: 14 }}>
-        <StatCard t={t} title="Total Customers" value={totalCustomers} color={t.blue} icon="👥" />
-        <StatCard t={t} title="Gold Members" value={goldMembers} color="#f59e0b" icon="🥇" />
-        <StatCard t={t} title="Silver Members" value={silverMembers} color="#9ca3af" icon="🥈" />
-        <StatCard t={t} title="Total Loyalty Pts" value={totalPoints} color={t.yellow} icon="⭐" />
+      {/* Header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: 16 }}>
+        <div>
+          <h1 style={{ fontSize: 36, fontWeight: 900, color: '#0f172a', margin: 0, display: 'flex', alignItems: 'center', gap: 12, letterSpacing: '-0.03em' }}>
+            <Users size={32} color="#4f46e5" strokeWidth={2.5} /> Customer Intelligence
+          </h1>
+          <p style={{ fontSize: 16, color: '#64748b', marginTop: 4, fontWeight: 600 }}>
+            Manage loyalty tiers, track spending, and analyse online vs walk-in behaviour.
+          </p>
+        </div>
       </div>
 
-      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-        <input 
-          value={search} 
-          onChange={e => setSearch(e.target.value)} 
-          placeholder="Search by name, email, phone..." 
-          style={{ flex: 1, minWidth: 200, background: t.input, border: `1px solid ${t.border}`, borderRadius: 9, padding: '10px 14px', color: t.text, fontSize: 13, outline: 'none' }} 
-        />
-        <select 
-          value={filter} 
-          onChange={e => setFilter(e.target.value)} 
-          style={{ padding: '10px 14px', background: t.input, border: `1px solid ${t.border}`, borderRadius: 9, color: t.text, fontSize: 13, outline: 'none', cursor: 'pointer' }}
-        >
-          <option value="All">All Types</option>
-          <option value="Walk-in">Walk-in Customers</option>
-          <option value="Online">Online Customers</option>
-          <option value="Delivery">Delivery Customers</option>
+      {/* KPI Cards */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 20 }}>
+        {[
+          { label: 'Total Customers', value: stats.total, color: '#4f46e5', icon: <Users size={24} /> },
+          { label: 'Online', value: stats.online, color: '#3b82f6', icon: <Wifi size={24} /> },
+          { label: 'Delivery', value: stats.delivery, color: '#8b5cf6', icon: <Truck size={24} /> },
+          { label: 'Gold Members', value: stats.gold, color: '#f59e0b', icon: <Award size={24} /> },
+          { label: 'Loyalty Pts', value: (stats.totalPts || 0).toLocaleString(), color: '#eab308', icon: <Star size={24} /> },
+          { label: 'Revenue', value: fmt(stats.totalSpent, settings?.sym), color: '#22c55e', icon: <TrendingUp size={24} /> },
+        ].map(({ label, value, color, icon }) => (
+          <div key={label} style={{ background: '#fff', borderRadius: 24, padding: '24px 28px', boxShadow: '0 12px 40px rgba(0,0,0,0.06)', display: 'flex', flexDirection: 'column', gap: 16, border: '1px solid #f1f5f9' }}>
+            <div style={{ width: 52, height: 52, borderRadius: 16, background: `${color}10`, display: 'flex', alignItems: 'center', justifyContent: 'center', color, flexShrink: 0 }}>
+              {icon}
+            </div>
+            <div>
+              <div style={{ fontSize: 12, fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: 1 }}>{label}</div>
+              <div style={{ fontSize: 24, fontWeight: 900, color: '#0f172a', marginTop: 4, letterSpacing: '-0.02em' }}>{value}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Filters */}
+      <div style={{ background: '#fff', borderRadius: 24, padding: '24px 32px', boxShadow: '0 12px 40px rgba(0,0,0,0.06)', display: 'flex', gap: 24, alignItems: 'center', flexWrap: 'wrap' }}>
+        {/* Search */}
+        <div style={{ position: 'relative', flex: 1, minWidth: 280 }}>
+          <Search size={18} style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
+          <input type="text" placeholder="Search name, email, phone..." value={search}
+            onChange={e => setSearch(e.target.value)}
+            style={{ width: '100%', padding: '14px 16px 14px 52px', borderRadius: 16, border: '1px solid #e2e8f0', background: '#f8fafc', color: '#0f172a', fontSize: 14, fontWeight: 600, outline: 'none', transition: 'all 0.2s' }} />
+        </div>
+
+        {/* Customer Type Filter */}
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', background: '#f1f5f9', padding: 6, borderRadius: 16 }}>
+          {[
+            { value: 'all', label: 'All' },
+            { value: 'online', label: 'Online' },
+            { value: 'walk-in', label: 'Walk-in' },
+            { value: 'delivery', label: 'Delivery' },
+            { value: 'unknown', label: 'New' },
+          ].map(({ value, label }) => (
+            <button key={value} onClick={() => setFilterType(value)}
+              style={{
+                padding: '8px 16px', borderRadius: 12, cursor: 'pointer', fontSize: 12, fontWeight: 800,
+                border: 'none',
+                background: filterType === value ? '#fff' : 'transparent',
+                color: filterType === value ? '#4f46e5' : '#64748b',
+                boxShadow: filterType === value ? '0 4px 10px rgba(0,0,0,0.08)' : 'none',
+                transition: 'all 0.2s'
+              }}>
+              {label}
+            </button>
+          ))}
+        </div>
+
+        {/* Tier Filter */}
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', background: '#f1f5f9', padding: 6, borderRadius: 16 }}>
+          {['all', 'Gold', 'Silver', 'Bronze'].map(tier => {
+            const col = tier === 'Gold' ? '#f59e0b' : tier === 'Silver' ? '#64748b' : tier === 'Bronze' ? '#b45309' : '#64748b'
+            return (
+              <button key={tier} onClick={() => setFilterTier(tier)}
+                style={{
+                  padding: '8px 16px', borderRadius: 12, cursor: 'pointer', fontSize: 12, fontWeight: 800,
+                  border: 'none',
+                  background: filterTier === tier ? '#fff' : 'transparent',
+                  color: filterTier === tier ? col : '#64748b',
+                  boxShadow: filterTier === tier ? '0 4px 10px rgba(0,0,0,0.08)' : 'none',
+                  transition: 'all 0.2s'
+                }}>
+                {tier === 'all' ? 'All Tiers' : `${TIER_ICONS[tier]} ${tier}`}
+              </button>
+            )
+          })}
+        </div>
+
+        {/* Sort */}
+        <select value={sortBy} onChange={e => setSortBy(e.target.value)}
+          style={{ padding: '12px 18px', borderRadius: 16, border: '1px solid #e2e8f0', background: '#fff', color: '#0f172a', fontSize: 13, fontWeight: 700, outline: 'none', cursor: 'pointer', boxShadow: '0 4px 12px rgba(0,0,0,0.04)' }}>
+          <option value="spent">Sort: Highest Spend</option>
+          <option value="pts">Sort: Most Points</option>
+          <option value="orders">Sort: Most Orders</option>
+          <option value="name">Sort: Name A–Z</option>
         </select>
       </div>
 
-      <Card t={t} style={{ padding: 0, overflow: 'hidden' }}>
-        <Table
-          t={t}
-          cols={['Customer', 'Email', 'Phone', 'Tier', 'Points', 'Total Spent', 'Orders', '']}
-          rows={customers.map(u => {
-            const myOrders = u.myOrders || []
-            const usedTier = u.dynamicTier || 'Bronze'
-            const tierC = { Bronze: '#cd7f32', Silver: '#9ca3af', Gold: '#f59e0b', 'N/A': '#9ca3af' }
-            return [
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <div style={{ width: 32, height: 32, background: (tierC[usedTier] || '#9ca3af') + '20', border: `2px solid ${tierC[usedTier] || '#9ca3af'}40`, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 900, color: tierC[usedTier] || '#9ca3af' }}>{u.avatar}</div>
-                <span style={{ fontWeight: 700, color: t.text }}>{u.name}</span>
-              </div>,
-              <span style={{ fontSize: 12, color: t.text3 }}>{u.email}</span>,
-              <span style={{ fontSize: 12, color: t.text3 }}>{u.phone || '—'}</span>,
-              <Badge t={t} text={usedTier.toUpperCase()} color={usedTier === 'Gold' ? 'yellow' : usedTier === 'Silver' ? 'blue' : 'orange'} />,
-              <span style={{ color: t.yellow, fontWeight: 700 }}>⭐{u.loyaltyPoints || u.loyalty_points || 0}</span>,
-              <span style={{ fontWeight: 800, color: t.accent }}>{fmt(u.dynamicSpent || 0, settings?.sym)}</span>,
-              <span style={{ color: t.blue, fontWeight: 700 }}>{myOrders.length}</span>,
-              <Btn t={t} variant="secondary" size="sm" onClick={() => setSelected(u)}>View Profile</Btn>,
-            ]
-          })}
-        />
-      </Card>
+      {/* Results Count */}
+      <div style={{ fontSize: 12, color: t.text4, fontWeight: 600 }}>
+        Showing <strong style={{ color: t.text }}>{filtered.length}</strong> of <strong style={{ color: t.text }}>{enriched.length}</strong> customers
+      </div>
+
+      {/* Customer Table */}
+      <div style={{ background: '#fff', borderRadius: 24, boxShadow: '0 12px 40px rgba(0,0,0,0.06)', overflow: 'hidden' }}>
+        {filtered.length === 0 ? (
+          <div style={{ padding: 80, textAlign: 'center', color: '#94a3b8' }}>
+            <Users size={60} strokeWidth={1} style={{ marginBottom: 16, opacity: 0.4 }} />
+            <div style={{ fontSize: 18, fontWeight: 800, color: '#0f172a' }}>No customers match your filters.</div>
+            <div style={{ fontSize: 14, marginTop: 8, fontWeight: 600 }}>Try adjusting the search or filter options above.</div>
+          </div>
+        ) : (
+          <Table
+            t={t}
+            cols={['Customer', 'Contact', 'Tier', 'Points', 'Total Spent', 'Orders', 'Actions']}
+            rows={filtered.map(u => {
+              const tierCol = TIER_COLORS[u.tier] || '#9ca3af'
+              return [
+                <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                  <div style={{
+                    width: 48, height: 48, borderRadius: 14,
+                    background: `${tierCol}10`, border: `2px solid ${tierCol}20`,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: 18, fontWeight: 900, color: tierCol, flexShrink: 0
+                  }}>{u.avatar || u.name?.[0] || 'U'}</div>
+                  <div>
+                    <div style={{ fontWeight: 900, color: '#0f172a', fontSize: 15 }}>{u.name}</div>
+                    <div style={{ fontSize: 12, color: '#94a3b8', fontWeight: 700, marginTop: 2 }}>Joined {u.joinDate || '2024'}</div>
+                  </div>
+                </div>,
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                  <div style={{ fontSize: 13, color: '#445569', display: 'flex', alignItems: 'center', gap: 6, fontWeight: 700 }}>
+                    <Mail size={14} color="#94a3b8" /> {u.email}
+                  </div>
+                  <div style={{ fontSize: 13, color: '#64748b', display: 'flex', alignItems: 'center', gap: 6, fontWeight: 600 }}>
+                    <Phone size={14} color="#94a3b8" /> {u.phone || '—'}
+                  </div>
+                </div>,
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 14, fontWeight: 900, color: tierCol }}>
+                  {TIER_ICONS[u.tier]} {u.tier}
+                </span>,
+                <span style={{ color: '#f59e0b', fontWeight: 900, fontSize: 15 }}>⭐ {(u.pts || 0).toLocaleString()}</span>,
+                <span style={{ fontWeight: 900, color: '#4f46e5', fontSize: 16 }}>{fmt(u.spent, settings?.sym)}</span>,
+                <div style={{ padding: '6px 12px', borderRadius: 8, background: '#eef2ff', color: '#4f46e5', fontSize: 12, fontWeight: 900, display: 'inline-block' }}>
+                   {u.myOrders.length} orders
+                </div>,
+                <Btn t={t} variant="ghost" style={{ 
+                  color: '#4f46e5', 
+                  fontSize: 13, 
+                  fontWeight: 800,
+                  padding: '8px 16px', 
+                  borderRadius: 10,
+                  background: '#f8fafc',
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: 8,
+                  border: '1px solid #e2e8f0'
+                }} onClick={() => setSelected(u)}>
+                  <Eye size={16} /> View Profile
+                </Btn>,
+              ]
+            })}
+          />
+        )}
+      </div>
 
       {selected && (
-        <Modal t={t} title={'Customer Profile — ' + selected.name} onClose={() => setSelected(null)} width={600}>
-          {(() => {
-            const myOrders = orders.filter(o => o.customerId === selected.id || o.customer_id === selected.id)
-            const dynamicSpent = myOrders.reduce((s, o) => s + (o.total || 0), 0)
-            const totalSpent = Math.max(selected.totalSpent || selected.total_spent || 0, dynamicSpent)
-            const usedTier = selected.dynamicTier || selected.tier || 'Bronze'
-            const pts = selected.loyaltyPoints || selected.loyalty_points || 0
+        <div style={{ 
+          position: 'fixed', 
+          inset: 0, 
+          zIndex: 9999, 
+          background: 'rgba(15, 23, 42, 0.6)', 
+          backdropFilter: 'blur(12px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: 24
+        }} onClick={() => setSelected(null)}>
+          <div style={{ 
+            maxWidth: 720, 
+            width: '100%', 
+            borderRadius: 40, 
+            padding: 48, 
+            background: '#fff',
+            boxShadow: '0 40px 100px rgba(0,0,0,0.25)',
+            position: 'relative',
+            animation: 'modalSlideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1)'
+          }} onClick={e => e.stopPropagation()}>
+            {(() => {
+              const myOrders = (orders || []).filter(o => o.customerId === selected.id || o.customer_id === selected.id)
+              const tierCol = TIER_COLORS[selected.tier] || '#9ca3af'
+              return (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
 
-            return (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 16, background: `linear-gradient(135deg,${t.accent},${t.accent2})`, borderRadius: 12, padding: '20px 24px', color: '#fff' }}>
-                  <div style={{ width: 56, height: 56, background: 'rgba(255,255,255,.2)', border: '3px solid rgba(255,255,255,.4)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, fontWeight: 900 }}>{selected.avatar}</div>
-                  <div>
-                    <div style={{ fontSize: 20, fontWeight: 900 }}>{selected.name}</div>
-                    <div style={{ fontSize: 13, opacity: .8 }}>{selected.email} · {selected.role}</div>
-                    <div style={{ marginTop: 6, display: 'flex', gap: 10 }}>
-                      <span style={{ background: 'rgba(255,255,255,.2)', padding: '3px 10px', borderRadius: 20, fontSize: 12, fontWeight: 700 }}>{usedTier === 'Gold' ? '🥇' : usedTier === 'Silver' ? '🥈' : '🥉'} {usedTier}</span>
-                      <span style={{ background: 'rgba(255,255,255,.2)', padding: '3px 10px', borderRadius: 20, fontSize: 12, fontWeight: 700 }}>⭐ {pts} pts</span>
+                  {/* Profile Hero */}
+                  <div style={{ 
+                    background: 'linear-gradient(135deg, #4f46e5, #7c3aed)', 
+                    borderRadius: 32, 
+                    padding: '32px 40px', 
+                    color: '#fff', 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    gap: 24,
+                    boxShadow: '0 20px 40px rgba(79, 70, 229, 0.2)'
+                  }}>
+                    <div style={{ 
+                      width: 80, 
+                      height: 80, 
+                      borderRadius: 24, 
+                      background: 'rgba(255,255,255,0.2)', 
+                      border: '4px solid rgba(255,255,255,0.3)', 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      justifyContent: 'center', 
+                      fontSize: 28, 
+                      fontWeight: 900, 
+                      flexShrink: 0 
+                    }}>
+                      {selected.avatar || selected.name?.[0] || 'U'}
                     </div>
-                  </div>
-                </div>
-
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
-                  <StatCard t={t} title="Total Orders" value={myOrders.length} color={t.blue} icon="🧾" />
-                  <StatCard t={t} title="Total Spent" value={fmt(totalSpent, settings?.sym)} color={t.accent} icon="💰" />
-                  <StatCard t={t} title="Loyalty Points" value={pts} color={t.yellow} icon="⭐" />
-                </div>
-
-                <div>
-                  <div style={{ fontSize: 13, fontWeight: 800, color: t.text, marginBottom: 12 }}>Order History</div>
-                  {myOrders.length === 0
-                    ? <div style={{ color: t.text3, fontSize: 13 }}>No orders yet</div>
-                    : myOrders.map(o => (
-                      <div key={o.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', borderBottom: `1px solid ${t.border}`, flexWrap: 'wrap', gap: 8 }}>
-                        <div>
-                          <div style={{ fontSize: 13, fontWeight: 700, color: t.text }}>{o.id || o.order_number}</div>
-                          <div style={{ fontSize: 11, color: t.text3 }}>{o.date || o.created_at?.split('T')[0]} · {(o.items || o.order_items || []).length} items</div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: 28, fontWeight: 900, letterSpacing: '-0.02em' }}>{selected.name}</div>
+                      <div style={{ fontSize: 14, opacity: 0.9, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6, marginTop: 4 }}>
+                         <Mail size={14} /> {selected.email}
+                      </div>
+                      <div style={{ display: 'flex', gap: 12, marginTop: 16 }}>
+                        <div style={{ background: 'rgba(255,255,255,0.2)', padding: '6px 14px', borderRadius: 12, fontSize: 13, fontWeight: 900, display: 'flex', alignItems: 'center', gap: 6 }}>
+                          {TIER_ICONS[selected.tier]} {selected.tier}
                         </div>
-                        <div style={{ textAlign: 'right' }}>
-                          <div style={{ fontSize: 14, fontWeight: 800, color: t.accent }}>{fmt(o.total, settings?.sym)}</div>
-                          <Badge t={t} text={o.status} color={o.status === 'completed' ? 'green' : 'yellow'} />
+                        <div style={{ background: 'rgba(255,255,255,0.2)', padding: '6px 14px', borderRadius: 12, fontSize: 13, fontWeight: 900, display: 'flex', alignItems: 'center', gap: 6 }}>
+                          ⭐ {selected.pts?.toLocaleString()} pts
                         </div>
                       </div>
-                    ))}
+                    </div>
+                  </div>
+
+                  {/* Stats Grid */}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
+                    <div style={{ padding: '24px', borderRadius: 24, background: '#f8fafc', border: '1px solid #e2e8f0', textAlign: 'center' }}>
+                      <div style={{ fontSize: 28, fontWeight: 900, color: '#3b82f6' }}>{myOrders.length}</div>
+                      <div style={{ fontSize: 12, color: '#64748b', fontWeight: 800, marginTop: 4, textTransform: 'uppercase', letterSpacing: 1 }}>Orders</div>
+                    </div>
+                    <div style={{ padding: '24px', borderRadius: 24, background: '#f8fafc', border: '1px solid #e2e8f0', textAlign: 'center' }}>
+                      <div style={{ fontSize: 24, fontWeight: 900, color: '#4f46e5' }}>{fmt(selected.spent, settings?.sym)}</div>
+                      <div style={{ fontSize: 12, color: '#64748b', fontWeight: 800, marginTop: 4, textTransform: 'uppercase', letterSpacing: 1 }}>Revenue</div>
+                    </div>
+                    <div style={{ padding: '24px', borderRadius: 24, background: '#f8fafc', border: '1px solid #e2e8f0', textAlign: 'center' }}>
+                      <div style={{ fontSize: 28, fontWeight: 900, color: '#f59e0b' }}>{selected.pts?.toLocaleString()}</div>
+                      <div style={{ fontSize: 12, color: '#64748b', fontWeight: 800, marginTop: 4, textTransform: 'uppercase', letterSpacing: 1 }}>Points</div>
+                    </div>
+                  </div>
+
+                  {/* Order History */}
+                  <div>
+                    <div style={{ fontSize: 16, fontWeight: 900, color: '#0f172a', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <ShoppingBag size={20} color="#4f46e5" strokeWidth={2.5} /> Recent History
+                    </div>
+                    {myOrders.length === 0 ? (
+                      <div style={{ textAlign: 'center', color: '#94a3b8', fontSize: 14, padding: 32, background: '#f8fafc', borderRadius: 24, border: '1px dashed #e2e8f0', fontWeight: 600 }}>No historical data found.</div>
+                    ) : (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                        {myOrders.slice(0, 5).map(o => (
+                          <div key={o.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '16px 20px', background: '#f8fafc', borderRadius: 16, border: '1px solid #f1f5f9', alignItems: 'center' }}>
+                            <div>
+                              <div style={{ fontSize: 14, fontWeight: 800, color: '#0f172a' }}>#{o.id?.slice(-8).toUpperCase() || o.order_number}</div>
+                              <div style={{ fontSize: 12, color: '#94a3b8', fontWeight: 600, marginTop: 2 }}>
+                                {(o.date || o.created_at || '').split(/[ T]/)[0]} · {(o.items || o.order_items || []).length} products
+                              </div>
+                            </div>
+                            <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                              <span style={{ fontSize: 16, fontWeight: 900, color: '#0f172a' }}>{fmt(o.total, settings?.sym)}</span>
+                              <div style={{ 
+                                padding: '6px 12px', 
+                                borderRadius: 10, 
+                                fontSize: 11, 
+                                fontWeight: 900, 
+                                background: o.status === 'completed' ? '#f0fdf4' : '#fffbeb',
+                                color: o.status === 'completed' ? '#22c55e' : '#f59e0b',
+                                textTransform: 'uppercase'
+                              }}>
+                                {o.status || 'completed'}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
-            )
-          })()}
-        </Modal>
+              )
+            })()}
+          </div>
+        </div>
       )}
     </div>
   )
