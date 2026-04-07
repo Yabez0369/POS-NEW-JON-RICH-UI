@@ -12,7 +12,7 @@ export function GuestShopPage({ products = [], banners = [], settings = {} }) {
   const [activeTab, setActiveTab] = useState('All')
   const [searchQuery, setSearchQuery] = useState('')
 
-  const allActiveOffers = banners.filter(b => b.active && b.offerType === 'category')
+  const allActiveOffers = (banners || []).filter(b => b.active && b.offerType === 'category')
   const getGuestDisc = (p) => {
     const o = allActiveOffers.find(b => b.offerTarget === p.category)
     return Math.max(o ? o.offerDiscount : 0, p.discount || 0)

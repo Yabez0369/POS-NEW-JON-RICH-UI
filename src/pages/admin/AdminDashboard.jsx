@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react'
-import { Badge, Card, StatCard, Table, Btn } from '@/components/ui'
+import { Badge, Card, StatCard, Table, Btn, Modal } from '@/components/ui'
 import { useVenueStore } from '@/stores/venueStore'
 import { fmt, ts } from '@/lib/utils'
 import { 
@@ -11,11 +11,13 @@ import {
   Activity, 
   CheckCircle2,
   Clock,
-  LogOut
+  LogOut,
+  Package
 } from 'lucide-react'
 
-export const AdminDashboard = ({ orders = [], products = [], users = [], settings, t }) => {
+export const AdminDashboard = ({ orders = [], products = [], users = [], venues = [], settings, t, currentUser }) => {
   const [showClosing, setShowClosing] = useState(false)
+  const [showLowStock, setShowLowStock] = useState(false)
   const { selectedVenueId, selectedSiteId } = useVenueStore()
 
   const activeOrders = useMemo(() => {
@@ -43,13 +45,15 @@ export const AdminDashboard = ({ orders = [], products = [], users = [], setting
       return tsStr.startsWith(latestDate);
     })
     const todaySales = todayOrders.reduce((s, o) => s + (o.total || 0), 0)
-    const lowStockCount = (products || []).filter(p => (p.stock || 0) < 10).length
+    const lowStockProducts = (products || []).filter(p => (p.stock || 0) < 10)
+    const lowStockCount = lowStockProducts.length
     const profitSnapshot = todaySales * 0.3 // Assuming 30% margin for demo
 
     return {
       todaySales,
       todayOrders: todayOrders.length,
       lowStockCount,
+      lowStockProducts,
       profitSnapshot
     }
   }, [activeOrders, products])
@@ -64,11 +68,58 @@ export const AdminDashboard = ({ orders = [], products = [], users = [], setting
     }))
   }, [orders, settings])
 
+  const topProducts = useMemo(() => {
+    return [
+      { name: 'Premium VIP Access', sales: 124, revenue: 14500.50 },
+      { name: 'Standard Match Ticket', sales: 98, revenue: 4900.00 },
+      { name: 'Home Kit Jersey 2026', sales: 85, revenue: 7649.15 },
+      { name: 'Stadium Scarf', sales: 64, revenue: 1280.00 },
+      { name: 'Matchday Program', sales: 45, revenue: 225.00 }
+    ]
+  }, [])
+
+  const latestOrderDate = useMemo(() => activeOrders.length > 0 
+    ? activeOrders.reduce((latest, o) => {
+        const tsStr = o.created_at || o.date || '';
+        const orderDate = tsStr.includes('T') ? tsStr.split('T')[0] : tsStr.split(' ')[0];
+        return orderDate && orderDate > latest ? orderDate : latest;
+      }, '2000-01-01') 
+    : new Date().toISOString().split('T')[0], [activeOrders]);
+
+  const outletPerformance = useMemo(() => {
+    const siteStats = {};
+    activeOrders.forEach(o => {
+      const tsStr = o.created_at || o.date || '';
+      if (tsStr.startsWith(latestOrderDate)) {
+        const sid = o.site_id || o.siteId || 'unknown';
+        if (!siteStats[sid]) siteStats[sid] = { sales: 0, orders: 0, profit: 0 };
+        siteStats[sid].sales += (o.total || 0);
+        siteStats[sid].orders += 1;
+        siteStats[sid].profit += (o.total || 0) * 0.3;
+      }
+    });
+
+    return (venues || []).flatMap(v => (v.sites || []).map(s => {
+      const stats = siteStats[s.id] || { sales: 0, orders: 0, profit: 0 };
+      return { venueName: v.name, siteName: s.name, id: s.id, ...stats };
+    })).sort((a,b) => b.sales - a.sales);
+  }, [activeOrders, venues, latestOrderDate]);
+
+  const topOutlets = useMemo(() => {
+    return outletPerformance.filter(o => o.sales > 0).slice(0, 4);
+  }, [outletPerformance]);
+
+  const maxOutletSale = useMemo(() => Math.max(...topOutlets.map(o => o.sales), 1), [topOutlets]);
+
   return (
     <div style={{ 
       display: 'flex', 
       flexDirection: 'column', 
-      gap: 24,
+      gap: 32,
+      background: '#f8fafc',
+      margin: '-24px',
+      padding: '32px',
+      minHeight: 'calc(100vh - 64px)',
       animation: 'fadeIn 0.5s ease-out' 
     }}>
       {/* Header Section */}
@@ -80,11 +131,11 @@ export const AdminDashboard = ({ orders = [], products = [], users = [], setting
         gap: 16 
       }}>
         <div>
-          <h1 style={{ fontSize: 28, fontWeight: 900, color: t.text, margin: 0, letterSpacing: '-0.02em' }}>
+          <h1 style={{ fontSize: 36, fontWeight: 900, color: '#0f172a', margin: 0, letterSpacing: '-0.03em' }}>
             System Control
           </h1>
-          <p style={{ fontSize: 14, color: t.text3, marginTop: 4 }}>
-            Good Morning, <span style={{ color: t.accent, fontWeight: 700 }}>Admin</span>. Here is your store at a glance.
+          <p style={{ fontSize: 16, color: '#64748b', marginTop: 4, fontWeight: 600 }}>
+            Good Afternoon, <span style={{ color: '#0f172a', fontWeight: 800 }}>{currentUser?.name || 'Admin'}</span>. Here is your store at a glance.
           </p>
         </div>
         <Btn 
@@ -106,143 +157,176 @@ export const AdminDashboard = ({ orders = [], products = [], users = [], setting
       {/* KPI Section */}
       <div style={{ 
         display: 'grid', 
-        gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', 
-        gap: 20 
+        gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', 
+        gap: 24 
       }}>
-        <StatCard 
-          t={t} 
-          title="Today Sales" 
-          value={fmt(stats.todaySales, settings?.sym)} 
-          description="Gross revenue today"
-          icon={<DollarSign size={20} />} 
-          color={t.green}
-          trend={+14.5}
-        />
-        <StatCard 
-          t={t} 
-          title="Total Orders" 
-          value={stats.todayOrders} 
-          description="Transactions processed"
-          icon={<ShoppingCart size={20} />} 
-          color={t.blue}
-          trend={+8.2}
-        />
-        <StatCard 
-          t={t} 
-          title="Stock Alerts" 
-          value={stats.lowStockCount} 
-          description="Items below threshold"
-          icon={<AlertTriangle size={20} />} 
-          color={stats.lowStockCount > 10 ? t.red : t.yellow}
-          trend={stats.lowStockCount > 0 ? 'Risk' : 'Clear'}
-        />
-        <StatCard 
-          t={t} 
-          title="Profit Snapshot" 
-          value={fmt(stats.profitSnapshot, settings?.sym)} 
-          description="Est. net (30% margin)"
-          icon={<TrendingUp size={20} />} 
-          color={t.accent}
-          trend={+12}
-        />
-      </div>
-
-      <div style={{ 
-        display: 'grid', 
-        gridTemplateColumns: '2fr 1fr', 
-        gap: 24,
-        alignItems: 'start'
-      }} className="admin-grid-main">
-        
-        {/* Recent Orders Hub */}
-        <Card t={t} style={{ padding: 0, overflow: 'hidden', borderRadius: 20 }}>
-          <div style={{ 
-            padding: '20px 24px', 
-            borderBottom: `1px solid ${t.border}`,
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center'
-          }}>
-            <h3 style={{ margin: 0, fontSize: 16, fontWeight: 900, color: t.text }}>Recent Sales Hub</h3>
-            <Btn t={t} variant="ghost" style={{ fontSize: 12, fontWeight: 700, color: t.accent }}>
-              View All <ArrowRight size={14} />
-            </Btn>
+        {/* Stock Alerts */}
+        <div 
+          onClick={() => setShowLowStock(true)}
+          style={{ 
+            background: '#fff', 
+            borderRadius: 24, 
+            padding: '24px 32px', 
+            boxShadow: '0 12px 40px rgba(0,0,0,0.06)', 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: 20, 
+            position: 'relative', 
+            overflow: 'hidden',
+            cursor: 'pointer',
+            transition: 'transform 0.2s ease'
+          }}
+          onMouseOver={e => e.currentTarget.style.transform = 'translateY(-4px)'}
+          onMouseOut={e => e.currentTarget.style.transform = 'none'}
+        >
+          <div style={{ position: 'absolute', top: 0, left: 0, width: 6, height: '100%', background: stats.lowStockCount > 0 ? '#ef4444' : '#22c55e' }} />
+          <div style={{ width: 56, height: 56, borderRadius: 16, background: stats.lowStockCount > 0 ? '#fef2f2' : '#f0fdf4', display: 'flex', alignItems: 'center', justifyContent: 'center', color: stats.lowStockCount > 0 ? '#ef4444' : '#22c55e' }}>
+            <AlertTriangle size={28} />
           </div>
-          <Table 
-            t={t}
-            cols={['Order ID', 'Customer', 'Total', 'Status']}
-            rows={activeOrders.slice(0, 6).map(o => [
-              <span style={{ fontWeight: 700, fontSize: 13, color: t.text2 }}>{o.id}</span>,
-              <div style={{ fontSize: 13, color: t.text }}>{o.customerName || 'Guest'}</div>,
-              <span style={{ fontWeight: 800, color: t.accent }}>{fmt(o.total, settings?.sym)}</span>,
-              <Badge t={t} text={o.status || 'Active'} color={o.status === 'completed' ? 'green' : 'blue'} />
-            ])}
-          />
-        </Card>
-
-        {/* Activity Stream */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-          <Card t={t} style={{ borderRadius: 20 }}>
-            <h3 style={{ margin: '0 0 20px 0', fontSize: 16, fontWeight: 900, color: t.text, display: 'flex', alignItems: 'center', gap: 8 }}>
-              <Activity size={18} color={t.accent} /> Live Activity
-            </h3>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-              {recentActivity.map((act, i) => (
-                <div key={i} style={{ display: 'flex', gap: 12, position: 'relative' }}>
-                  <div style={{ 
-                    width: 32, 
-                    height: 32, 
-                    borderRadius: 10, 
-                    background: act.status === 'success' ? `${t.green}15` : `${t.red}15`,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    flexShrink: 0
-                  }}>
-                    {act.status === 'success' ? <CheckCircle2 size={16} color={t.green} /> : <AlertTriangle size={16} color={t.red} />}
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 13, color: t.text, fontWeight: 600, lineHeight: 1.3 }}>{act.msg}</div>
-                    <div style={{ fontSize: 11, color: t.text4, marginTop: 2, display: 'flex', alignItems: 'center', gap: 4 }}>
-                      <Clock size={10} /> {act.time}
-                    </div>
-                  </div>
-                  {i < recentActivity.length - 1 && (
-                    <div style={{ 
-                      position: 'absolute', 
-                      left: 15, 
-                      top: 36, 
-                      bottom: -12, 
-                      width: 1, 
-                      background: t.border,
-                      zIndex: 0 
-                    }} />
-                  )}
-                </div>
-              ))}
-            </div>
-          </Card>
-
-          {/* Smart Alert Placeholder */}
-          {stats.lowStockCount > 5 && (
-            <div style={{ 
-              background: `linear-gradient(135deg, ${t.red}, #991b1b)`, 
-              borderRadius: 20, 
-              padding: '20px', 
-              color: '#fff',
-              boxShadow: `0 8px 16px ${t.red}40`
-            }}>
-              <div style={{ display: 'flex', gap: 12 }}>
-                <AlertTriangle size={24} />
-                <div>
-                  <div style={{ fontWeight: 900, fontSize: 15 }}>Urgent: Low Stock</div>
-                  <div style={{ fontSize: 12, opacity: 0.9, marginTop: 4 }}>{stats.lowStockCount} products are reaching critical levels. Restock now to avoid sales loss.</div>
-                </div>
-              </div>
-            </div>
-          )}
+          <div>
+            <div style={{ fontSize: 32, fontWeight: 900, color: '#0f172a', letterSpacing: '-0.02em' }}>{stats.lowStockCount}</div>
+            <div style={{ fontSize: 12, color: '#64748b', fontWeight: 800, textTransform: 'uppercase', letterSpacing: 1 }}>STOCK ALERTS</div>
+          </div>
+        </div>
+        {/* Today Sales */}
+        <div style={{ background: '#fff', borderRadius: 24, padding: '24px 32px', boxShadow: '0 12px 40px rgba(0,0,0,0.06)', display: 'flex', alignItems: 'center', gap: 20, position: 'relative', overflow: 'hidden' }}>
+          <div style={{ position: 'absolute', top: 0, left: 0, width: 6, height: '100%', background: '#22c55e' }} />
+          <div style={{ width: 56, height: 56, borderRadius: 16, background: '#f0fdf4', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#22c55e' }}>
+            <DollarSign size={28} />
+          </div>
+          <div>
+            <div style={{ fontSize: 32, fontWeight: 900, color: '#22c55e', letterSpacing: '-0.02em' }}>{fmt(stats.todaySales, settings?.sym)}</div>
+            <div style={{ fontSize: 12, color: '#64748b', fontWeight: 800, textTransform: 'uppercase', letterSpacing: 1 }}>TODAY SALES</div>
+          </div>
+        </div>
+        {/* Total Orders */}
+        <div style={{ background: '#fff', borderRadius: 24, padding: '24px 32px', boxShadow: '0 12px 40px rgba(0,0,0,0.06)', display: 'flex', alignItems: 'center', gap: 20, position: 'relative', overflow: 'hidden' }}>
+          <div style={{ position: 'absolute', top: 0, left: 0, width: 6, height: '100%', background: '#3b82f6' }} />
+          <div style={{ width: 56, height: 56, borderRadius: 16, background: '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#3b82f6' }}>
+            <ShoppingCart size={28} />
+          </div>
+          <div>
+            <div style={{ fontSize: 32, fontWeight: 900, color: '#0f172a', letterSpacing: '-0.02em' }}>{stats.todayOrders}</div>
+            <div style={{ fontSize: 12, color: '#64748b', fontWeight: 800, textTransform: 'uppercase', letterSpacing: 1 }}>TOTAL ORDERS</div>
+          </div>
+        </div>
+        {/* Profit Snapshot */}
+        <div style={{ background: '#fff', borderRadius: 24, padding: '24px 32px', boxShadow: '0 12px 40px rgba(0,0,0,0.06)', display: 'flex', alignItems: 'center', gap: 20, position: 'relative', overflow: 'hidden' }}>
+          <div style={{ position: 'absolute', top: 0, left: 0, width: 6, height: '100%', background: t.accent }} />
+          <div style={{ width: 56, height: 56, borderRadius: 16, background: `${t.accent}15`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: t.accent }}>
+            <TrendingUp size={28} />
+          </div>
+          <div>
+            <div style={{ fontSize: 32, fontWeight: 900, color: '#0f172a', letterSpacing: '-0.02em' }}>{fmt(stats.profitSnapshot, settings?.sym)}</div>
+            <div style={{ fontSize: 12, color: '#64748b', fontWeight: 800, textTransform: 'uppercase', letterSpacing: 1 }}>PROFIT SNAPSHOT</div>
+          </div>
         </div>
       </div>
+
+      {/* Outlet Performance Details */}
+      <section style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            <h2 style={{ fontSize: 22, fontWeight: 900, color: '#0f172a', margin: 0, letterSpacing: '-0.02em' }}>Venue & Outlet Performance</h2>
+            <p style={{ fontSize: 13, color: '#64748b', marginTop: 4, fontWeight: 600 }}>Real-time contribution breakdown for <strong>{new Date(latestOrderDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'long' })}</strong></p>
+          </div>
+        </div>
+        
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 24 }}>
+          {outletPerformance.map((outlet, i) => (
+            <div key={outlet.id || i} style={{ 
+              background: '#fff', 
+              borderRadius: 24, 
+              padding: '24px', 
+              boxShadow: '0 8px 20px rgba(0,0,0,0.04)', 
+              border: '1px solid #f1f5f9',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 16,
+              transition: 'transform 0.2s ease',
+              cursor: 'default'
+            }} onMouseOver={e => e.currentTarget.style.transform = 'translateY(-4px)'} onMouseOut={e => e.currentTarget.style.transform = 'none'}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                  <div style={{ width: 44, height: 44, borderRadius: 12, background: i === 0 ? '#eff6ff' : '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center', color: i === 0 ? '#3b82f6' : '#94a3b8' }}>
+                    <Activity size={20} />
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 14, fontWeight: 900, color: '#0f172a' }}>{outlet.siteName}</div>
+                    <div style={{ fontSize: 11, fontWeight: 800, color: '#64748b', textTransform: 'uppercase' }}>{outlet.venueName}</div>
+                  </div>
+                </div>
+                {i === 0 && outlet.sales > 0 && <Badge t={t} text="Top Performer" color="blue" />}
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                <div style={{ background: '#f8fafc', padding: '12px', borderRadius: 16 }}>
+                  <div style={{ fontSize: 10, fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase' }}>Orders</div>
+                  <div style={{ fontSize: 18, fontWeight: 900, color: '#0f172a' }}>{outlet.orders}</div>
+                </div>
+                <div style={{ background: '#f8fafc', padding: '12px', borderRadius: 16 }}>
+                  <div style={{ fontSize: 10, fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase' }}>Profit</div>
+                  <div style={{ fontSize: 18, fontWeight: 900, color: '#22c55e' }}>{fmt(outlet.profit, settings?.sym)}</div>
+                </div>
+              </div>
+
+              <div style={{ borderTop: '1px dashed #e2e8f0', paddingTop: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ fontSize: 11, fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase' }}>Total Revenue</div>
+                <div style={{ fontSize: 20, fontWeight: 900, color: '#0f172a' }}>{fmt(outlet.sales, settings?.sym)}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+
+      {/* Low Stock Details Modal */}
+      {showLowStock && (
+        <Modal t={t} title="Low Stock Inventory" onClose={() => setShowLowStock(false)}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <div style={{ display: 'flex', gap: 12, alignItems: 'center', background: `${t.yellow}10`, padding: 12, borderRadius: 12 }}>
+              <AlertTriangle color={t.yellow} size={20} />
+              <div style={{ fontSize: 13, color: t.text2 }}>
+                The following products are currently below the threshold of <strong>10 units</strong>.
+              </div>
+            </div>
+            
+            <div style={{ maxHeight: 400, overflowY: 'auto', borderRadius: 12, border: `1px solid ${t.border}` }}>
+              <Table 
+                t={t}
+                cols={['Product', 'Category', 'Stock']}
+                rows={stats.lowStockProducts.map(p => [
+                  <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    <span style={{ fontWeight: 700, color: t.text }}>{p.name}</span>
+                    <span style={{ fontSize: 11, color: t.text4 }}>{p.sku || 'No SKU'}</span>
+                  </div>,
+                  <span style={{ fontSize: 12, color: t.text3 }}>{p.category || 'General'}</span>,
+                  <Badge t={t} text={`${p.stock || 0} left`} color={p.stock < 5 ? 'red' : 'yellow'} />
+                ])}
+              />
+              {stats.lowStockProducts.length === 0 && (
+                <div style={{ padding: 40, textAlign: 'center', color: t.text4 }}>
+                  No low stock items found. All levels are healthy!
+                </div>
+              )}
+            </div>
+            
+            <div style={{ display: 'flex', gap: 12, marginTop: 8 }}>
+              <Btn t={t} variant="outline" style={{ flex: 1 }} onClick={() => setShowLowStock(false)}>Close</Btn>
+              <Btn 
+                t={t} 
+                style={{ flex: 1, background: t.accent, color: '#fff' }} 
+                onClick={() => {
+                  // This could navigate to inventory page
+                  setShowLowStock(false)
+                }}
+              >
+                Manage Inventory
+              </Btn>
+            </div>
+          </div>
+        </Modal>
+      )}
 
       {/* Daily Closing Modal */}
       {showClosing && (
@@ -250,51 +334,79 @@ export const AdminDashboard = ({ orders = [], products = [], users = [], setting
           position: 'fixed', 
           inset: 0, 
           zIndex: 9999, 
-          background: 'rgba(0,0,0,0.4)', 
-          backdropFilter: 'blur(8px)',
+          background: 'rgba(15, 23, 42, 0.6)', 
+          backdropFilter: 'blur(12px)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          padding: 20
+          padding: 24
         }} onClick={() => setShowClosing(false)}>
-          <Card t={t} style={{ maxWidth: 400, width: '100%', borderRadius: 24, padding: 32 }} onClick={e => e.stopPropagation()}>
-            <div style={{ textAlign: 'center' }}>
-              <div style={{ 
-                width: 64, 
-                height: 64, 
-                borderRadius: 20, 
-                background: `${t.accent}15`, 
-                display: 'flex', 
-                alignItems: 'center', 
-                justifyContent: 'center', 
-                margin: '0 auto 20px',
-                color: t.accent
-              }}>
-                <Clock size={32} />
-              </div>
-              <h2 style={{ fontSize: 22, fontWeight: 900, color: t.text, margin: '0 0 8px 0' }}>Daily Closing</h2>
-              <p style={{ fontSize: 14, color: t.text3, margin: '0 0 24px 0' }}>Summary for {new Date().toLocaleDateString()}</p>
-              
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 32 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 16px', background: t.bg, borderRadius: 12 }}>
-                  <span style={{ fontSize: 14, color: t.text3 }}>Total Revenue</span>
-                  <span style={{ fontSize: 14, fontWeight: 800, color: t.text }}>{fmt(stats.todaySales, settings?.sym)}</span>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 16px', background: t.bg, borderRadius: 12 }}>
-                  <span style={{ fontSize: 14, color: t.text3 }}>Total Orders</span>
-                  <span style={{ fontSize: 14, fontWeight: 800, color: t.text }}>{stats.todayOrders}</span>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 16px', background: t.bg2, borderRadius: 12 }}>
-                  <span style={{ fontSize: 14, color: t.text3, fontWeight: 700 }}>Est. Profit</span>
-                  <span style={{ fontSize: 14, fontWeight: 900, color: t.green }}>{fmt(stats.profitSnapshot, settings?.sym)}</span>
-                </div>
-              </div>
-
-              <Btn t={t} onClick={() => setShowClosing(false)} style={{ width: '100%', borderRadius: 14, padding: 14, fontWeight: 800 }}> Close Day & Log Out </Btn>
+          <div style={{ 
+            maxWidth: 450, 
+            width: '100%', 
+            borderRadius: 40, 
+            padding: 48, 
+            background: '#fff',
+            boxShadow: '0 40px 100px rgba(0,0,0,0.25)',
+            textAlign: 'center',
+            position: 'relative',
+            animation: 'modalSlideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1)'
+          }} onClick={e => e.stopPropagation()}>
+            <div style={{ 
+              width: 80, 
+              height: 80, 
+              borderRadius: 24, 
+              background: '#eef2ff', 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center', 
+              margin: '0 auto 28px',
+              color: '#4f46e5',
+              boxShadow: '0 8px 20px rgba(79, 70, 229, 0.1)'
+            }}>
+              <Clock size={40} />
             </div>
-          </Card>
+            
+            <h2 style={{ fontSize: 32, fontWeight: 900, color: '#0f172a', margin: '0 0 10px 0', letterSpacing: '-0.03em' }}>Daily Closing</h2>
+            <p style={{ fontSize: 16, color: '#64748b', margin: '0 0 32px 0', fontWeight: 600 }}>Summary for {new Date().toLocaleDateString()}</p>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginBottom: 40 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '18px 24px', background: '#f8fafc', borderRadius: 20 }}>
+                <span style={{ fontSize: 15, color: '#64748b', fontWeight: 700 }}>Total Revenue</span>
+                <span style={{ fontSize: 18, fontWeight: 900, color: '#0f172a' }}>{fmt(stats.todaySales, settings?.sym)}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '18px 24px', background: '#f8fafc', borderRadius: 20 }}>
+                <span style={{ fontSize: 15, color: '#64748b', fontWeight: 700 }}>Total Orders</span>
+                <span style={{ fontSize: 18, fontWeight: 900, color: '#0f172a' }}>{stats.todayOrders}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '20px 24px', background: 'transparent', margin: '4px 0' }}>
+                <span style={{ fontSize: 16, color: '#0f172a', fontWeight: 800 }}>Est. Profit</span>
+                <span style={{ fontSize: 22, fontWeight: 900, color: '#22c55e' }}>{fmt(stats.profitSnapshot, settings?.sym)}</span>
+              </div>
+            </div>
+
+            <Btn t={t} onClick={() => setShowClosing(false)} style={{ 
+              width: '100%', 
+              borderRadius: 20, 
+              padding: 20, 
+              fontWeight: 900,
+              fontSize: 16,
+              background: 'linear-gradient(135deg, #4f46e5, #4338ca)',
+              color: '#fff',
+              boxShadow: '0 10px 25px rgba(79, 70, 229, 0.3)',
+              border: 'none'
+            }}> 
+              Close Day & Log Out 
+            </Btn>
+          </div>
         </div>
       )}
+      <style>{`
+        @keyframes modalSlideUp {
+          from { transform: translateY(40px); opacity: 0; }
+          to { transform: translateY(0); opacity: 1; }
+        }
+      `}</style>
     </div>
   )
 }

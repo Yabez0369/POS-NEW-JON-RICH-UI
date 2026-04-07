@@ -2,66 +2,71 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '@/context/AuthContext'
 import { useTheme } from '@/context/ThemeContext'
 import { useAppStore } from '@/stores/appStore'
+import { 
+  LayoutDashboard, Wallet, Package, Users, UserSquare, BarChart3, 
+  Image as ImageIcon, Ticket, ShieldCheck, Building2, Settings,
+  FolderTree, Tags, AlertTriangle, Truck, ClipboardCheck,
+  MonitorSmartphone, Undo2, Box, Home, Banknote, Receipt,
+  Printer, ListTodo, Store, ScrollText, MapPin, User, LogOut
+} from 'lucide-react'
 
 const navByRole = {
   admin: [
     { type: 'group', l: 'Management' },
-    { key: 'dashboard', l: 'Dashboard', i: '📊' },
-    { key: 'sales', l: 'Sales Hub', i: '💰' },
-    { key: 'inventory', l: 'Inventory', i: '📦' },
-    { key: 'users', l: 'User RBAC', i: '👥' },
-    { key: 'customers', l: 'Customers', i: '🧑‍🤝‍🧑' },
-    { key: 'reports', l: 'Reports', i: '📈' },
+    { key: 'dashboard', l: 'Dashboard', i: LayoutDashboard },
+    { key: 'inventory', l: 'Inventory', i: Package },
+    { key: 'users', l: 'User RBAC', i: Users },
+    { key: 'customers', l: 'Customers', i: UserSquare },
+    { key: 'reports', l: 'Reports', i: BarChart3 },
     { type: 'group', l: 'Marketing' },
-    { key: 'banners', l: 'Banners', i: '🖼️' },
-    { key: 'coupons', l: 'Coupon Codes', i: '🎟️' },
+    { key: 'banners', l: 'Banners', i: ImageIcon },
+    { key: 'coupons', l: 'Coupon Codes', i: Ticket },
     { type: 'group', l: 'System' },
-    { key: 'audit', l: 'Audit Logs', i: '🛡️' },
-    { key: 'venues', l: 'Venues', i: '🏟️' },
-    { key: 'settings', l: 'Settings', i: '⚙️' },
+    { key: 'audit', l: 'Audit Logs', i: ShieldCheck },
+    { key: 'settings', l: 'Settings', i: Settings },
   ],
   manager: [
     { type: 'group', l: 'Operations' },
-    { key: 'dashboard', l: 'Dashboard', i: '📊' },
-    { key: 'reports', l: 'Reports', i: '📈' },
+    { key: 'dashboard', l: 'Dashboard', i: LayoutDashboard },
+    { key: 'reports', l: 'Reports', i: BarChart3 },
     { type: 'group', l: 'Team' },
-    { key: 'team', l: 'Team Management', i: '👥' },
+    { key: 'team', l: 'Team Management', i: Users },
     { type: 'group', l: 'Inventory' },
-    { key: 'categories', l: 'Categories', i: '🗂️' },
-    { key: 'products', l: 'Products', i: '🏷️' },
-    { key: 'inventory', l: 'Stock Levels', i: '📦' },
-    { key: 'damage-lost', l: 'Damaged/Lost', i: '⚠️' },
-    { key: 'stock-transfer', l: 'Stock Transfer', i: '🚛' },
-    { key: 'stocktake', l: 'Stocktake', i: '📝' },
+    { key: 'categories', l: 'Categories', i: FolderTree },
+    { key: 'products', l: 'Products', i: Tags },
+    { key: 'inventory', l: 'Stock Levels', i: Package },
+    { key: 'damage-lost', l: 'Damaged/Lost', i: AlertTriangle },
+    { key: 'stock-transfer', l: 'Stock Transfer', i: Truck },
+    { key: 'stocktake', l: 'Stocktake', i: ClipboardCheck },
     { type: 'group', l: 'Sales' },
-    { key: 'pos', l: 'POS Terminal', i: '🛒' },
-    { key: 'returns', l: 'Returns', i: '↩️' },
-    { key: 'pickup', l: 'Pickup Orders', i: '📦' },
+    { key: 'pos', l: 'POS Terminal', i: MonitorSmartphone },
+    { key: 'returns', l: 'Returns', i: Undo2 },
+    { key: 'pickup', l: 'Pickup Orders', i: Box },
   ],
   cashier: [
     { type: 'group', l: 'Overview' },
-    { key: 'home', l: 'Home', i: '🏠' },
+    { key: 'home', l: 'Home', i: Home },
     { type: 'group', l: 'Selling' },
-    { key: 'pos', l: 'POS Terminal', i: '🛒' },
-    { key: 'cash', l: 'Cash Management', i: '💰' },
+    { key: 'pos', l: 'POS Terminal', i: MonitorSmartphone },
+    { key: 'cash', l: 'Cash Management', i: Banknote },
     { type: 'group', l: 'Order Info' },
-    { key: 'orders', l: 'My Orders', i: '🧾' },
-    { key: 'returns', l: 'Returns', i: '↩️' },
-    { key: 'pickup', l: 'Pickup Orders', i: '📦' },
-    { key: 'hardware', l: 'Hardware', i: '🖨️' },
+    { key: 'orders', l: 'My Orders', i: Receipt },
+    { key: 'returns', l: 'Returns', i: Undo2 },
+    { key: 'pickup', l: 'Pickup Orders', i: Box },
+    { key: 'hardware', l: 'Hardware', i: Printer },
   ],
   staff: [
     { type: 'group', l: 'Fulfillment' },
-    { key: 'staffdash', l: 'Order Queue', i: '📋' },
-    { key: 'pickup', l: 'Pickup Verify', i: '📦' },
+    { key: 'staffdash', l: 'Order Queue', i: ListTodo },
+    { key: 'pickup', l: 'Pickup Verify', i: Box },
   ],
   customer: [
     { type: 'group', l: 'Shop' },
-    { key: 'shop', l: 'Start Shopping', i: '🛍️' },
+    { key: 'shop', l: 'Start Shopping', i: Store },
     { type: 'group', l: 'My Account' },
-    { key: 'history', l: 'Order History', i: '📜' },
-    { key: 'tracking', l: 'Track Orders', i: '📍' },
-    { key: 'returns', l: 'Returns', i: '↩️' },
+    { key: 'history', l: 'Order History', i: ScrollText },
+    { key: 'tracking', l: 'Track Orders', i: MapPin },
+    { key: 'returns', l: 'Returns', i: Undo2 },
   ],
 }
 
@@ -136,95 +141,6 @@ export function Sidebar() {
           </div>
         </div>
       </div>
-      <div style={{ padding: '16px 16px', borderBottom: `1px solid ${theme.border}` }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div
-            style={{
-              width: 40,
-              height: 40,
-              background: col + '20',
-              border: `2px solid ${col}50`,
-              borderRadius: '50%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: 14,
-              fontWeight: 900,
-              color: col,
-              flexShrink: 0,
-            }}
-          >
-            {currentUser.avatar}
-          </div>
-          <div className="sidebar-label" style={{ flex: 1, minWidth: 0 }}>
-            <div
-              style={{
-                fontSize: 14,
-                fontWeight: 800,
-                color: theme.text,
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
-              }}
-            >
-              {currentUser.name}
-            </div>
-            <div style={{ fontSize: 11, color: col, textTransform: 'capitalize', fontWeight: 700 }}>
-              {currentUser.role}
-            </div>
-          </div>
-        </div>
-        {currentUser.role === 'customer' && (
-          <div className="sidebar-label" style={{ marginTop: 8, display: 'flex', gap: 6 }}>
-            <div
-              style={{
-                flex: 1,
-                background: tierC[currentUser.tier] + '20',
-                border: `1px solid ${tierC[currentUser.tier]}40`,
-                borderRadius: 7,
-                padding: '4px 8px',
-                textAlign: 'center',
-              }}
-            >
-              <div style={{ fontSize: 9, color: theme.text3, fontWeight: 700 }}>TIER</div>
-              <div style={{ fontSize: 11, fontWeight: 900, color: tierC[currentUser.tier] }}>
-                {currentUser.tier === 'Gold' ? '🥇' : currentUser.tier === 'Silver' ? '🥈' : '🥉'} {currentUser.tier}
-              </div>
-            </div>
-            <div
-              style={{
-                flex: 1,
-                background: theme.yellowBg,
-                border: `1px solid ${theme.yellowBorder}`,
-                borderRadius: 7,
-                padding: '4px 8px',
-                textAlign: 'center',
-              }}
-            >
-              <div style={{ fontSize: 9, color: theme.text3, fontWeight: 700 }}>POINTS</div>
-              <div style={{ fontSize: 11, fontWeight: 900, color: theme.yellow }}>
-                ⭐{currentUser.loyaltyPoints || 0}
-              </div>
-            </div>
-          </div>
-        )}
-        {currentUser.counter && (
-          <div
-            className="sidebar-label"
-            style={{
-              marginTop: 6,
-              fontSize: 10,
-              color: theme.text3,
-              background: theme.bg3,
-              padding: '3px 8px',
-              borderRadius: 6,
-              display: 'inline-block',
-            }}
-          >
-            📍{currentUser.counter}
-          </div>
-        )}
-      </div>
       <nav style={{ flex: 1, padding: '12px 12px', overflowY: 'auto' }}>
         {nav.map((item, idx) => {
           if (item.type === 'group') {
@@ -270,36 +186,17 @@ export function Sidebar() {
                 fontFamily: 'inherit',
               }}
             >
-              <span style={{ fontSize: 16, minWidth: 24, textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{item.i}</span>
+              {item.i && (
+                <span style={{ minWidth: 24, textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <item.i size={18} strokeWidth={1.8} />
+                </span>
+              )}
               <span className="sidebar-label">{item.l}</span>
             </button>
           )
         })}
       </nav>
       <div style={{ padding: '12px 12px', borderTop: `1px solid ${theme.border}`, background: theme.bg2 }}>
-        <button
-          onClick={() => handleNav({ key: 'profile' })}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 12,
-            width: '100%',
-            padding: '10px 12px',
-            borderRadius: 12,
-            border: 'none',
-            background: 'transparent',
-            color: theme.text3,
-            cursor: 'pointer',
-            fontSize: 14,
-            fontWeight: 500,
-            fontFamily: 'inherit',
-            marginBottom: 4,
-            transition: 'all 0.15s',
-          }}
-        >
-          <span style={{ fontSize: 16, minWidth: 24, textAlign: 'center' }}>👤</span>
-          <span className="sidebar-label">My Profile</span>
-        </button>
         <button
           onClick={logout}
           style={{
@@ -319,7 +216,9 @@ export function Sidebar() {
             transition: 'all 0.15s',
           }}
         >
-          <span style={{ fontSize: 16, minWidth: 24, textAlign: 'center' }}>🚪</span>
+          <span style={{ minWidth: 24, textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <LogOut size={18} strokeWidth={1.8} />
+          </span>
           <span className="sidebar-label">Sign Out</span>
         </button>
       </div>

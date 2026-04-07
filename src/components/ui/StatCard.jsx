@@ -2,7 +2,7 @@ import { Card } from './Card'
 import { THEMES } from '@/lib/theme'
 import { useAuth } from '@/context/AuthContext'
 
-export const StatCard = ({ title, value, sub, color, icon, t, trend }) => {
+export const StatCard = ({ title, value, sub, color, icon, t, trend, onClick }) => {
   const theme = t || THEMES.light
 
   let isManager = false;
@@ -13,7 +13,7 @@ export const StatCard = ({ title, value, sub, color, icon, t, trend }) => {
 
   if (isManager) {
     return (
-      <Card t={t} style={{ position: 'relative', overflow: 'hidden', padding: '12px 16px' }}>
+      <Card t={t} onClick={onClick} style={{ position: 'relative', overflow: 'hidden', padding: '12px 16px' }}>
         <div style={{ position: 'absolute', top: -40, right: -40, width: 120, height: 120, background: `radial-gradient(circle, ${color}30 0%, transparent 70%)`, filter: 'blur(30px)' }}></div>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", position: 'relative', zIndex: 1 }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
@@ -28,13 +28,13 @@ export const StatCard = ({ title, value, sub, color, icon, t, trend }) => {
             {typeof trend === 'number' ? (
               <>
                 <span style={{ display: 'inline-block', padding: '1px 5px', background: trend > 0 ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)', borderRadius: 3 }}>
-                  {trend > 0 ? "↑" : "↓"} {Math.abs(trend)}%
+                   {trend > 0 ? "↑" : "↓"} {Math.abs(trend)}%
                 </span>
                 <span style={{ color: '#64748B', fontWeight: 500 }}>vs last week</span>
               </>
             ) : (
                 <span style={{ display: 'inline-block', padding: '2px 6px', background: 'rgba(245, 158, 11, 0.1)', borderRadius: 4 }}>
-                  {trend}
+                   {trend}
                 </span>
             )}
           </div>
@@ -44,7 +44,7 @@ export const StatCard = ({ title, value, sub, color, icon, t, trend }) => {
   }
 
   return (
-    <Card t={t}>
+    <Card t={t} onClick={onClick} hover={!!onClick}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 }}>
         <div style={{ fontSize: 11, color: theme.text3, fontWeight: 800, textTransform: "uppercase", letterSpacing: 0.7 }}>{title}</div>
         <div style={{ width: 36, height: 36, borderRadius: 10, background: color + "18", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 }}>{icon}</div>

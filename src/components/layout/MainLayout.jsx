@@ -19,7 +19,8 @@ export function MainLayout() {
                 location.pathname.includes('/app/home') || 
                 location.pathname.includes('/app/cash') || 
                 location.pathname.includes('/app/pickup') ||
-                location.pathname.includes('/app/hardware')
+                location.pathname.includes('/app/hardware') ||
+                location.pathname.includes('/app/customer-display')
 
   const isManager = currentUser?.role === 'manager'
 

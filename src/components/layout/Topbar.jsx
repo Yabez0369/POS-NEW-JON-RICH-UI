@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { useLocation } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { useTheme } from '@/context/ThemeContext'
 import { useAuth } from '@/context/AuthContext'
 import { useAppStore } from '@/stores/appStore'
@@ -41,6 +41,7 @@ export function Topbar({ venues = [] }) {
   const { toggleSidebar, notifications, markAllRead } = useAppStore()
   const { selectedVenueId, selectedSiteId, setVenue, setSite } = useVenueStore()
   const location = useLocation()
+  const navigate = useNavigate()
   const [bellOpen, setBellOpen] = useState(false)
   const bellRef = useRef()
   const isAdmin = currentUser?.role === 'admin'
@@ -150,17 +151,36 @@ export function Topbar({ venues = [] }) {
         </div>
 
         {currentUser && (
-          <div style={{
-            display: 'flex', alignItems: 'center', gap: 8,
-            background: t.bg3, borderRadius: 8, padding: '3px 10px 3px 6px',
-            border: `1px solid ${t.border}`,
-          }}>
+          <div 
+            onClick={() => navigate('/app/profile')}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 10,
+              background: '#fff', borderRadius: 12, padding: '4px 12px 4px 6px',
+              border: '1px solid #e2e8f0', cursor: 'pointer',
+              transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+              boxShadow: '0 2px 4px rgba(0,0,0,0.02)',
+            }}
+            onMouseOver={(e) => {
+              e.currentTarget.style.transform = 'translateY(-1px)'
+              e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.06)'
+              e.currentTarget.style.borderColor = '#4f46e5'
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.transform = 'none'
+              e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.02)'
+              e.currentTarget.style.borderColor = '#e2e8f0'
+            }}
+          >
             <div style={{
-              width: 26, height: 26, borderRadius: '50%', background: t.accent,
+              width: 32, height: 32, borderRadius: 10, background: 'linear-gradient(135deg, #4f46e5, #4338ca)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 11, fontWeight: 900, color: '#fff',
+              fontSize: 12, fontWeight: 900, color: '#fff',
+              boxShadow: '0 2px 6px rgba(79, 70, 229, 0.3)'
             }}>{currentUser.avatar || currentUser.name?.charAt(0)}</div>
-            <span className="hide-mobile" style={{ fontSize: 12, fontWeight: 700, color: t.text }}>{currentUser.name}</span>
+            <div className="hide-mobile" style={{ display: 'flex', flexDirection: 'column' }}>
+              <span style={{ fontSize: 13, fontWeight: 800, color: '#0f172a', lineHeight: 1.2 }}>{currentUser.name}</span>
+              <span style={{ fontSize: 10, fontWeight: 700, color: '#4f46e5', textTransform: 'uppercase', letterSpacing: 0.5 }}>{currentUser.role}</span>
+            </div>
           </div>
         )}
       </div>

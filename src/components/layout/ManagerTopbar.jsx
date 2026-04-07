@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/context/AuthContext'
 import { useAppStore } from '@/stores/appStore'
 
@@ -8,6 +9,7 @@ export function ManagerTopbar() {
   const { notifications, markAllRead, clearNotifications } = useAppStore()
   const [showNotifs, setShowNotifs] = useState(false)
   const dropdownRef = useRef(null)
+  const navigate = useNavigate()
 
   const unreadCount = notifications.filter(n => !n.read).length
 
@@ -134,14 +136,37 @@ export function ManagerTopbar() {
           )}
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer', padding: '6px 12px', borderRadius: 99, background: '#fff', boxShadow: '0 2px 10px rgba(0,0,0,0.03)', border: '1px solid rgba(0,0,0,0.05)' }}>
-          <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'linear-gradient(135deg, #0F172A, #1E293B)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, color: '#fff', fontWeight: 'bold' }}>
+        <div 
+          onClick={() => navigate('/app/profile')}
+          style={{ 
+            display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer', 
+            padding: '8px 16px', borderRadius: 16, background: '#fff', 
+            boxShadow: '0 4px 12px rgba(0,0,0,0.03)', border: '1px solid #e2e8f0',
+            transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)'
+          }}
+          onMouseOver={(e) => {
+            e.currentTarget.style.transform = 'translateY(-1px)'
+            e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,0.08)'
+            e.currentTarget.style.borderColor = '#3b82f6'
+          }}
+          onMouseOut={(e) => {
+            e.currentTarget.style.transform = 'none'
+            e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.03)'
+            e.currentTarget.style.borderColor = '#e2e8f0'
+          }}
+        >
+          <div style={{ 
+            width: 32, height: 32, borderRadius: 10, 
+            background: 'linear-gradient(135deg, #0F172A, #1E293B)', 
+            display: 'flex', alignItems: 'center', justifyContent: 'center', 
+            fontSize: 14, color: '#fff', fontWeight: 'bold' 
+          }}>
             {currentUser?.avatar || 'M'}
           </div>
-          <div style={{ display: 'none' }} className="d-md-block">
-            <div style={{ fontSize: 13, fontWeight: 700, color: '#1E293B' }}>{currentUser?.name || 'Admin'}</div>
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
+            <div style={{ fontSize: 13, fontWeight: 800, color: '#1E293B', lineHeight: 1.2 }}>{currentUser?.name || 'Manager'}</div>
+            <div style={{ fontSize: 10, color: '#3b82f6', fontWeight: 800, textTransform: 'uppercase', letterSpacing: 0.5 }}>{currentUser?.role || 'Staff'} Access</div>
           </div>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
         </div>
       </div>
     </div>
