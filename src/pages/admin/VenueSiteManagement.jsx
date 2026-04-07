@@ -114,159 +114,332 @@ export const VenueSiteManagement = ({ t: tProp }) => {
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
+    <div style={{ 
+      display: 'flex', 
+      flexDirection: 'column', 
+      gap: 32,
+      background: '#f8fafc',
+      margin: '-24px',
+      padding: '32px',
+      minHeight: 'calc(100vh - 64px)',
+      animation: 'fadeIn 0.5s ease-out'
+    }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: 16 }}>
         <div>
-          <h1 style={{ fontSize: 26, fontWeight: 900, color: t.text, margin: 0, display: 'flex', alignItems: 'center', gap: 10 }}>
-            <Globe size={26} color={t.accent} /> Venue Infrastructure
+          <h1 style={{ fontSize: 36, fontWeight: 900, color: '#0f172a', margin: 0, display: 'flex', alignItems: 'center', gap: 12, letterSpacing: '-0.03em' }}>
+            <Globe size={32} color="#4f46e5" strokeWidth={2.5} /> Venue Infrastructure
           </h1>
-          <p style={{ fontSize: 13, color: t.text3, marginTop: 4 }}>Manage multi-site venues and synchronize metadata with Optimo.</p>
+          <p style={{ fontSize: 16, color: '#64748b', marginTop: 4, fontWeight: 600 }}>Manage multi-site venues and synchronize metadata with Optimo.</p>
         </div>
-        <Btn t={t} onClick={openVenueAdd} style={{ background: t.accent, color: '#fff', borderRadius: 12, padding: '10px 24px', fontWeight: 800 }}>
-          <Plus size={18} style={{ marginRight: 8 }} /> Add Venue
+        <Btn t={t} onClick={openVenueAdd} style={{ 
+          borderRadius: 14, 
+          background: 'linear-gradient(135deg, #4f46e5, #4338ca)', 
+          color: '#fff', 
+          padding: '12px 28px', 
+          fontWeight: 900, 
+          fontSize: 14,
+          display: 'flex', 
+          alignItems: 'center', 
+          gap: 10,
+          boxShadow: '0 8px 20px rgba(79, 70, 229, 0.25)',
+          border: 'none'
+        }}>
+          <Plus size={20} /> Add Venue
         </Btn>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 14 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 24 }}>
           {[
-              { label: 'Total Venues', value: venues.length, color: t.accent, icon: <Building2 size={18} /> },
-              { label: 'Primary Sites', value: venues.reduce((s, v) => s + v.sites.length, 0), color: t.purple, icon: <Activity size={18} /> },
-              { label: 'Total Capacity', value: venues.reduce((s, v) => s + v.sites.reduce((ss, sss) => ss + (sss.capacity || 0), 0), 0).toLocaleString(), color: t.green, icon: <Users size={18} /> },
-              { label: 'Sync Status', value: 'Live', color: t.blue, icon: <RefreshCw size={18} /> },
+              { label: 'Total Venues', value: venues.length, color: '#4f46e5', icon: <Building2 size={24} /> },
+              { label: 'Primary Sites', value: venues.reduce((s, v) => s + v.sites.length, 0), color: '#8b5cf6', icon: <Activity size={24} /> },
+              { label: 'Total Capacity', value: venues.reduce((s, v) => s + v.sites.reduce((ss, sss) => ss + (sss.capacity || 0), 0), 0).toLocaleString(), color: '#22c55e', icon: <Users size={24} /> },
+              { label: 'Sync Status', value: 'Live', color: '#3b82f6', icon: <RefreshCw size={24} /> },
           ].map(({ label, value, color, icon }) => (
-              <Card key={label} t={t} style={{ padding: '14px 18px', borderRadius: 16, display: 'flex', alignItems: 'center', gap: 14 }}>
-                <div style={{ width: 40, height: 40, borderRadius: 12, background: `${color}15`, display: 'flex', alignItems: 'center', justifyContent: 'center', color, flexShrink: 0 }}>
+              <div key={label} style={{ background: '#fff', borderRadius: 24, padding: '24px 32px', boxShadow: '0 12px 40px rgba(0,0,0,0.06)', display: 'flex', alignItems: 'center', gap: 20, position: 'relative', overflow: 'hidden', border: '1px solid #f1f5f9' }}>
+                <div style={{ position: 'absolute', top: 0, left: 0, width: 6, height: '100%', background: color }} />
+                <div style={{ width: 56, height: 56, borderRadius: 16, background: `${color}10`, display: 'flex', alignItems: 'center', justifyContent: 'center', color, flexShrink: 0 }}>
                     {icon}
                 </div>
                 <div>
-                    <div style={{ fontSize: 11, fontWeight: 800, color: t.text4, textTransform: 'uppercase' }}>{label}</div>
-                    <div style={{ fontSize: 20, fontWeight: 1000, color }}>{value}</div>
+                    <div style={{ fontSize: 12, fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: 1 }}>{label}</div>
+                    <div style={{ fontSize: 32, fontWeight: 900, color: '#0f172a', marginTop: 4, letterSpacing: '-0.02em' }}>{value}</div>
                 </div>
-              </Card>
+              </div>
           ))}
       </div>
 
-      <Card t={t} style={{ padding: '16px 20px', borderRadius: 18, border: `1px solid ${t.border}` }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-            <div style={{ fontSize: 14, fontWeight: 900, color: t.text, display: 'flex', alignItems: 'center', gap: 8 }}>
-                <Settings size={16} /> Optimo Production Integration
+      <div style={{ background: '#fff', padding: '28px 32px', borderRadius: 28, boxShadow: '0 12px 40px rgba(0,0,0,0.06)', border: '1px solid #f1f5f9' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+            <div style={{ fontSize: 18, fontWeight: 900, color: '#0f172a', display: 'flex', alignItems: 'center', gap: 10, letterSpacing: '-0.02em' }}>
+                <Settings size={20} color="#4f46e5" strokeWidth={2.5} /> Optimo Production Integration
             </div>
-            {lastOptimoSync && <div style={{ fontSize: 11, color: t.text4 }}>Last updated: {lastOptimoSync.toLocaleTimeString()}</div>}
+            {lastOptimoSync && <div style={{ fontSize: 13, color: '#64748b', fontWeight: 600 }}>Last updated: {lastOptimoSync.toLocaleTimeString()}</div>}
         </div>
-        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 20 }}>
-          <div style={{ flex: 1, minWidth: 200 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <div style={{ width: 8, height: 8, borderRadius: '50%', background: t.red }} />
-                <div style={{ fontSize: 13, color: t.text2, fontWeight: 700 }}>Legacy Connection: <span style={{ color: t.red }}>Disconnected</span></div>
+        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 32 }}>
+          <div style={{ flex: 1, minWidth: 280 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#ef4444', position: 'relative' }}>
+                   <div style={{ position: 'absolute', inset: -4, borderRadius: '50%', border: '2px solid #ef4444', animation: 'ping 2s cubic-bezier(0, 0, 0.2, 1) infinite' }} />
+                </div>
+                <div style={{ fontSize: 15, color: '#0f172a', fontWeight: 900 }}>Infrastructure Pipeline: <span style={{ color: '#ef4444' }}>Disconnected</span></div>
             </div>
-            <div style={{ fontSize: 12, color: t.text4, marginTop: 4 }}>Sync venue metadata, floorplans, and station mappings from the Optimo cloud.</div>
+            <div style={{ fontSize: 14, color: '#64748b', marginTop: 6, fontWeight: 600 }}>Synchronize venue metadata, dynamic floorplans, and endpoint station mappings from the Optimo cloud architecture.</div>
           </div>
-          <Btn t={t} variant={optimoSyncing ? 'ghost' : 'outline'} onClick={handleOptimoSyncNow} disabled={optimoSyncing} style={{ borderRadius: 12, padding: '10px 20px' }}>
-            {optimoSyncing ? <><RefreshCw size={14} className="spin" /> Syncing Network...</> : <><RefreshCw size={14} /> Synchronize All Data</>}
+          <Btn t={t} variant={optimoSyncing ? 'ghost' : 'outline'} onClick={handleOptimoSyncNow} disabled={optimoSyncing} style={{ 
+            borderRadius: 16, 
+            padding: '14px 28px',
+            fontSize: 14,
+            fontWeight: 800,
+            border: '1px solid #e2e8f0',
+            background: '#fff',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 10,
+            transition: 'all 0.2s'
+          }}>
+            {optimoSyncing ? <><RefreshCw size={16} className="spin" /> Syncing Cloud...</> : <><RefreshCw size={16} color="#4f46e5" /> Synchronize All Infrastructure</>}
           </Btn>
         </div>
-      </Card>
+      </div>
 
       {venues.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '60px 20px', color: t.text3 }}>
-          <div style={{ fontSize: 48, marginBottom: 12 }}>🏟️</div>
-          <div style={{ fontSize: 18, fontWeight: 700, marginBottom: 6 }}>No venues</div>
-          <div style={{ fontSize: 13, marginBottom: 16 }}>Add your first venue to get started</div>
-          <Btn t={t} onClick={openVenueAdd}>+ Add Venue</Btn>
+        <div style={{ background: '#fff', padding: 100, textAlign: 'center', borderRadius: 32, boxShadow: '0 12px 40px rgba(0,0,0,0.06)' }}>
+          <div style={{ fontSize: 64, marginBottom: 20 }}>🏟️</div>
+          <div style={{ fontSize: 20, fontWeight: 900, color: '#0f172a' }}>No Venue Infrastructure Found</div>
+          <div style={{ fontSize: 15, color: '#64748b', marginTop: 8, fontWeight: 600 }}>Create your first venue to begin configuring localized operation sites.</div>
+          <Btn t={t} onClick={openVenueAdd} style={{ 
+            marginTop: 32, 
+            background: '#4f46e5', 
+            color: '#fff', 
+            borderRadius: 16, 
+            padding: '16px 32px', 
+            fontWeight: 900,
+            fontSize: 15,
+            boxShadow: '0 10px 20px rgba(79, 70, 229, 0.2)',
+            border: 'none'
+          }}>+ Initialize Venue</Btn>
         </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
           {venues.map(venue => {
             const isExpanded = expandedVenue === venue.id
             const sync = syncStatus[venue.id]
             return (
-              <Card t={t} key={venue.id} style={{ overflow: 'hidden' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10 }}>
-                  <div style={{ cursor: 'pointer', flex: 1 }} onClick={() => setExpandedVenue(isExpanded ? null : venue.id)}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <span style={{ fontSize: 20 }}>{isExpanded ? '▾' : '▸'}</span>
-                      <div>
-                        <div style={{ fontSize: 15, fontWeight: 800, color: t.text }}>{venue.name}</div>
-                        <div style={{ fontSize: 12, color: t.text3, marginTop: 2 }}>{venue.address}</div>
-                      </div>
+              <div key={venue.id} style={{
+                background: '#fff',
+                borderRadius: 28, 
+                padding: '24px 32px', 
+                boxShadow: '0 12px 40px rgba(0,0,0,0.06)',
+                border: '1px solid #f1f5f9',
+                transition: 'all 0.3s ease',
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ cursor: 'pointer', flex: 1, display: 'flex', alignItems: 'center', gap: 20 }} onClick={() => setExpandedVenue(isExpanded ? null : venue.id)}>
+                    <div style={{ 
+                      width: 48, height: 48, borderRadius: 14, background: '#f8fafc', border: '1px solid #e2e8f0', 
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#0f172a',
+                      transform: isExpanded ? 'rotate(90deg)' : 'none', transition: 'transform 0.3s'
+                    }}>
+                      <Globe size={24} />
+                    </div>
+                    <div>
+                      <div style={{ fontSize: 18, fontWeight: 900, color: '#0f172a', letterSpacing: '-0.01em' }}>{venue.name}</div>
+                      <div style={{ fontSize: 14, color: '#64748b', marginTop: 2, fontWeight: 600 }}>{venue.address}</div>
                     </div>
                   </div>
-                  <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexShrink: 0 }}>
-                    <Badge t={t} text={venue.type} color="blue" />
-                    <Badge t={t} text={`${venue.sites.length} site${venue.sites.length !== 1 ? 's' : ''}`} color="purple" />
-                  <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexShrink: 0 }}>
-                    <Badge t={t} text={venue.type} color="blue" />
-                    <Badge t={t} text={`${venue.sites.length} Areas`} color="purple" />
-                    <Btn t={t} variant="ghost" size="sm" onClick={() => syncVenue(venue.id)} disabled={sync === 'syncing'} style={{ color: t.accent }}>
-                      {sync === 'syncing' ? <RefreshCw size={14} className="spin" /> : <RefreshCw size={14} />}
-                    </Btn>
-                    <Btn t={t} variant="ghost" size="sm" onClick={() => openVenueEdit(venue)} style={{ color: t.text3 }}>✏️</Btn>
-                    <Btn t={t} variant="ghost" size="sm" onClick={() => deleteVenue(venue.id)} style={{ color: t.red }}>🗑️</Btn>
-                  </div>
+                  <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexShrink: 0 }}>
+                    <div style={{ padding: '6px 12px', borderRadius: 10, background: '#eef2ff', color: '#4f46e5', fontSize: 11, fontWeight: 900 }}>{venue.type.toUpperCase()}</div>
+                    <div style={{ padding: '6px 12px', borderRadius: 10, background: '#f5f3ff', color: '#8b5cf6', fontSize: 11, fontWeight: 900 }}>{venue.sites.length} AREAS</div>
+                    
+                    <div style={{ display: 'flex', gap: 4, background: '#f8fafc', padding: 6, borderRadius: 14, border: '1px solid #e2e8f0' }}>
+                      <Btn t={t} variant="ghost" style={{ color: '#4f46e5', width: 36, height: 36, padding: 0 }} onClick={(e) => { e.stopPropagation(); syncVenue(venue.id); }} disabled={sync === 'syncing'}>
+                        {sync === 'syncing' ? <RefreshCw size={16} className="spin" /> : <RefreshCw size={16} />}
+                      </Btn>
+                      <Btn t={t} variant="ghost" style={{ color: '#64748b', width: 36, height: 36, padding: 0 }} onClick={(e) => { e.stopPropagation(); openVenueEdit(venue); }}>✏️</Btn>
+                      <Btn t={t} variant="ghost" style={{ color: '#ef4444', width: 36, height: 36, padding: 0 }} onClick={(e) => { e.stopPropagation(); deleteVenue(venue.id); }}>🗑️</Btn>
+                    </div>
                   </div>
                 </div>
 
                 {isExpanded && (
-                  <div style={{ marginTop: 16, paddingTop: 14, borderTop: `1px solid ${t.border}` }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                      <div style={{ fontSize: 13, fontWeight: 800, color: t.text }}>Sites</div>
-                      <Btn t={t} variant="secondary" size="sm" onClick={() => openSiteAdd(venue.id)}>+ Add Site</Btn>
+                  <div style={{ 
+                    marginTop: 24, padding: 32, background: '#f8fafc', borderRadius: 24, border: '1px solid #e2e8f0',
+                    animation: 'fadeIn 0.3s ease-out'
+                  }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+                      <div style={{ fontSize: 16, fontWeight: 900, color: '#0f172a', letterSpacing: '-0.01em' }}>Operational Sites & Areas</div>
+                      <Btn t={t} style={{ 
+                        background: '#4f46e5', color: '#fff', borderRadius: 12, padding: '10px 20px', 
+                        fontWeight: 900, fontSize: 13, border: 'none', boxShadow: '0 4px 12px rgba(79, 70, 229, 0.2)' 
+                      }} onClick={() => openSiteAdd(venue.id)}>+ Add Area</Btn>
                     </div>
                     {venue.sites.length === 0 ? (
-                      <div style={{ textAlign: 'center', padding: '20px', color: t.text3, fontSize: 13 }}>No sites yet</div>
+                      <div style={{ textAlign: 'center', padding: '48px', color: '#94a3b8', fontSize: 14, fontWeight: 600 }}>No localized sites configured for this venue.</div>
                     ) : (
-                      <Table t={t} cols={['Site', 'Capacity', 'Status', 'Actions']}
+                      <Table t={t} cols={['Identity', 'Occupancy / Capacity', 'Operational Status', 'Actions']}
                         rows={venue.sites.map(site => [
                           <div>
-                            <div style={{ fontWeight: 700, color: t.text }}>{site.name}</div>
-                            <div style={{ fontSize: 11, color: t.text3 }}>{site.id}</div>
+                            <div style={{ fontWeight: 900, color: '#0f172a', fontSize: 14 }}>{site.name}</div>
+                            <div style={{ fontSize: 12, color: '#94a3b8', fontWeight: 700, marginTop: 2 }}>{site.id}</div>
                           </div>,
-                          site.capacity.toLocaleString(),
-                          <Badge t={t} text={site.status} color={site.status === 'active' ? 'green' : 'red'} />,
-                          <div style={{ display: 'flex', gap: 5 }}>
-                            <Btn t={t} variant="secondary" size="sm" onClick={() => openSiteEdit(venue.id, site)}>✏️</Btn>
-                            <Btn t={t} variant="danger" size="sm" onClick={() => deleteSite(venue.id, site.id)}>🗑️</Btn>
+                          <div style={{ fontWeight: 900, color: '#4f46e5', fontSize: 14 }}>{site.capacity.toLocaleString()}</div>,
+                          <Badge t={t} text={site.status.toUpperCase()} color={site.status === 'active' ? 'green' : 'red'} style={{ fontWeight: 900, padding: '6px 12px', borderRadius: 8 }} />,
+                          <div style={{ display: 'flex', gap: 8 }}>
+                            <Btn t={t} variant="ghost" style={{ background: '#fff', color: '#64748b', border: '1px solid #e2e8f0', borderRadius: 10, padding: '8px 16px', fontWeight: 800, fontSize: 12 }} onClick={() => openSiteEdit(venue.id, site)}>Edit</Btn>
+                            <Btn t={t} variant="ghost" style={{ background: '#fff', color: '#ef4444', border: '1px solid #fecaca', borderRadius: 10, padding: '8px 16px', fontWeight: 800, fontSize: 12 }} onClick={() => deleteSite(venue.id, site.id)}>Remove</Btn>
                           </div>
-                        ])} empty="No sites" />
+                        ])} empty="No sites found" />
                     )}
                   </div>
                 )}
-              </Card>
+              </div>
             )
           })}
         </div>
       )}
 
       {showVenueForm && (
-        <Modal t={t} title={editVenue ? '✏️ Edit Venue' : '+ Add Venue'} onClose={() => setShowVenueForm(false)} width={460}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-            <Input t={t} label="Venue Name" value={venueForm.name} onChange={v => setVenueForm(f => ({ ...f, name: v }))} placeholder="e.g. Central Arena" />
-            <Input t={t} label="Address" value={venueForm.address} onChange={v => setVenueForm(f => ({ ...f, address: v }))} placeholder="Full address" />
-            <Input t={t} label="Type" value={venueForm.type} onChange={v => setVenueForm(f => ({ ...f, type: v }))} placeholder="e.g. Arena, Theatre, Stadium" />
-            <div style={{ display: 'flex', gap: 10 }}>
-              <Btn t={t} variant="secondary" fullWidth onClick={() => setShowVenueForm(false)}>Cancel</Btn>
-              <Btn t={t} variant="success" fullWidth onClick={saveVenue}>{editVenue ? 'Save Changes' : 'Add Venue'}</Btn>
+        <div style={{ 
+          position: 'fixed', 
+          inset: 0, 
+          zIndex: 9999, 
+          background: 'rgba(15, 23, 42, 0.6)', 
+          backdropFilter: 'blur(12px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: 24
+        }} onClick={() => setShowVenueForm(false)}>
+          <div style={{ 
+            maxWidth: 500, 
+            width: '100%', 
+            borderRadius: 40, 
+            padding: 48, 
+            background: '#fff',
+            boxShadow: '0 40px 100px rgba(0,0,0,0.25)',
+            position: 'relative',
+            animation: 'modalSlideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1)'
+          }} onClick={e => e.stopPropagation()}>
+            <div style={{ textAlign: 'center', marginBottom: 32 }}>
+              <h2 style={{ fontSize: 28, fontWeight: 1000, color: '#0f172a', margin: '0 0 8px 0', letterSpacing: '-0.03em' }}>{editVenue ? 'Initialize Infrastructure' : 'Add New Venue'}</h2>
+              <p style={{ fontSize: 15, color: '#64748b', fontWeight: 600 }}>Configure the identity and location of your new operational venue.</p>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+              <div>
+                <label style={{ display: 'block', fontSize: 11, fontWeight: 900, color: '#64748b', marginBottom: 10, textTransform: 'uppercase', letterSpacing: 1 }}>Identity Name</label>
+                <input 
+                  type="text" 
+                  value={venueForm.name} 
+                  onChange={e => setVenueForm(f => ({ ...f, name: e.target.value }))} 
+                  placeholder="e.g. Central Arena"
+                  style={{ width: '100%', padding: '14px 18px', borderRadius: 16, border: '1px solid #e2e8f0', background: '#f8fafc', color: '#0f172a', fontSize: 14, fontWeight: 700, outline: 'none' }}
+                />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: 11, fontWeight: 900, color: '#64748b', marginBottom: 10, textTransform: 'uppercase', letterSpacing: 1 }}>Physical Address</label>
+                <input 
+                  type="text" 
+                  value={venueForm.address} 
+                  onChange={e => setVenueForm(f => ({ ...f, address: e.target.value }))} 
+                  placeholder="Full physical address"
+                  style={{ width: '100%', padding: '14px 18px', borderRadius: 16, border: '1px solid #e2e8f0', background: '#f8fafc', color: '#0f172a', fontSize: 14, fontWeight: 700, outline: 'none' }}
+                />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: 11, fontWeight: 900, color: '#64748b', marginBottom: 10, textTransform: 'uppercase', letterSpacing: 1 }}>Infrastructure Type</label>
+                <Select t={t} label="" value={venueForm.type} onChange={v => setVenueForm(f => ({ ...f, type: v }))} options={[{ value: 'Venue', label: '🏟️ Standard Venue' }, { value: 'Theatre', label: '🎭 Theatre / Cinema' }, { value: 'Stadium', label: '🏟️ Sports Stadium' }, { value: 'Retail', label: '🏪 Retail Hub' }]} />
+              </div>
+              <div style={{ display: 'flex', gap: 12, marginTop: 8 }}>
+                <Btn t={t} variant="ghost" fullWidth style={{ borderRadius: 16, padding: 16, fontWeight: 800, color: '#64748b', background: '#f8fafc' }} onClick={() => setShowVenueForm(false)}>Cancel</Btn>
+                <Btn t={t} fullWidth style={{ 
+                  borderRadius: 16, 
+                  padding: 16, 
+                  fontWeight: 900, 
+                  background: 'linear-gradient(135deg, #4f46e5, #4338ca)', 
+                  color: '#fff',
+                  boxShadow: '0 8px 20px rgba(79, 70, 229, 0.2)',
+                  border: 'none'
+                }} onClick={saveVenue}>{editVenue ? 'Save Changes' : 'Add Venue'}</Btn>
+              </div>
             </div>
           </div>
-        </Modal>
+        </div>
       )}
 
       {showSiteForm && (
-        <Modal t={t} title={editSite ? '✏️ Edit Site' : '+ Add Site'} onClose={() => setShowSiteForm(null)} width={420}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-            <Input t={t} label="Site Name" value={siteForm.name} onChange={v => setSiteForm(f => ({ ...f, name: v }))} placeholder="e.g. Main Hall" />
-            <Input t={t} label="Capacity" value={siteForm.capacity} onChange={v => setSiteForm(f => ({ ...f, capacity: v }))} placeholder="0" type="number" />
-            <div style={{ display: 'flex', gap: 8 }}>
-              {['active', 'inactive'].map(s => (
-                <button key={s} onClick={() => setSiteForm(f => ({ ...f, status: s }))} style={{ flex: 1, padding: '8px', borderRadius: 9, border: `1px solid ${siteForm.status === s ? t.accent : t.border}`, background: siteForm.status === s ? t.accent + '15' : 'transparent', color: siteForm.status === s ? t.accent : t.text3, fontSize: 13, fontWeight: 700, cursor: 'pointer', textTransform: 'capitalize' }}>{s}</button>
-              ))}
+        <div style={{ 
+          position: 'fixed', 
+          inset: 0, 
+          zIndex: 9999, 
+          background: 'rgba(15, 23, 42, 0.6)', 
+          backdropFilter: 'blur(12px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: 24
+        }} onClick={() => setShowSiteForm(null)}>
+          <div style={{ 
+            maxWidth: 450, 
+            width: '100%', 
+            borderRadius: 40, 
+            padding: 48, 
+            background: '#fff',
+            boxShadow: '0 40px 100px rgba(0,0,0,0.25)',
+            position: 'relative',
+            animation: 'modalSlideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1)'
+          }} onClick={e => e.stopPropagation()}>
+            <div style={{ textAlign: 'center', marginBottom: 32 }}>
+              <h2 style={{ fontSize: 28, fontWeight: 1000, color: '#0f172a', margin: '0 0 8px 0', letterSpacing: '-0.03em' }}>{editSite ? 'Edit Area' : 'Add New Area'}</h2>
+              <p style={{ fontSize: 15, color: '#64748b', fontWeight: 600 }}>Define a specific operational area within the venue.</p>
             </div>
-            <div style={{ display: 'flex', gap: 10 }}>
-              <Btn t={t} variant="secondary" fullWidth onClick={() => setShowSiteForm(null)}>Cancel</Btn>
-              <Btn t={t} variant="success" fullWidth onClick={saveSite}>{editSite ? 'Save Changes' : 'Add Site'}</Btn>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+              <div>
+                <label style={{ display: 'block', fontSize: 11, fontWeight: 900, color: '#64748b', marginBottom: 10, textTransform: 'uppercase', letterSpacing: 1 }}>Identity Area Name</label>
+                <input 
+                  type="text" 
+                  value={siteForm.name} 
+                  onChange={e => setSiteForm(f => ({ ...f, name: e.target.value }))} 
+                  placeholder="e.g. Main Stand, East Hall"
+                  style={{ width: '100%', padding: '14px 18px', borderRadius: 16, border: '1px solid #e2e8f0', background: '#f8fafc', color: '#0f172a', fontSize: 14, fontWeight: 700, outline: 'none' }}
+                />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: 11, fontWeight: 900, color: '#64748b', marginBottom: 10, textTransform: 'uppercase', letterSpacing: 1 }}>Maximum Occupancy</label>
+                <input 
+                  type="number" 
+                  value={siteForm.capacity} 
+                  onChange={e => setSiteForm(f => ({ ...f, capacity: e.target.value }))} 
+                  placeholder="0" 
+                  style={{ width: '100%', padding: '14px 18px', borderRadius: 16, border: '1px solid #e2e8f0', background: '#f8fafc', color: '#0f172a', fontSize: 14, fontWeight: 700, outline: 'none' }}
+                />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: 11, fontWeight: 900, color: '#64748b', marginBottom: 10, textTransform: 'uppercase', letterSpacing: 1 }}>Deployment Status</label>
+                <div style={{ display: 'flex', gap: 12 }}>
+                  {['active', 'inactive'].map(s => (
+                    <button key={s} onClick={() => setSiteForm(f => ({ ...f, status: s }))} style={{ 
+                      flex: 1, padding: '14px', borderRadius: 16, 
+                      border: siteForm.status === s ? '2px solid #4f46e5' : '1px solid #e2e8f0', 
+                      background: siteForm.status === s ? '#eef2ff' : '#fff', 
+                      color: siteForm.status === s ? '#4f46e5' : '#64748b', 
+                      fontSize: 14, fontWeight: 900, cursor: 'pointer', textTransform: 'uppercase', letterSpacing: 1 
+                    }}>{s}</button>
+                  ))}
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: 12, marginTop: 8 }}>
+                <Btn t={t} variant="ghost" fullWidth style={{ borderRadius: 16, padding: 16, fontWeight: 800, color: '#64748b', background: '#f8fafc' }} onClick={() => setShowSiteForm(null)}>Cancel</Btn>
+                <Btn t={t} fullWidth style={{ 
+                  borderRadius: 16, padding: 16, fontWeight: 900, 
+                  background: 'linear-gradient(135deg, #4f46e5, #4338ca)', color: '#fff',
+                  boxShadow: '0 8px 20px rgba(79, 70, 229, 0.2)', border: 'none'
+                }} onClick={saveSite}>{editSite ? 'Save Changes' : 'Confirm Area'}</Btn>
+              </div>
             </div>
           </div>
-        </Modal>
+        </div>
       )}
     </div>
   )
