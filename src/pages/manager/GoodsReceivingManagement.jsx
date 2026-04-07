@@ -160,7 +160,11 @@ export default function GoodsReceivingManagement() {
   }, [receivings, t, handleEdit, handleDelete])
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 20, padding: '0 clamp(12px, 3vw, 24px)', maxWidth: '100%', margin: '0 auto' }}>
+    <div style={{ 
+      background: 'linear-gradient(180deg, #C4E8E7 0%, #FFFFFF 100%)',
+      minHeight: '100%', padding: '32px', borderRadius: 24,
+      display: 'flex', flexDirection: 'column', gap: 20, maxWidth: '100%', margin: '0 auto', boxSizing: 'border-box' 
+    }}>
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
         <div style={{ fontSize: 22, fontWeight: 900, color: t.text }}>📥 Goods Receiving</div>

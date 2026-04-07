@@ -15,12 +15,11 @@ export function MainLayout() {
   const { sidebarOpen, closeSidebar } = useAppStore()
   const [venues, setVenues] = useState([])
   const location = useLocation()
-  const isPos = location.pathname.includes('/app/pos') || 
-                location.pathname.includes('/app/home') || 
-                location.pathname.includes('/app/cash') || 
-                location.pathname.includes('/app/pickup') ||
-                location.pathname.includes('/app/hardware') ||
-                location.pathname.includes('/app/customer-display')
+  const isPos = location.pathname.includes('/app/pos') ||
+    location.pathname.includes('/app/home') ||
+    location.pathname.includes('/app/cash') ||
+    location.pathname.includes('/app/pickup') ||
+    location.pathname.includes('/app/hardware')
 
   const isManager = currentUser?.role === 'manager'
 
@@ -55,7 +54,7 @@ export function MainLayout() {
       <div
         className={`main-content ${isPos ? 'pos-main-content' : ''}`}
         style={{
-          marginLeft: isPos ? 0 : (sidebarOpen ? 80 : 220),
+          marginLeft: isPos ? 0 : (sidebarOpen ? 80 : 260),
           minHeight: '100vh',
           display: 'flex',
           flexDirection: 'column',

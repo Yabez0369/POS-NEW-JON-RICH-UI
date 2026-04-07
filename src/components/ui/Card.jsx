@@ -14,15 +14,15 @@ export const Card = ({ children, t, style = {}, onClick, hover = false }) => {
   } catch (e) { }
 
   const baseStyle = isManager ? {
-    background: hov ? 'linear-gradient(145deg, #1E293B, #0F172A)' : 'linear-gradient(135deg, #0F172A, #1E293B)',
-    border: '1px solid rgba(255,255,255,0.05)',
+    background: '#FFFFFF',
+    border: '1px solid #E2E8F0',
     borderRadius: 24,
     padding: 24,
-    boxShadow: '0 20px 40px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.1)',
+    boxShadow: '0 4px 20px rgba(0,0,0,0.03)',
     transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
     cursor: onClick ? 'pointer' : 'default',
-    color: '#fff',
-    transform: hov && hover ? 'scale(1.02)' : 'scale(1)',
+    color: '#0F172A',
+    transform: hov && hover ? 'translateY(-4px)' : 'translateY(0)',
   } : {
     background: hov ? theme.cardHover : theme.card,
     border: `1px solid ${theme.border}`,

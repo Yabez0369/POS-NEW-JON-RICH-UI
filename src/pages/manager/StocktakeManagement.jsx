@@ -2,7 +2,7 @@ import { useState, useCallback, useMemo, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTheme } from '@/context/ThemeContext'
 import { useAuth } from '@/context/AuthContext'
-import { Btn, Input, Badge, Card, Modal, Table, Select } from '@/components/ui'
+import { Btn, Input, Badge, Card, StatCard, Modal, Table, Select } from '@/components/ui'
 import { notify } from '@/components/shared'
 import { ts } from '@/lib/utils'
 import { stocktakeService, productsService, sitesService, inventoryService } from '@/services'
@@ -140,15 +140,19 @@ export default function StocktakeManagement() {
   ])
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 20, padding: 'clamp(16px, 4vw, 28px)', maxWidth: 1400, margin: '0 auto', width: '100%', boxSizing: 'border-box' }}>
+    <div style={{ 
+      background: 'linear-gradient(180deg, #C4E8E7 0%, #FFFFFF 100%)',
+      minHeight: '100%', padding: '32px', borderRadius: 24,
+      display: 'flex', flexDirection: 'column', gap: 20, maxWidth: 1400, margin: '0 auto', width: '100%', boxSizing: 'border-box' 
+    }}>
       <InventoryHeader title="📋 Stocktake" t={t} activePage="stocktake" />
 
       {/* Stats */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16, marginBottom: 28 }}>
-        <Card t={t} style={{ padding: 16 }}><div style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', fontWeight: 800, letterSpacing: 0.7, marginBottom: 8 }}>Total Items</div><div style={{ fontSize: 28, fontWeight: 900, color: '#fff' }}>{stocktakeItems.length}</div></Card>
-        <Card t={t} style={{ padding: 16 }}><div style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', fontWeight: 800, letterSpacing: 0.7, marginBottom: 8 }}>Discrepancies</div><div style={{ fontSize: 28, fontWeight: 900, color: '#ef4444' }}>{stats.discrepancies}</div></Card>
-        <Card t={t} style={{ padding: 16 }}><div style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', fontWeight: 800, letterSpacing: 0.7, marginBottom: 8 }}>Counted Items</div><div style={{ fontSize: 28, fontWeight: 900, color: '#3b82f6' }}>{stats.counted}</div></Card>
-        <Card t={t} style={{ padding: 16 }}><div style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', fontWeight: 800, letterSpacing: 0.7, marginBottom: 8 }}>Total Variance</div><div style={{ fontSize: 28, fontWeight: 900, color: stats.totalVariance === 0 ? '#10b981' : stats.totalVariance > 0 ? '#3b82f6' : '#ef4444' }}>{stats.totalVariance > 0 ? '+' : ''}{stats.totalVariance}</div></Card>
+        <StatCard t={t} title="Total Items" value={stocktakeItems.length} icon="📋" />
+        <StatCard t={t} title="Discrepancies" value={stats.discrepancies} color="#ef4444" icon="⚠" />
+        <StatCard t={t} title="Counted Items" value={stats.counted} color="#3b82f6" icon="✔" />
+        <StatCard t={t} title="Total Variance" value={`${stats.totalVariance > 0 ? '+' : ''}${stats.totalVariance}`} color={stats.totalVariance === 0 ? '#10b981' : stats.totalVariance > 0 ? '#3b82f6' : '#ef4444'} icon="📊" />
       </div>
 
       <div className="controls-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16, marginBottom: 24 }}>

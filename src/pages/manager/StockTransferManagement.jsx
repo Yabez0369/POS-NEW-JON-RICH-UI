@@ -2,7 +2,7 @@ import { useState, useCallback, useMemo, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTheme } from '@/context/ThemeContext'
 import { useAuth } from '@/context/AuthContext'
-import { Btn, Input, Badge, Card, Modal, Table, Select } from '@/components/ui'
+import { Btn, Input, Badge, Card, StatCard, Modal, Table, Select } from '@/components/ui'
 import { notify } from '@/components/shared'
 import { ts } from '@/lib/utils'
 import { inventoryService, productsService, sitesService } from '@/services'
@@ -167,7 +167,11 @@ export default function StockTransferManagement() {
   ])
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 20, padding: 'clamp(16px, 4vw, 28px)', maxWidth: 1400, margin: '0 auto', width: '100%', boxSizing: 'border-box' }}>
+    <div style={{ 
+      background: 'linear-gradient(180deg, #C4E8E7 0%, #FFFFFF 100%)',
+      minHeight: '100%', padding: '32px', borderRadius: 24,
+      display: 'flex', flexDirection: 'column', gap: 20, maxWidth: 1400, margin: '0 auto', width: '100%', boxSizing: 'border-box' 
+    }}>
       <InventoryHeader
         title="🔄 Stock Transfer"
         t={t}
@@ -176,22 +180,10 @@ export default function StockTransferManagement() {
 
       {/* Stats */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16, marginBottom: 28 }}>
-        <Card t={t} style={{ padding: 16 }}>
-          <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', fontWeight: 800, letterSpacing: 0.7, marginBottom: 8 }}>Total Transfers</div>
-          <div style={{ fontSize: 28, fontWeight: 900, color: '#fff' }}>{transferItems.length}</div>
-        </Card>
-        <Card t={t} style={{ padding: 16 }}>
-          <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', fontWeight: 800, letterSpacing: 0.7, marginBottom: 8 }}>Pending</div>
-          <div style={{ fontSize: 28, fontWeight: 900, color: '#f59e0b' }}>{transferItems.filter(t => t.status === 'pending').length}</div>
-        </Card>
-        <Card t={t} style={{ padding: 16 }}>
-          <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', fontWeight: 800, letterSpacing: 0.7, marginBottom: 8 }}>In Transit</div>
-          <div style={{ fontSize: 28, fontWeight: 900, color: '#3b82f6' }}>{transferItems.filter(t => t.status === 'in-transit').length}</div>
-        </Card>
-        <Card t={t} style={{ padding: 16 }}>
-          <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', fontWeight: 800, letterSpacing: 0.7, marginBottom: 8 }}>Completed</div>
-          <div style={{ fontSize: 28, fontWeight: 900, color: '#10b981' }}>{transferItems.filter(t => t.status === 'completed').length}</div>
-        </Card>
+        <StatCard t={t} title="Total Transfers" value={transferItems.length} icon="🔄" />
+        <StatCard t={t} title="Pending" value={transferItems.filter(t => t.status === 'pending').length} color="#f59e0b" icon="⏳" />
+        <StatCard t={t} title="In Transit" value={transferItems.filter(t => t.status === 'in-transit').length} color="#3b82f6" icon="🚚" />
+        <StatCard t={t} title="Completed" value={transferItems.filter(t => t.status === 'completed').length} color="#10b981" icon="✅" />
       </div>
 
       {/* Controls */}

@@ -32,8 +32,12 @@ export const StaffManagement = ({ users, setUsers, counters, addAudit, currentUs
   const roleC = { cashier: t.green, staff: t.teal }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-      <div style={{ fontSize: 22, fontWeight: 900, color: t.text }}>Staff Management</div>
+    <div style={{ 
+      background: 'linear-gradient(180deg, #C4E8E7 0%, #FFFFFF 100%)',
+      minHeight: '100%', padding: '32px', borderRadius: 24,
+      display: 'flex', flexDirection: 'column', gap: 20, boxSizing: 'border-box' 
+    }}>
+      <div style={{ fontSize: 24, fontWeight: 950, color: '#1E293B', letterSpacing: -0.5 }}>Staff Management</div>
 
       <div style={{ display: 'flex', gap: 10, justifyContent: 'space-between', flexWrap: 'wrap', alignItems: 'center' }}>
         <div style={{ display: 'flex', gap: 10 }}>
