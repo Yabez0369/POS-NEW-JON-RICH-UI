@@ -588,19 +588,19 @@ CREATE TRIGGER trigger_serial_numbers_updated_at
 CREATE OR REPLACE FUNCTION get_my_profile()
 RETURNS SETOF profiles AS $$
   SELECT * FROM profiles WHERE id = auth.uid();
-$$ LANGUAGE sql SECURITY DEFINER;
+$$ LANGUAGE sql SECURITY DEFINER SET search_path = public;
 
 -- 2b. Get authenticated user's role (bypasses RLS to prevent infinite recursion)
 CREATE OR REPLACE FUNCTION get_my_role()
 RETURNS TEXT AS $$
   SELECT role FROM public.profiles WHERE id = auth.uid();
-$$ LANGUAGE sql SECURITY DEFINER STABLE;
+$$ LANGUAGE sql SECURITY DEFINER SET search_path = public STABLE;
 
 -- 2c. Get authenticated user's venue_id (bypasses RLS)
 CREATE OR REPLACE FUNCTION get_my_venue_id()
 RETURNS UUID AS $$
   SELECT venue_id FROM public.profiles WHERE id = auth.uid();
-$$ LANGUAGE sql SECURITY DEFINER STABLE;
+$$ LANGUAGE sql SECURITY DEFINER SET search_path = public STABLE;
 
 -- 3. Auto-create profile on auth.users insert
 CREATE OR REPLACE FUNCTION handle_new_user()
@@ -697,7 +697,7 @@ CREATE POLICY "Users can update own profile"
 CREATE POLICY "Admins and managers can read all profiles in venue"
   ON profiles FOR SELECT
   USING (
-    get_my_role() IN ('admin', 'manager')
+    (SELECT role FROM public.profiles WHERE id = auth.uid()) IN ('admin', 'manager')
     AND (get_my_venue_id() = profiles.venue_id OR get_my_venue_id() IS NULL)
   );
 

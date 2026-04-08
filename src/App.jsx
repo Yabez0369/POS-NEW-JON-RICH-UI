@@ -220,6 +220,7 @@ function AppContent({ users, setUsers }) {
   const [banners, setBanners] = useState(() => isSupabaseConfigured() ? [] : INITIAL_BANNERS)
   const [coupons, setCoupons] = useState(() => isSupabaseConfigured() ? [] : INITIAL_COUPONS)
   const [venues, setVenues] = useState(() => isSupabaseConfigured() ? [] : INITIAL_VENUES)
+  const [sites, setSites] = useState([])
   const [auditLogs, setAuditLogs] = useState([])
 
   useSupabaseSync(setProducts, 'products', INITIAL_PRODUCTS, productsService.fetchProducts)
@@ -229,6 +230,7 @@ function AppContent({ users, setUsers }) {
   useSupabaseSync(setBanners, 'banners', INITIAL_BANNERS)
   useSupabaseSync(setCoupons, 'coupons', INITIAL_COUPONS)
   useSupabaseSync(setVenues, 'venues', INITIAL_VENUES, () => import('@/services').then(m => m.venuesService.fetchVenuesWithSites()))
+  useSupabaseSync(setSites, 'sites', [])
   // User sync moved to App
   useSupabaseSync(setAuditLogs, 'audit_logs', [], () =>
     supabase.from('audit_logs').select('id,user_id,action,module,details,created_at').order('created_at', { ascending: false }).limit(200)
@@ -350,7 +352,7 @@ function AppContent({ users, setUsers }) {
             {/* Dashboard - role-specific */}
             <Route path="dashboard" element={
               currentUser?.role === 'admin'
-                ? <AdminDashboard orders={orders} users={users} products={products} settings={settings} t={t} />
+                ? <AdminDashboard orders={orders} users={users} products={products} venues={venues} sites={sites} settings={settings} t={t} />
                 : currentUser?.role === 'manager'
                   ? <ManagerDashboard orders={orders} products={products} users={users} counters={counters} settings={settings} t={t} />
                   : <Navigate to="/app" replace />
@@ -383,7 +385,7 @@ function AppContent({ users, setUsers }) {
             } />
             <Route path="users" element={
               <ProtectedRoute allowedRoles={['admin']}>
-                <UserManagement users={users} t={t} />
+                <UserManagement users={users} setUsers={setUsers} venues={venues} t={t} />
               </ProtectedRoute>
             } />
             <Route path="audit" element={

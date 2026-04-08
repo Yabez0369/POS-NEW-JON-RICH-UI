@@ -114,6 +114,9 @@ export const NumberPadModal = ({
 
     setVal(newVal)
     if (onChange) onChange(newVal)
+
+    // Haptic Feedback
+    if (window.navigator.vibrate) window.navigator.vibrate(40)
   }
 
   return (
@@ -177,8 +180,8 @@ export const NumberPadModal = ({
           </div>
         </div>
 
-        {/* — Subtle Branding — */}
-        <div style={footerStyle}>TOUCH OPTIMIZED TERMINAL</div>
+        {/* — Footer Simplified — */}
+        <div style={{ height: '8px' }} />
       </div>
 
       <style dangerouslySetInnerHTML={{ __html: animations }} />
@@ -322,24 +325,43 @@ const closeBtnStyle = {
   cursor: 'pointer'
 }
 
+const topCloseBtnStyle = {
+  position: 'absolute',
+  top: '12px',
+  right: '12px',
+  width: '44px',
+  height: '44px',
+  borderRadius: '14px',
+  background: 'rgba(255,255,255,0.08)',
+  border: '1px solid rgba(255,255,255,0.1)',
+  color: 'rgba(255,255,255,0.6)',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  cursor: 'pointer',
+  zIndex: 100,
+  transition: 'all 0.2s'
+}
+
 const keysWrapper = {
   display: 'flex',
   flexDirection: 'column',
-  gap: '12px'
+  gap: '18px',
+  marginTop: '10px'
 }
 
 const rowStyle = {
   display: 'flex',
-  gap: '10px',
+  gap: '16px',
   justifyContent: 'center'
 }
 
 const keyBaseStyle = {
-  width: '100%',
+  width: '74px',
   height: '74px',
-  background: 'rgba(255, 255, 255, 0.08)',
-  border: '1px solid rgba(255, 255, 255, 0.05)',
-  borderRadius: '18px',
+  background: 'rgba(255, 255, 255, 0.1)',
+  border: '1px solid rgba(255, 255, 255, 0.08)',
+  borderRadius: '50%', // PERFECT CIRCLE
   color: '#fff',
   fontSize: '24px',
   fontWeight: '800',
@@ -354,67 +376,68 @@ const keyBaseStyle = {
 }
 
 const functionalKeyStyles = {
-  background: 'rgba(255, 255, 255, 0.15)',
+  background: 'rgba(255, 255, 255, 0.18)',
   boxShadow: '0 6px 16px rgba(0,0,0,0.4)',
 }
 
 const keyPressStyle = {
-  transform: 'scale(0.95)',
-  background: 'rgba(255, 255, 255, 0.2)',
+  transform: 'scale(0.9)',
+  background: 'rgba(255, 255, 255, 0.25)',
   boxShadow: 'inset 0 4px 10px rgba(0,0,0,0.5)',
-  color: '#fff'
 }
 
 const keyFlashStyle = {
-  background: 'rgba(79, 70, 229, 0.4)', // POS Indigo
-  boxShadow: '0 0 20px rgba(79, 70, 229, 0.6)',
+  background: 'rgba(79, 70, 229, 0.5)',
+  boxShadow: '0 0 20px rgba(79, 70, 229, 0.7)',
 }
 
 const keyPopupStyle = {
   position: 'absolute',
-  bottom: '110%',
+  bottom: '120%',
   left: '50%',
-  transform: 'translateX(-50%) scale(1.1)',
-  width: '80px',
-  height: '100px',
+  transform: 'translateX(-50%)',
+  width: '70px',
+  height: '70px',
   background: '#fff',
-  borderRadius: '20px',
+  borderRadius: '50%',
   color: '#0F172A',
-  fontSize: '44px',
+  fontSize: '32px',
   fontWeight: '900',
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
-  boxShadow: '0 20px 40px rgba(0,0,0,0.5)',
+  boxShadow: '0 15px 30px rgba(0,0,0,0.5)',
   zIndex: 10,
   animation: 'popIn 0.1s ease-out'
 }
 
 const dotButtonStyle = {
   ...keyBaseStyle,
-  flex: 1,
-  background: 'rgba(255, 255, 255, 0.12)',
+  width: '74px',
+  borderRadius: '50%',
+  background: 'rgba(255, 255, 255, 0.15)',
   fontSize: '24px'
 }
 
 const saveBtnStyle = {
   ...keyBaseStyle,
-  flex: 2,
-  background: 'linear-gradient(135deg, #4F46E5, #3730A3)',
+  width: '160px',
+  borderRadius: '40px',
+  background: 'linear-gradient(135deg, #6366F1, #4F46E5)',
   border: 'none',
-  fontSize: '18px',
+  fontSize: '16px',
   fontWeight: '900',
-  letterSpacing: '1px',
   boxShadow: '0 10px 30px rgba(79, 70, 229, 0.4)',
 }
 
 const footerStyle = {
-  paddingTop: '10px',
+  paddingTop: '16px',
   textAlign: 'center',
   fontSize: '10px',
   fontWeight: '900',
   color: 'rgba(255,255,255,0.2)',
-  letterSpacing: '3px'
+  letterSpacing: '4px',
+  textTransform: 'uppercase'
 }
 
 const animations = `

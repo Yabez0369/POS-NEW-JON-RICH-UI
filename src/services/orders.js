@@ -33,10 +33,10 @@ export async function createOrderWithItems({ siteId, counterId, cashierId, custo
     const s = String(id).toLowerCase();
     // Match common mock prefixes (0000, 1111, aaaa, BBBB, etc.) or temp IDs
     return s.startsWith('0000') || s.startsWith('1111') || s.startsWith('2222') ||
-           s.startsWith('c0000') || s.startsWith('b0000') || s.startsWith('a0000') ||
-           s.startsWith('aaaa') || s.startsWith('bbbb') || s.startsWith('cccc') ||
-           s.startsWith('dddd') || s.startsWith('eeee') || s.startsWith('ffff') ||
-           s.startsWith('temp-');
+      s.startsWith('c0000') || s.startsWith('b0000') || s.startsWith('a0000') ||
+      s.startsWith('aaaa') || s.startsWith('bbbb') || s.startsWith('cccc') ||
+      s.startsWith('dddd') || s.startsWith('eeee') || s.startsWith('ffff') ||
+      s.startsWith('temp-');
   };
 
   const orderPayload = {

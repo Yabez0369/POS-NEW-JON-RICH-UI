@@ -543,9 +543,265 @@
 .receipt-total { display: flex; justify-content: space-between; font-weight: 900; font-size: 20px; margin-bottom: 16px; }
 .modal-close { width: 100%; height: 60px; background: white; border-radius: 20px; margin-top: 20px; border: none; font-weight: 900; color: var(--terminal-navy); cursor: pointer; }
 
+/* ── Step 3: Reason Capture ── */
+.reason-capture-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.reason-pill-grid.large {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+.reason-pill-large {
+  height: 120px;
+  border-radius: 24px;
+  border: 2px solid var(--terminal-border);
+  background: white;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.reason-pill-large .pill-circle {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 2px solid var(--terminal-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: transparent;
+  transition: all 0.2s;
+}
+
+.reason-pill-large.active {
+  border-color: var(--terminal-indigo);
+  background: #F5F7FF;
+  transform: translateY(-4px);
+  box-shadow: 0 12px 24px rgba(79, 70, 229, 0.1);
+}
+
+.reason-pill-large.active .pill-circle {
+  background: var(--terminal-indigo);
+  border-color: var(--terminal-indigo);
+  color: white;
+}
+
+.pill-label { font-size: 16px; font-weight: 800; color: var(--terminal-navy); }
+
+.comment-box-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.comment-box-wrap label {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--terminal-text-soft);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.comment-box-wrap textarea {
+  width: 100%;
+  height: 140px;
+  border-radius: 24px;
+  border: 2px solid var(--terminal-border);
+  padding: 20px;
+  font-size: 16px;
+  font-family: inherit;
+  resize: none;
+  transition: all 0.2s;
+}
+
+.comment-box-wrap textarea:focus {
+  outline: none;
+  border-color: var(--terminal-indigo);
+  box-shadow: 0 10px 30px rgba(79, 70, 229, 0.08);
+}
+
+/* ── Step 4: Action Selection ── */
+.refund-method-sub {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  animation: fadeIn 0.3s ease;
+}
+
+.refund-method-sub button {
+  flex: 1;
+  height: 40px;
+  border-radius: 12px;
+  border: 1px solid var(--terminal-border);
+  background: white;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.refund-method-sub button.active {
+  background: var(--terminal-indigo);
+  color: white;
+  border-color: var(--terminal-indigo);
+}
+
+.exchange-product-browser {
+  margin-top: 40px;
+  background: white;
+  border-radius: 32px;
+  padding: 32px;
+  box-shadow: var(--terminal-shadow);
+}
+
+.browser-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.browser-header h3 { font-size: 20px; font-weight: 900; }
+
+.browser-search-wrap {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #F1F5F9;
+  padding: 0 20px;
+  border-radius: 100px;
+  width: 300px;
+}
+
+.browser-search-wrap input {
+  height: 48px;
+  border: none;
+  background: transparent;
+  font-size: 14px;
+  font-weight: 600;
+  width: 100%;
+}
+
+.browser-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+.browser-item {
+  padding: 16px;
+  border-radius: 20px;
+  border: 1px solid var(--terminal-border);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.browser-item:hover { border-color: var(--terminal-indigo); background: #F8FAFF; }
+.browser-item.selected { border-color: var(--terminal-indigo); background: #F5F7FF; }
+
+.item-img { font-size: 24px; }
+.item-meta { display: flex; flex-direction: column; }
+.item-meta .name { font-size: 13px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100px; }
+.item-meta .price { font-size: 12px; font-weight: 700; color: var(--terminal-indigo); }
+
+.repl-qty-ctrl {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: white;
+  padding: 4px;
+  border-radius: 100px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+}
+
+.repl-qty-ctrl button {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: none;
+  background: #F1F5F9;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+/* ── Step 5: Final Summary ── */
+.summary-section-label {
+  font-size: 11px;
+  font-weight: 900;
+  color: var(--terminal-text-soft);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 8px;
+  opacity: 0.6;
+}
+
+.summary-section-label.margin-top { margin-top: 24px; }
+
+.summary-line.replacement {
+  background: #F0FDF4;
+  border-radius: 12px;
+  padding: 12px;
+  border-bottom: none !important;
+  margin-bottom: 8px;
+}
+
+.summary-line.replacement .line-price { color: #16A34A; }
+
+.audit-preview-card {
+  background: white;
+  border-radius: 24px;
+  padding: 24px;
+  box-shadow: var(--terminal-shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.audit-row { display: flex; justify-content: space-between; font-size: 14px; }
+.audit-row .label { font-weight: 800; color: var(--terminal-text-soft); }
+.audit-row .val { font-weight: 700; color: var(--terminal-navy); }
+.italic { font-style: italic; opacity: 0.8; }
+.uppercase { text-transform: uppercase; letter-spacing: 0.5px; }
+.font-bold { font-weight: 900; }
+.text-indigo { color: var(--terminal-indigo); }
+
+.pricing-math-box {
+  background: var(--terminal-navy);
+  border-radius: 24px;
+  padding: 24px;
+  color: white;
+  margin-top: 24px;
+}
+
+.math-row { display: flex; justify-content: space-between; font-size: 15px; margin-bottom: 8px; opacity: 0.8; }
+.math-divider { height: 1px; background: rgba(255,255,255,0.1); margin: 12px 0; }
+.math-total-row { display: flex; justify-content: space-between; font-size: 20px; font-weight: 900; }
+
+.text-red { color: #FCA5A5; }
+.text-green { color: #86EFAC; }
+
+.animate-up { animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+@keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
 /* Responsive adjustments */
 @media (max-width: 900px) {
   .confirm-layout { grid-template-columns: 1fr; }
   .type-selection-cards { grid-template-columns: 1fr; }
   .returns-footer { padding: 0 20px; height: 100px; }
+  .reason-pill-grid.large { grid-template-columns: 1fr; }
+  .browser-grid { grid-template-columns: 1fr 1fr; }
 }

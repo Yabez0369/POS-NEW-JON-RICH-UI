@@ -1,11 +1,44 @@
 import { useState } from 'react'
-import { Badge, Card, Table } from '@/components/ui'
+import { Badge, Card, Table, Btn } from '@/components/ui'
+import { Shield, Download, Activity, AlertCircle, Clock, CheckCircle, Search } from 'lucide-react'
 
 export const AuditLogs = ({ auditLogs, t }) => {
-  const [f, setF] = useState('all')
-  const mods = ['all', ...new Set(auditLogs.map(l => l.module))]
-  const fil = f === 'all' ? auditLogs : auditLogs.filter(l => l.module === f)
-  const roleColors = { admin: 'red', manager: 'yellow', cashier: 'green', customer: 'blue', system: 'purple' }
+  const [searchTerm, setSearchTerm] = useState('')
+  const [filterModule, setFilterModule] = useState('all')
+  const [filterSeverity, setFilterSeverity] = useState('all')
+
+  const safeLogs = auditLogs || []
+  const modules = ['all', ...new Set(safeLogs.map(l => l.module).filter(Boolean))]
+
+  const getSeverity = (log) => {
+    if (log.severity) return log.severity;
+    const act = (log.action || '').toLowerCase();
+    if (act.includes('delete') || act.includes('remove') || act.includes('failed')) return 'HIGH'
+    if (act.includes('edit') || act.includes('update')) return 'MED'
+    return 'LOW'
+  }
+
+  const getModuleIcon = (module) => {
+    return <Activity size={20} />
+  }
+
+  const filtered = safeLogs.filter(l => {
+    const matchSearch = Object.values(l).some(val => String(val).toLowerCase().includes(searchTerm.toLowerCase()))
+    const matchMod = filterModule === 'all' || l.module === filterModule
+    const matchSev = filterSeverity === 'all' || getSeverity(l) === filterSeverity
+    return matchSearch && matchMod && matchSev
+  })
+
+  const stats = {
+    total: safeLogs.length,
+    high: safeLogs.filter(l => getSeverity(l) === 'HIGH').length,
+    med: safeLogs.filter(l => getSeverity(l) === 'MED').length,
+    low: safeLogs.filter(l => getSeverity(l) === 'LOW').length,
+  }
+
+  const handleExport = () => {
+    console.log('Exporting logs...')
+  }
 
   return (
     <div style={{ 
@@ -20,20 +53,29 @@ export const AuditLogs = ({ auditLogs, t }) => {
     }}>
 
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: 16 }}>
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        alignItems: 'center', 
+        flexWrap: 'wrap', 
+        gap: 16,
+        position: 'sticky',
+        top: -32,
+        zIndex: 50,
+        background: '#f8fafc',
+        padding: '16px 0',
+        margin: '-16px 0 0 0'
+      }}>
         <div>
-          <h1 style={{ fontSize: 36, fontWeight: 900, color: '#0f172a', margin: 0, display: 'flex', alignItems: 'center', gap: 12, letterSpacing: '-0.03em' }}>
-            <Shield size={32} color="#4f46e5" strokeWidth={2.5} /> Audit Log
+          <h1 style={{ fontSize: 24, fontWeight: 900, color: '#0f172a', margin: 0, display: 'flex', alignItems: 'center', gap: 12, letterSpacing: '-0.03em' }}>
+            <Shield size={24} color="#4f46e5" strokeWidth={2.5} /> Audit Log
           </h1>
-          <p style={{ fontSize: 16, color: '#64748b', marginTop: 4, fontWeight: 600 }}>
-             Full system activity history — every action tracked and timestamped.
-          </p>
         </div>
         <div style={{ display: 'flex', gap: 12 }}>
           <Btn t={t} variant="outline" style={{ 
             borderRadius: 14, 
-            padding: '12px 24px', 
-            fontSize: 14,
+            padding: '8px 16px', 
+            fontSize: 13,
             fontWeight: 800,
             color: '#64748b',
             display: 'flex', 
@@ -43,7 +85,7 @@ export const AuditLogs = ({ auditLogs, t }) => {
             border: '1px solid #e2e8f0',
             boxShadow: '0 4px 12px rgba(0,0,0,0.04)'
           }} onClick={handleExport}>
-            <Download size={18} /> Export History
+            <Download size={16} /> Export
           </Btn>
         </div>
       </div>
@@ -117,7 +159,7 @@ export const AuditLogs = ({ auditLogs, t }) => {
       <div style={{ background: '#fff', borderRadius: 32, boxShadow: '0 12px 40px rgba(0,0,0,0.06)', overflow: 'hidden', border: '1px solid #f1f5f9' }}>
         <div style={{ padding: '24px 32px', borderBottom: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f8fafc' }}>
           <span style={{ fontSize: 18, fontWeight: 900, color: '#0f172a', letterSpacing: '-0.02em' }}>Activity Analytics Timeline</span>
-          <span style={{ fontSize: 14, color: '#64748b', fontWeight: 700 }}>{filtered.length} of {auditLogs.length} events logged</span>
+          <span style={{ fontSize: 14, color: '#64748b', fontWeight: 700 }}>{filtered.length} of {safeLogs.length} events logged</span>
         </div>
 
         {filtered.length === 0 ? (
@@ -125,7 +167,7 @@ export const AuditLogs = ({ auditLogs, t }) => {
             <Shield size={64} strokeWidth={1} style={{ marginBottom: 20, opacity: 0.4 }} />
             <div style={{ fontSize: 20, fontWeight: 900, color: '#0f172a' }}>No audit events found.</div>
             <div style={{ fontSize: 15, marginTop: 8, fontWeight: 600 }}>
-              {auditLogs.length === 0 ? 'Events will appear here as users take actions in the system.' : 'Try adjusting your search or filters.'}
+              {safeLogs.length === 0 ? 'Events will appear here as users take actions in the system.' : 'Try adjusting your search or filters.'}
             </div>
           </div>
         ) : (
@@ -220,7 +262,7 @@ export const AuditLogs = ({ auditLogs, t }) => {
       </div>
 
       {/* Empty State Hint */}
-      {auditLogs.length === 0 && (
+      {safeLogs.length === 0 && (
         <div style={{
           display: 'flex', 
           alignItems: 'center', 

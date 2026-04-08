@@ -94,7 +94,7 @@ export const ReturnManagement = ({
 
   return (
     <div style={{ 
-      background: 'linear-gradient(180deg, #C4E8E7 0%, #FFFFFF 100%)',
+      background: 'transparent',
       minHeight: '100%', padding: '32px', borderRadius: 24,
       display: 'flex', flexDirection: 'column', gap: 24, boxSizing: 'border-box' 
     }}>
@@ -142,7 +142,7 @@ export const ReturnManagement = ({
                   {selectedReturn.reason_code || selectedReturn.reason || 'No specific reason provided.'}
                 </div>
               </div>
-              <div style={{ width: 180, padding: 16, background: 'linear-gradient(135deg, #C4E8E7, #FFFFFF)', borderRadius: 16, border: '1px solid #C4E8E7', textAlign: 'right' }}>
+              <div style={{ width: 180, padding: 16, background: 'transparent', borderRadius: 16, border: '1px solid #C4E8E7', textAlign: 'right' }}>
                 <div style={{ fontSize: 11, color: '#0ea5e9', fontWeight: 800, textTransform: 'uppercase' }}>Total Refund</div>
                 <div style={{ fontSize: 24, fontWeight: 900, color: '#0ea5e9', marginTop: 4 }}>
                   {fmt(selectedReturn.refund_amount || selectedReturn.refundAmount, sym)}

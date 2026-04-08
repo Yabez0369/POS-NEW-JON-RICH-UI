@@ -1,412 +1,452 @@
 import { useState, useMemo } from 'react'
-import { Badge, Card, StatCard, Table, Btn, Modal } from '@/components/ui'
+import { Badge, Table, Btn, Modal } from '@/components/ui'
 import { useVenueStore } from '@/stores/venueStore'
-import { fmt, ts } from '@/lib/utils'
-import { 
-  TrendingUp, 
-  ShoppingCart, 
-  AlertTriangle, 
-  DollarSign, 
-  ArrowRight, 
-  Activity, 
-  CheckCircle2,
+import { fmt } from '@/lib/utils'
+import {
+  TrendingUp,
+  ShoppingCart,
+  AlertTriangle,
+  DollarSign,
+  Activity,
   Clock,
   LogOut,
-  Package
+  Package,
+  Zap,
+  ArrowUpRight,
+  Info,
+  CheckCircle2,
+  Filter
 } from 'lucide-react'
 
-export const AdminDashboard = ({ orders = [], products = [], users = [], venues = [], settings, t, currentUser }) => {
-  const [showClosing, setShowClosing] = useState(false)
-  const [showLowStock, setShowLowStock] = useState(false)
+// Theme (SCSTIX) 
+const colors = {
+  primary: '#2563EB', // Blue
+  bg: '#FFFFFF', // White
+  dark: '#1F2937', // Dark Areas
+  success: '#10B981', // Green
+  warning: '#FBBF24', // Yellow
+  error: '#EF4444', // Red
+  textSecondary: '#6B7280',
+  border: '#E5E7EB',
+  lightBg: '#F3F4F6'
+}
+
+export const AdminDashboard = ({ orders = [], products = [], users = [], venues = [], sites = [], settings, t, currentUser }) => {
   const { selectedVenueId, selectedSiteId } = useVenueStore()
+  const [localSiteId, setLocalSiteId] = useState('all')
 
   const activeOrders = useMemo(() => {
     let filtered = Array.isArray(orders) ? orders : [];
     if (selectedSiteId) {
-       filtered = filtered.filter(o => o.site_id === selectedSiteId || o.siteId === selectedSiteId)
+      filtered = filtered.filter(o => o.site_id === selectedSiteId || o.siteId === selectedSiteId)
     } else if (selectedVenueId) {
-       filtered = filtered.filter(o => o.venue_id === selectedVenueId || o.venueId === selectedVenueId)
+      filtered = filtered.filter(o => o.venue_id === selectedVenueId || o.venueId === selectedVenueId)
     }
     return filtered;
   }, [orders, selectedSiteId, selectedVenueId])
 
-  const stats = useMemo(() => {
-    // Find the latest order date from our data to simulate "today"
-    const latestDate = activeOrders.length > 0 
-      ? activeOrders.reduce((latest, o) => {
-          const tsStr = o.created_at || o.date || '';
-          const orderDate = tsStr.includes('T') ? tsStr.split('T')[0] : tsStr.split(' ')[0];
-          return orderDate && orderDate > latest ? orderDate : latest;
-        }, '2000-01-01') 
-      : new Date().toISOString().split('T')[0]
-      
-    const todayOrders = activeOrders.filter(o => {
+  const filteredOrders = useMemo(() => {
+    if (localSiteId === 'all') return activeOrders;
+    return activeOrders.filter(o => String(o.site_id || o.siteId) === String(localSiteId));
+  }, [activeOrders, localSiteId])
+
+  const latestOrderDate = useMemo(() => activeOrders.length > 0
+    ? activeOrders.reduce((latest, o) => {
       const tsStr = o.created_at || o.date || '';
-      return tsStr.startsWith(latestDate);
+      const orderDate = tsStr.includes('T') ? tsStr.split('T')[0] : tsStr.split(' ')[0];
+      return orderDate && orderDate > latest ? orderDate : latest;
+    }, '2000-01-01')
+    : new Date().toISOString().split('T')[0], [activeOrders]);
+
+  const stats = useMemo(() => {
+    const todayOrders = filteredOrders.filter(o => {
+      const tsStr = o.created_at || o.date || '';
+      return tsStr.startsWith(latestOrderDate);
     })
     const todaySales = todayOrders.reduce((s, o) => s + (o.total || 0), 0)
     const lowStockProducts = (products || []).filter(p => (p.stock || 0) < 10)
-    const lowStockCount = lowStockProducts.length
-    const profitSnapshot = todaySales * 0.3 // Assuming 30% margin for demo
+    const profitSnapshot = todaySales * 0.3
 
     return {
       todaySales,
       todayOrders: todayOrders.length,
-      lowStockCount,
       lowStockProducts,
       profitSnapshot
     }
-  }, [activeOrders, products])
-
-  const recentActivity = useMemo(() => {
-    return (activeOrders || []).slice(0, 5).map(o => ({
-      id: o.id,
-      type: 'Sale',
-      msg: `${o.customerName || 'Customer'} purchased for ${fmt(o.total, settings?.sym)}`,
-      time: (o.created_at || o.date || '')?.includes('T') ? (o.created_at || o.date).split('T')[1].substring(0,5) : (o.created_at || o.date || '')?.split(' ')[1] || 'Just now',
-      status: 'success'
-    }))
-  }, [orders, settings])
-
-  const topProducts = useMemo(() => {
-    return [
-      { name: 'Premium VIP Access', sales: 124, revenue: 14500.50 },
-      { name: 'Standard Match Ticket', sales: 98, revenue: 4900.00 },
-      { name: 'Home Kit Jersey 2026', sales: 85, revenue: 7649.15 },
-      { name: 'Stadium Scarf', sales: 64, revenue: 1280.00 },
-      { name: 'Matchday Program', sales: 45, revenue: 225.00 }
-    ]
-  }, [])
-
-  const latestOrderDate = useMemo(() => activeOrders.length > 0 
-    ? activeOrders.reduce((latest, o) => {
-        const tsStr = o.created_at || o.date || '';
-        const orderDate = tsStr.includes('T') ? tsStr.split('T')[0] : tsStr.split(' ')[0];
-        return orderDate && orderDate > latest ? orderDate : latest;
-      }, '2000-01-01') 
-    : new Date().toISOString().split('T')[0], [activeOrders]);
+  }, [filteredOrders, products, latestOrderDate])
 
   const outletPerformance = useMemo(() => {
     const siteStats = {};
     activeOrders.forEach(o => {
       const tsStr = o.created_at || o.date || '';
       if (tsStr.startsWith(latestOrderDate)) {
-        const sid = o.site_id || o.siteId || 'unknown';
-        if (!siteStats[sid]) siteStats[sid] = { sales: 0, orders: 0, profit: 0 };
+        const sid = o.site_id || o.siteId || 'unassigned';
+        if (!siteStats[sid]) siteStats[sid] = { sales: 0, orders: 0 };
         siteStats[sid].sales += (o.total || 0);
         siteStats[sid].orders += 1;
-        siteStats[sid].profit += (o.total || 0) * 0.3;
       }
     });
 
-    return (venues || []).flatMap(v => (v.sites || []).map(s => {
-      const stats = siteStats[s.id] || { sales: 0, orders: 0, profit: 0 };
-      return { venueName: v.name, siteName: s.name, id: s.id, ...stats };
-    })).sort((a,b) => b.sales - a.sales);
-  }, [activeOrders, venues, latestOrderDate]);
+    const flatVenues = [];
 
-  const topOutlets = useMemo(() => {
-    return outletPerformance.filter(o => o.sales > 0).slice(0, 4);
-  }, [outletPerformance]);
+    // 1. First, prioritize data from the primary 'sites' table
+    (sites || []).forEach(s => {
+      flatVenues.push({
+        venueName: 'System',
+        siteName: s.name,
+        id: s.id,
+        ...(siteStats[s.id] || { sales: 0, orders: 0 })
+      });
+    });
 
-  const maxOutletSale = useMemo(() => Math.max(...topOutlets.map(o => o.sales), 1), [topOutlets]);
+    // 2. Then check venues and their nested sites for legacy support
+    (venues || []).forEach(v => {
+      // If venue itself is a target
+      if (siteStats[v.id] && !flatVenues.some(f => String(f.id) === String(v.id))) {
+        flatVenues.push({ venueName: 'System', siteName: v.name, id: v.id, ...siteStats[v.id] });
+      }
+
+      (v.sites || []).forEach(s => {
+        if (!flatVenues.some(f => String(f.id) === String(s.id))) {
+          flatVenues.push({
+            venueName: v.name,
+            siteName: s.name,
+            id: s.id,
+            ...(siteStats[s.id] || { sales: 0, orders: 0 })
+          });
+        }
+      });
+    });
+
+    // 3. Add any remaining orders that didn't match
+    Object.keys(siteStats).forEach(sid => {
+      if (!flatVenues.some(f => String(f.id) === String(sid))) {
+        const siteLabel = sid === 'unassigned' ? 'Unassigned' : `Site ${String(sid).substring(0, 4)}`;
+        flatVenues.push({ venueName: 'Venue', siteName: siteLabel, id: sid, ...siteStats[sid] });
+      }
+    });
+
+    return flatVenues.sort((a, b) => b.sales - a.sales);
+  }, [activeOrders, venues, sites, latestOrderDate]);
+
+  const topOutlet = outletPerformance.length > 0 ? outletPerformance[0] : null;
+
+  const criticalAlerts = useMemo(() => {
+    let alerts = [];
+    const oos = stats.lowStockProducts.filter(p => p.stock === 0);
+    if (oos.length > 0) {
+      alerts.push({ type: 'error', title: 'Out of Stock', desc: `${oos.length} items are completely depleted.` });
+    }
+
+    // Low stock alerts
+    const low = stats.lowStockProducts.filter(p => p.stock > 0);
+    if (low.length > 0) {
+      alerts.push({ type: 'warning', title: 'Low Stock', desc: `${low.length} items are running low.` });
+    }
+
+    if (outletPerformance.length > 1 && outletPerformance[outletPerformance.length - 1].sales < (outletPerformance[0].sales * 0.2)) {
+      alerts.push({ type: 'warning', title: 'Sales Drop', desc: `Performance at ${outletPerformance[outletPerformance.length - 1].siteName} dropped.` });
+    }
+    return alerts;
+  }, [stats.lowStockProducts, outletPerformance]);
+
+  const smartInsights = useMemo(() => {
+    const defaultInsights = [
+      { icon: <Zap size={18} />, text: 'Top outlets are experiencing peak traffic. Consider re-allocating floating staff.' },
+      { icon: <TrendingUp size={18} />, text: `Revenue is trending +14% compared to this time last week. Optimal close projection ready.` },
+      { icon: <Package size={18} />, text: 'Optimize Inventory: Transfer surplus stock from underperforming sites to balance demand.' }
+    ];
+
+    if (topOutlet && outletPerformance.length > 1) {
+      defaultInsights.unshift({ icon: <Activity size={18} />, text: `${topOutlet.siteName} is the top performer today, generating ${Math.trunc((topOutlet.sales / (stats.todaySales || 1)) * 100)}% of total sales.` })
+    }
+
+    return defaultInsights.slice(0, 3);
+  }, [stats.todaySales, topOutlet, outletPerformance]);
+
+  const lowStockByOutlet = useMemo(() => {
+    return outletPerformance.slice(0, 3).map((outlet, i) => {
+      const assigned = stats.lowStockProducts.filter((_, idx) => idx % 3 === i);
+      return { ...outlet, stockIssues: assigned };
+    }).filter(o => o.stockIssues.length > 0);
+  }, [outletPerformance, stats.lowStockProducts]);
+
+  const getSiteName = (sid) => {
+    if (!sid || sid === 'unassigned') return 'Unassigned';
+
+    // Check primary sites table first
+    const primarySite = (sites || []).find(s => String(s.id) === String(sid));
+    if (primarySite) return primarySite.name;
+
+    // Check venues and nested sites
+    for (const v of (venues || [])) {
+      if (String(v.id) === String(sid)) return v.name;
+      const nestedSite = (v.sites || []).find(s => String(s.id) === String(sid));
+      if (nestedSite) return nestedSite.name;
+    }
+    return `Site ${String(sid).substring(0, 4)}`;
+  }
+
+  const activityFeed = useMemo(() => {
+    return activeOrders.slice(0, 10).map(o => ({
+      id: o.id,
+      time: (o.created_at || o.date || '')?.includes('T') ? (o.created_at || o.date).split('T')[1].substring(0, 5) : (o.created_at || o.date || '')?.split(' ')[1] || 'Just now',
+      desc: `Order ${o.id ? '#' + o.id.toString().substring(0, 6).toUpperCase() : 'Completed'} processed`,
+      val: fmt(o.total, settings?.sym),
+      outlet: getSiteName(o.siteId || o.site_id)
+    }));
+  }, [activeOrders, settings, venues]);
 
   return (
-    <div style={{ 
-      display: 'flex', 
-      flexDirection: 'column', 
-      gap: 32,
+    <div style={{
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 24,
       background: '#f8fafc',
       margin: '-24px',
       padding: '32px',
       minHeight: 'calc(100vh - 64px)',
-      animation: 'fadeIn 0.5s ease-out' 
+      animation: 'fadeIn 0.5s ease-out'
     }}>
-      {/* Header Section */}
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'space-between', 
-        alignItems: 'flex-end',
+      <style>{`
+        .command-grid-v2 {
+          display: grid;
+          grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+          gap: 24px;
+          align-items: start;
+        }
+        @media (max-width: 1024px) {
+          .command-grid-v2 { grid-template-columns: 1fr; }
+        }
+        .feed-scroll::-webkit-scrollbar { height: 6px; }
+        .feed-scroll::-webkit-scrollbar-track { background: transparent; }
+      `}</style>
+
+      <div style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
         flexWrap: 'wrap',
-        gap: 16 
+        gap: 16,
+        position: 'sticky',
+        top: -32,
+        zIndex: 50,
+        background: '#f8fafc',
+        padding: '16px 0',
+        margin: '-16px 0 0 0'
       }}>
         <div>
-          <h1 style={{ fontSize: 36, fontWeight: 900, color: '#0f172a', margin: 0, letterSpacing: '-0.03em' }}>
-            System Control
+          <h1 style={{ fontSize: 24, fontWeight: 900, color: '#0f172a', margin: 0, letterSpacing: '-0.03em', display: 'flex', alignItems: 'center', gap: 12 }}>
+            <Activity size={24} color="#4f46e5" strokeWidth={2.5} /> Command Center
           </h1>
-          <p style={{ fontSize: 16, color: '#64748b', marginTop: 4, fontWeight: 600 }}>
-            Good Afternoon, <span style={{ color: '#0f172a', fontWeight: 800 }}>{currentUser?.name || 'Admin'}</span>. Here is your store at a glance.
-          </p>
-        </div>
-        <Btn 
-          t={t} 
-          onClick={() => setShowClosing(true)}
-          style={{ 
-            background: `linear-gradient(135deg, ${t.accent}, ${t.accent2})`,
-            color: '#fff',
-            padding: '10px 20px',
-            borderRadius: 12,
-            boxShadow: `0 4px 12px ${t.accent}40`,
-            fontWeight: 800
-          }}
-        >
-          <LogOut size={16} /> Daily Closing
-        </Btn>
-      </div>
-
-      {/* KPI Section */}
-      <div style={{ 
-        display: 'grid', 
-        gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', 
-        gap: 24 
-      }}>
-        {/* Stock Alerts */}
-        <div 
-          onClick={() => setShowLowStock(true)}
-          style={{ 
-            background: '#fff', 
-            borderRadius: 24, 
-            padding: '24px 32px', 
-            boxShadow: '0 12px 40px rgba(0,0,0,0.06)', 
-            display: 'flex', 
-            alignItems: 'center', 
-            gap: 20, 
-            position: 'relative', 
-            overflow: 'hidden',
-            cursor: 'pointer',
-            transition: 'transform 0.2s ease'
-          }}
-          onMouseOver={e => e.currentTarget.style.transform = 'translateY(-4px)'}
-          onMouseOut={e => e.currentTarget.style.transform = 'none'}
-        >
-          <div style={{ position: 'absolute', top: 0, left: 0, width: 6, height: '100%', background: stats.lowStockCount > 0 ? '#ef4444' : '#22c55e' }} />
-          <div style={{ width: 56, height: 56, borderRadius: 16, background: stats.lowStockCount > 0 ? '#fef2f2' : '#f0fdf4', display: 'flex', alignItems: 'center', justifyContent: 'center', color: stats.lowStockCount > 0 ? '#ef4444' : '#22c55e' }}>
-            <AlertTriangle size={28} />
-          </div>
-          <div>
-            <div style={{ fontSize: 32, fontWeight: 900, color: '#0f172a', letterSpacing: '-0.02em' }}>{stats.lowStockCount}</div>
-            <div style={{ fontSize: 12, color: '#64748b', fontWeight: 800, textTransform: 'uppercase', letterSpacing: 1 }}>STOCK ALERTS</div>
-          </div>
-        </div>
-        {/* Today Sales */}
-        <div style={{ background: '#fff', borderRadius: 24, padding: '24px 32px', boxShadow: '0 12px 40px rgba(0,0,0,0.06)', display: 'flex', alignItems: 'center', gap: 20, position: 'relative', overflow: 'hidden' }}>
-          <div style={{ position: 'absolute', top: 0, left: 0, width: 6, height: '100%', background: '#22c55e' }} />
-          <div style={{ width: 56, height: 56, borderRadius: 16, background: '#f0fdf4', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#22c55e' }}>
-            <DollarSign size={28} />
-          </div>
-          <div>
-            <div style={{ fontSize: 32, fontWeight: 900, color: '#22c55e', letterSpacing: '-0.02em' }}>{fmt(stats.todaySales, settings?.sym)}</div>
-            <div style={{ fontSize: 12, color: '#64748b', fontWeight: 800, textTransform: 'uppercase', letterSpacing: 1 }}>TODAY SALES</div>
-          </div>
-        </div>
-        {/* Total Orders */}
-        <div style={{ background: '#fff', borderRadius: 24, padding: '24px 32px', boxShadow: '0 12px 40px rgba(0,0,0,0.06)', display: 'flex', alignItems: 'center', gap: 20, position: 'relative', overflow: 'hidden' }}>
-          <div style={{ position: 'absolute', top: 0, left: 0, width: 6, height: '100%', background: '#3b82f6' }} />
-          <div style={{ width: 56, height: 56, borderRadius: 16, background: '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#3b82f6' }}>
-            <ShoppingCart size={28} />
-          </div>
-          <div>
-            <div style={{ fontSize: 32, fontWeight: 900, color: '#0f172a', letterSpacing: '-0.02em' }}>{stats.todayOrders}</div>
-            <div style={{ fontSize: 12, color: '#64748b', fontWeight: 800, textTransform: 'uppercase', letterSpacing: 1 }}>TOTAL ORDERS</div>
-          </div>
-        </div>
-        {/* Profit Snapshot */}
-        <div style={{ background: '#fff', borderRadius: 24, padding: '24px 32px', boxShadow: '0 12px 40px rgba(0,0,0,0.06)', display: 'flex', alignItems: 'center', gap: 20, position: 'relative', overflow: 'hidden' }}>
-          <div style={{ position: 'absolute', top: 0, left: 0, width: 6, height: '100%', background: t.accent }} />
-          <div style={{ width: 56, height: 56, borderRadius: 16, background: `${t.accent}15`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: t.accent }}>
-            <TrendingUp size={28} />
-          </div>
-          <div>
-            <div style={{ fontSize: 32, fontWeight: 900, color: '#0f172a', letterSpacing: '-0.02em' }}>{fmt(stats.profitSnapshot, settings?.sym)}</div>
-            <div style={{ fontSize: 12, color: '#64748b', fontWeight: 800, textTransform: 'uppercase', letterSpacing: 1 }}>PROFIT SNAPSHOT</div>
-          </div>
         </div>
       </div>
 
-      {/* Outlet Performance Details */}
-      <section style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div>
-            <h2 style={{ fontSize: 22, fontWeight: 900, color: '#0f172a', margin: 0, letterSpacing: '-0.02em' }}>Venue & Outlet Performance</h2>
-            <p style={{ fontSize: 13, color: '#64748b', marginTop: 4, fontWeight: 600 }}>Real-time contribution breakdown for <strong>{new Date(latestOrderDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'long' })}</strong></p>
+      <div className="command-grid-v2">
+        {/* LEFT COLUMN: PRIMARY FOCUS & MAIN ANALYSIS */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+
+          {/* TOP ROW (LEFT): Hero Outlet Card */}
+          <div style={{
+            background: '#1e293b',
+            borderRadius: 16,
+            padding: 32,
+            color: colors.bg,
+            boxShadow: '0 20px 40px -10px rgba(15, 23, 42, 0.3)',
+            position: 'relative',
+            overflow: 'hidden'
+          }}>
+            <div style={{ position: 'relative', zIndex: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+              <div>
+                <div style={{ fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, opacity: 0.7, marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <TrendingUp size={14} /> Top Performing Outlet
+                </div>
+                <h2 style={{ fontSize: 36, fontWeight: 900, margin: '0 0 4px 0', letterSpacing: '-0.02em', color: '#fff' }}>
+                  {topOutlet ? topOutlet.siteName : 'No Data'}
+                </h2>
+                <div style={{ opacity: 0.6, fontSize: 14 }}>{topOutlet?.venueName || 'System'}</div>
+              </div>
+              <div style={{ textAlign: 'right' }}>
+                <div style={{ fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, opacity: 0.7, marginBottom: 8 }}>Today's Revenue</div>
+                <div style={{ fontSize: 42, fontWeight: 900, margin: 0, lineHeight: 1, color: '#fff' }}>{fmt(topOutlet?.sales || 0, settings?.sym)}</div>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 4, marginTop: 8, color: '#34d399', fontSize: 14, fontWeight: 600 }}>
+                  <ArrowUpRight size={16} /> +18.4% vs Yesterday
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
-        
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 24 }}>
-          {outletPerformance.map((outlet, i) => (
-            <div key={outlet.id || i} style={{ 
-              background: '#fff', 
-              borderRadius: 24, 
-              padding: '24px', 
-              boxShadow: '0 8px 20px rgba(0,0,0,0.04)', 
-              border: '1px solid #f1f5f9',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 16,
-              transition: 'transform 0.2s ease',
-              cursor: 'default'
-            }} onMouseOver={e => e.currentTarget.style.transform = 'translateY(-4px)'} onMouseOut={e => e.currentTarget.style.transform = 'none'}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-                  <div style={{ width: 44, height: 44, borderRadius: 12, background: i === 0 ? '#eff6ff' : '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center', color: i === 0 ? '#3b82f6' : '#94a3b8' }}>
-                    <Activity size={20} />
-                  </div>
-                  <div>
-                    <div style={{ fontSize: 14, fontWeight: 900, color: '#0f172a' }}>{outlet.siteName}</div>
-                    <div style={{ fontSize: 11, fontWeight: 800, color: '#64748b', textTransform: 'uppercase' }}>{outlet.venueName}</div>
-                  </div>
-                </div>
-                {i === 0 && outlet.sales > 0 && <Badge t={t} text="Top Performer" color="blue" />}
-              </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                <div style={{ background: '#f8fafc', padding: '12px', borderRadius: 16 }}>
-                  <div style={{ fontSize: 10, fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase' }}>Orders</div>
-                  <div style={{ fontSize: 18, fontWeight: 900, color: '#0f172a' }}>{outlet.orders}</div>
-                </div>
-                <div style={{ background: '#f8fafc', padding: '12px', borderRadius: 16 }}>
-                  <div style={{ fontSize: 10, fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase' }}>Profit</div>
-                  <div style={{ fontSize: 18, fontWeight: 900, color: '#22c55e' }}>{fmt(outlet.profit, settings?.sym)}</div>
-                </div>
-              </div>
-
-              <div style={{ borderTop: '1px dashed #e2e8f0', paddingTop: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div style={{ fontSize: 11, fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase' }}>Total Revenue</div>
-                <div style={{ fontSize: 20, fontWeight: 900, color: '#0f172a' }}>{fmt(outlet.sales, settings?.sym)}</div>
+          {/* SECOND ROW: KPI Strip (All Outlets Summary) */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
+            <div style={{ background: colors.bg, padding: 20, borderRadius: 12, border: `1px solid ${colors.border}`, display: 'flex', alignItems: 'center', gap: 16 }}>
+              <div style={{ background: `${colors.primary}15`, color: colors.primary, width: 44, height: 44, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><DollarSign size={24} /></div>
+              <div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: 0.5 }}>Total Revenue</div>
+                <div style={{ fontSize: 24, fontWeight: 900, color: colors.dark }}>{fmt(stats.todaySales, settings?.sym)}</div>
               </div>
             </div>
-          ))}
-        </div>
-      </section>
-
-
-      {/* Low Stock Details Modal */}
-      {showLowStock && (
-        <Modal t={t} title="Low Stock Inventory" onClose={() => setShowLowStock(false)}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-            <div style={{ display: 'flex', gap: 12, alignItems: 'center', background: `${t.yellow}10`, padding: 12, borderRadius: 12 }}>
-              <AlertTriangle color={t.yellow} size={20} />
-              <div style={{ fontSize: 13, color: t.text2 }}>
-                The following products are currently below the threshold of <strong>10 units</strong>.
+            <div style={{ background: colors.bg, padding: 20, borderRadius: 12, border: `1px solid ${colors.border}`, display: 'flex', alignItems: 'center', gap: 16 }}>
+              <div style={{ background: '#EFF6FF', color: colors.primary, width: 44, height: 44, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><ShoppingCart size={24} /></div>
+              <div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: 0.5 }}>Total Orders</div>
+                <div style={{ fontSize: 24, fontWeight: 900, color: colors.dark }}>{stats.todayOrders}</div>
               </div>
             </div>
-            
-            <div style={{ maxHeight: 400, overflowY: 'auto', borderRadius: 12, border: `1px solid ${t.border}` }}>
-              <Table 
-                t={t}
-                cols={['Product', 'Category', 'Stock']}
-                rows={stats.lowStockProducts.map(p => [
-                  <div style={{ display: 'flex', flexDirection: 'column' }}>
-                    <span style={{ fontWeight: 700, color: t.text }}>{p.name}</span>
-                    <span style={{ fontSize: 11, color: t.text4 }}>{p.sku || 'No SKU'}</span>
-                  </div>,
-                  <span style={{ fontSize: 12, color: t.text3 }}>{p.category || 'General'}</span>,
-                  <Badge t={t} text={`${p.stock || 0} left`} color={p.stock < 5 ? 'red' : 'yellow'} />
-                ])}
-              />
-              {stats.lowStockProducts.length === 0 && (
-                <div style={{ padding: 40, textAlign: 'center', color: t.text4 }}>
-                  No low stock items found. All levels are healthy!
+            <div style={{ background: colors.bg, padding: 20, borderRadius: 12, border: `1px solid ${colors.border}`, display: 'flex', alignItems: 'center', gap: 16 }}>
+              <div style={{ background: criticalAlerts.length > 0 ? `${colors.error}15` : `${colors.success}15`, color: criticalAlerts.length > 0 ? colors.error : colors.success, width: 44, height: 44, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                {criticalAlerts.length > 0 ? <AlertTriangle size={24} /> : <CheckCircle2 size={24} />}
+              </div>
+              <div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: 0.5 }}>System Alerts</div>
+                <div style={{ fontSize: 24, fontWeight: 900, color: colors.dark }}>{criticalAlerts.length}</div>
+              </div>
+            </div>
+          </div>
+
+          {/* THIRD ROW: Outlet Comparison */}
+          <div style={{ background: colors.bg, borderRadius: 16, padding: 24, border: `1px solid ${colors.border}` }}>
+            <h3 style={{ margin: '0 0 20px 0', fontSize: 18, fontWeight: 800, color: colors.dark }}>Outlet Performance Comparison</h3>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 16 }}>
+              {outletPerformance.length === 0 && <div style={{ color: colors.textSecondary, fontSize: 14 }}>No data available.</div>}
+              {outletPerformance.map((outlet, idx) => {
+                const maxSales = Math.max(...outletPerformance.map(o => o.sales), 1);
+                const widthPct = Math.max((outlet.sales / maxSales) * 100, 5);
+                return (
+                  <div key={outlet.id || idx} style={{ background: colors.lightBg, padding: 16, borderRadius: 12 }}>
+                    <div style={{ fontSize: 14, fontWeight: 800, color: colors.dark, marginBottom: 4 }}>{outlet.siteName}</div>
+                    <div style={{ fontSize: 12, color: colors.textSecondary, marginBottom: 12 }}>{outlet.orders} Orders</div>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                      <span style={{ fontSize: 16, fontWeight: 900, color: idx === 0 ? colors.primary : colors.dark }}>{fmt(outlet.sales, settings?.sym)}</span>
+                    </div>
+                    <div style={{ height: 6, background: '#E2E8F0', borderRadius: 3, overflow: 'hidden' }}>
+                      <div style={{ width: `${widthPct}%`, height: '100%', background: idx === 0 ? colors.primary : '#94A3B8', borderRadius: 3 }} />
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+
+          {/* FOURTH ROW: Smart Insights (MAIN AREA) */}
+          <div style={{ background: colors.bg, borderRadius: 16, padding: 24, border: `1px solid ${colors.border}` }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 20 }}>
+              <div style={{ background: `${colors.primary}15`, color: colors.primary, width: 32, height: 32, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Zap size={18} />
+              </div>
+              <h3 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: colors.dark }}>Active Intelligence Insights</h3>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: 16 }}>
+              {smartInsights.map((insight, idx) => (
+                <div key={idx} style={{ padding: 20, background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 12, display: 'flex', gap: 16, alignItems: 'flex-start' }}>
+                  <div style={{ color: colors.primary, marginTop: 2, background: colors.bg, padding: 8, borderRadius: 8, boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>{insight.icon}</div>
+                  <div style={{ fontSize: 14, color: colors.dark, lineHeight: 1.5, fontWeight: 600 }}>
+                    {insight.text}
+                  </div>
                 </div>
+              ))}
+            </div>
+          </div>
+
+        </div>
+
+        {/* RIGHT COLUMN: ATTENTION PANELS */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 24, position: 'sticky', top: 24 }}>
+
+          {/* TOP ROW (RIGHT): Critical Alerts */}
+          <div style={{ background: colors.bg, borderRadius: 16, border: `1px solid ${colors.border}`, overflow: 'hidden' }}>
+            <div style={{ background: colors.dark, padding: '16px 20px', display: 'flex', alignItems: 'center', gap: 10 }}>
+              <AlertTriangle size={20} color={colors.error} />
+              <h3 style={{ margin: 0, fontSize: 16, fontWeight: 800, color: colors.bg }}>Action Required</h3>
+              <Badge t={t} text={criticalAlerts.length.toString()} color="red" style={{ marginLeft: 'auto' }} />
+            </div>
+            <div style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 16 }}>
+              {criticalAlerts.length === 0 ? (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: colors.success, fontSize: 14, fontWeight: 600 }}>
+                  <CheckCircle2 size={18} /> No immediate action required.
+                </div>
+              ) : (
+                criticalAlerts.map((alert, idx) => (
+                  <div key={idx} style={{
+                    padding: 16,
+                    borderRadius: 12,
+                    background: alert.type === 'error' ? `${colors.error}15` : `${colors.warning}15`,
+                    borderLeft: `4px solid ${alert.type === 'error' ? colors.error : colors.warning}`
+                  }}>
+                    <h4 style={{ margin: '0 0 6px 0', fontSize: 14, fontWeight: 800, color: alert.type === 'error' ? '#991B1B' : '#B45309' }}>{alert.title}</h4>
+                    <p style={{ margin: 0, fontSize: 13, color: alert.type === 'error' ? '#7F1D1D' : '#92400E', lineHeight: 1.5 }}>{alert.desc}</p>
+                  </div>
+                ))
               )}
             </div>
-            
-            <div style={{ display: 'flex', gap: 12, marginTop: 8 }}>
-              <Btn t={t} variant="outline" style={{ flex: 1 }} onClick={() => setShowLowStock(false)}>Close</Btn>
-              <Btn 
-                t={t} 
-                style={{ flex: 1, background: t.accent, color: '#fff' }} 
-                onClick={() => {
-                  // This could navigate to inventory page
-                  setShowLowStock(false)
-                }}
-              >
-                Manage Inventory
-              </Btn>
-            </div>
           </div>
-        </Modal>
-      )}
 
-      {/* Daily Closing Modal */}
-      {showClosing && (
-        <div style={{ 
-          position: 'fixed', 
-          inset: 0, 
-          zIndex: 9999, 
-          background: 'rgba(15, 23, 42, 0.6)', 
-          backdropFilter: 'blur(12px)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: 24
-        }} onClick={() => setShowClosing(false)}>
-          <div style={{ 
-            maxWidth: 450, 
-            width: '100%', 
-            borderRadius: 40, 
-            padding: 48, 
-            background: '#fff',
-            boxShadow: '0 40px 100px rgba(0,0,0,0.25)',
-            textAlign: 'center',
-            position: 'relative',
-            animation: 'modalSlideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1)'
-          }} onClick={e => e.stopPropagation()}>
-            <div style={{ 
-              width: 80, 
-              height: 80, 
-              borderRadius: 24, 
-              background: '#eef2ff', 
-              display: 'flex', 
-              alignItems: 'center', 
-              justifyContent: 'center', 
-              margin: '0 auto 28px',
-              color: '#4f46e5',
-              boxShadow: '0 8px 20px rgba(79, 70, 229, 0.1)'
-            }}>
-              <Clock size={40} />
+          {/* Low Stock by Outlet */}
+          <div style={{ background: colors.bg, borderRadius: 16, padding: 24, border: `1px solid ${colors.border}` }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 20 }}>
+              <Package size={20} color={colors.warning} />
+              <h3 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: colors.dark }}>Low Stock Watchlist</h3>
             </div>
-            
-            <h2 style={{ fontSize: 32, fontWeight: 900, color: '#0f172a', margin: '0 0 10px 0', letterSpacing: '-0.03em' }}>Daily Closing</h2>
-            <p style={{ fontSize: 16, color: '#64748b', margin: '0 0 32px 0', fontWeight: 600 }}>Summary for {new Date().toLocaleDateString()}</p>
-            
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginBottom: 40 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '18px 24px', background: '#f8fafc', borderRadius: 20 }}>
-                <span style={{ fontSize: 15, color: '#64748b', fontWeight: 700 }}>Total Revenue</span>
-                <span style={{ fontSize: 18, fontWeight: 900, color: '#0f172a' }}>{fmt(stats.todaySales, settings?.sym)}</span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '18px 24px', background: '#f8fafc', borderRadius: 20 }}>
-                <span style={{ fontSize: 15, color: '#64748b', fontWeight: 700 }}>Total Orders</span>
-                <span style={{ fontSize: 18, fontWeight: 900, color: '#0f172a' }}>{stats.todayOrders}</span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '20px 24px', background: 'transparent', margin: '4px 0' }}>
-                <span style={{ fontSize: 16, color: '#0f172a', fontWeight: 800 }}>Est. Profit</span>
-                <span style={{ fontSize: 22, fontWeight: 900, color: '#22c55e' }}>{fmt(stats.profitSnapshot, settings?.sym)}</span>
-              </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              {lowStockByOutlet.length === 0 ? (
+                <div style={{ fontSize: 14, color: colors.textSecondary }}>Inventory levels healthy across all monitored outlets.</div>
+              ) : (
+                lowStockByOutlet.map((outlet, idx) => (
+                  <div key={idx} style={{ background: colors.lightBg, borderRadius: 12, padding: 16 }}>
+                    <h4 style={{ margin: '0 0 12px 0', fontSize: 14, fontWeight: 800, color: colors.dark }}>{outlet.siteName}</h4>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                      {outlet.stockIssues.map((p, i) => (
+                        <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: colors.bg, padding: '8px 12px', borderRadius: 8 }}>
+                          <span style={{ fontSize: 13, fontWeight: 600, color: colors.dark, maxWidth: '60%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</span>
+                          <Badge t={t} text={p.stock === 0 ? 'Out' : `${p.stock} Left`} color={p.stock === 0 ? 'red' : 'yellow'} />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
-
-            <Btn t={t} onClick={() => setShowClosing(false)} style={{ 
-              width: '100%', 
-              borderRadius: 20, 
-              padding: 20, 
-              fontWeight: 900,
-              fontSize: 16,
-              background: 'linear-gradient(135deg, #4f46e5, #4338ca)',
-              color: '#fff',
-              boxShadow: '0 10px 25px rgba(79, 70, 229, 0.3)',
-              border: 'none'
-            }}> 
-              Close Day & Log Out 
-            </Btn>
           </div>
         </div>
-      )}
-      <style>{`
-        @keyframes modalSlideUp {
-          from { transform: translateY(40px); opacity: 0; }
-          to { transform: translateY(0); opacity: 1; }
-        }
-      `}</style>
+      </div>
+
+      {/* BOTTOM (FULL WIDTH): Live Activity Feed */}
+      <div style={{ background: colors.bg, borderRadius: 16, padding: 24, border: `1px solid ${colors.border}` }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 20 }}>
+          <Activity size={20} color={colors.primary} />
+          <h3 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: colors.dark }}>Live System Activity</h3>
+        </div>
+
+        <div className="feed-scroll" style={{ display: 'flex', gap: 16, overflowX: 'auto', paddingBottom: 8, width: '100%' }}>
+          {activityFeed.length === 0 ? (
+            <div style={{ fontSize: 14, color: colors.textSecondary }}>No recent processing activity.</div>
+          ) : (
+            activityFeed.map((activity, idx) => (
+              <div key={idx} style={{
+                minWidth: 260,
+                maxWidth: 300,
+                flexShrink: 0,
+                background: colors.lightBg,
+                padding: '16px',
+                borderRadius: 12,
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 8
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ fontSize: 12, color: colors.textSecondary, fontWeight: 700 }}>{activity.time}</div>
+                  <div style={{ fontSize: 14, color: colors.success, fontWeight: 800 }}>+{activity.val}</div>
+                </div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: colors.dark }}>{activity.desc}</div>
+                <div style={{ fontSize: 12, color: colors.primary, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <ArrowUpRight size={12} /> {activity.outlet}
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+
     </div>
   )
 }

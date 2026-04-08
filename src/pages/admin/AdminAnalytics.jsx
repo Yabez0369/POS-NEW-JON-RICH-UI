@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Badge, Card, StatCard, Select } from '@/components/ui'
 import { fmt } from '@/lib/utils'
+import { TrendingUp } from 'lucide-react'
 
 export const AdminAnalytics = ({ orders, products, t, settings }) => {
   const [shopFilter, setShopFilter] = useState('all')
@@ -50,8 +51,20 @@ export const AdminAnalytics = ({ orders, products, t, settings }) => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
-        <div style={{ fontSize: 22, fontWeight: 900, color: t.text }}>📈 Analytics Dashboard</div>
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        alignItems: 'center', 
+        flexWrap: 'wrap', 
+        gap: 12,
+        position: 'sticky',
+        top: 0,
+        zIndex: 50,
+        background: '#f8fafc',
+        padding: '16px 0',
+        margin: '-16px 0 0 0'
+      }}>
+        <div style={{ fontSize: 24, fontWeight: 900, color: t.text }}>📈 Analytics Dashboard</div>
         <Select t={t} label="" value={shopFilter} onChange={setShopFilter} options={SHOPS_LIST.map(s => ({ value: s, label: s === 'all' ? '🌐 All Shops' : '🏪 ' + s }))} />
       </div>
 

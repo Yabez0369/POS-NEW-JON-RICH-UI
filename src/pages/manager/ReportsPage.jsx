@@ -158,7 +158,7 @@ export const ReportsPage = ({ orders = [], users = [], products = [], t, setting
 
   return (
     <div style={{
-      background: isManager ? 'linear-gradient(180deg, #C4E8E7 0%, #FFFFFF 100%)' : 'transparent',
+      background: 'transparent',
       minHeight: '100%', padding: '24px', borderRadius: 24,
       display: 'flex', flexDirection: 'column', gap: 20
     }}>

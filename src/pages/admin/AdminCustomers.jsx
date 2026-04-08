@@ -1,11 +1,17 @@
 import { useState } from 'react'
 import { Btn, Badge, Card, StatCard, Modal, Table } from '@/components/ui'
 import { fmt } from '@/lib/utils'
+import { Users, Wifi, Truck, Award, Star, TrendingUp, Search, Eye, Mail, Phone, ShoppingBag } from 'lucide-react'
+
+const TIER_ICONS = { Gold: '👑', Silver: '🥈', Bronze: '🥉' }
+const TIER_COLORS = { Gold: '#f59e0b', Silver: '#64748b', Bronze: '#b45309' }
 
 export const AdminCustomers = ({ users, orders, t, settings }) => {
   const [selected, setSelected] = useState(null)
   const [search, setSearch] = useState('')
-  const [filter, setFilter] = useState('All')
+  const [filterType, setFilterType] = useState('all')
+  const [filterTier, setFilterTier] = useState('all')
+  const [sortBy, setSortBy] = useState('spent')
 
   const baseCustomers = users.filter(u => u.role === 'customer').map(u => {
     const myOrders = orders.filter(o => o.customerId === u.id || o.customer_id === u.id)
@@ -27,32 +33,55 @@ export const AdminCustomers = ({ users, orders, t, settings }) => {
   const totalPoints = baseCustomers.reduce((s, u) => s + (u.loyaltyPoints || u.loyalty_points || 0), 0)
 
   // Filter customers based on search and selected filter type
-  const customers = baseCustomers.filter(u => {
+  const filtered = baseCustomers.filter(u => {
     // Basic search filtering (Name, Email, Phone)
     const matchesSearch = search === '' || 
-      u.name.toLowerCase().includes(search.toLowerCase()) || 
-      u.email.toLowerCase().includes(search.toLowerCase()) || 
-      (u.phone && u.phone.includes(search))
+      (u.name || '').toLowerCase().includes(search.toLowerCase()) || 
+      (u.email || '').toLowerCase().includes(search.toLowerCase()) || 
+      (u.phone && String(u.phone).includes(search))
 
     if (!matchesSearch) return false
+    
+    // Tier filter
+    if (filterTier !== 'all' && u.dynamicTier !== filterTier) return false;
 
     // Filter by order types using their order history
-    if (filter === 'All') return true
+    if (filterType === 'all') return true
     
     const myOrders = u.myOrders || []
     
-    if (filter === 'Walk-in') {
+    if (filterType === 'walk-in') {
       return myOrders.some(o => (o.orderType || o.order_type) === 'in-store')
     }
-    if (filter === 'Online') {
+    if (filterType === 'online') {
       return myOrders.some(o => (o.payment || o.payment_method) === 'Online' || (o.orderType || o.order_type) === 'online')
     }
-    if (filter === 'Delivery') {
+    if (filterType === 'delivery') {
       return myOrders.some(o => (o.orderType || o.order_type) === 'delivery')
+    }
+    if (filterType === 'unknown') { // new/unknown
+      return myOrders.length === 0
     }
     
     return true
+  }).sort((a, b) => {
+    if (sortBy === 'spent') return (b.dynamicSpent || 0) - (a.dynamicSpent || 0)
+    if (sortBy === 'pts') return (b.loyaltyPoints || b.loyalty_points || 0) - (a.loyaltyPoints || a.loyalty_points || 0)
+    if (sortBy === 'orders') return (b.myOrders?.length || 0) - (a.myOrders?.length || 0)
+    if (sortBy === 'name') return (a.name || '').localeCompare(b.name || '')
+    return 0
   })
+
+  const enriched = baseCustomers;
+
+  const stats = {
+    total: totalCustomers,
+    online: baseCustomers.filter(u => u.myOrders.some(o => (o.orderType || o.order_type) === 'online' || (o.payment || o.payment_method) === 'Online')).length,
+    delivery: baseCustomers.filter(u => u.myOrders.some(o => (o.orderType || o.order_type) === 'delivery')).length,
+    gold: goldMembers,
+    totalPts: totalPoints,
+    totalSpent: baseCustomers.reduce((s, u) => s + (u.dynamicSpent || 0), 0)
+  }
 
   return (
     <div style={{ 
@@ -67,14 +96,23 @@ export const AdminCustomers = ({ users, orders, t, settings }) => {
     }}>
 
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: 16 }}>
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        alignItems: 'center', 
+        flexWrap: 'wrap', 
+        gap: 16,
+        position: 'sticky',
+        top: -32,
+        zIndex: 50,
+        background: '#f8fafc',
+        padding: '16px 0',
+        margin: '-16px 0 0 0'
+      }}>
         <div>
-          <h1 style={{ fontSize: 36, fontWeight: 900, color: '#0f172a', margin: 0, display: 'flex', alignItems: 'center', gap: 12, letterSpacing: '-0.03em' }}>
-            <Users size={32} color="#4f46e5" strokeWidth={2.5} /> Customer Intelligence
+          <h1 style={{ fontSize: 24, fontWeight: 900, color: '#0f172a', margin: 0, display: 'flex', alignItems: 'center', gap: 12, letterSpacing: '-0.03em' }}>
+            <Users size={24} color="#4f46e5" strokeWidth={2.5} /> Customer Intelligence
           </h1>
-          <p style={{ fontSize: 16, color: '#64748b', marginTop: 4, fontWeight: 600 }}>
-            Manage loyalty tiers, track spending, and analyse online vs walk-in behaviour.
-          </p>
         </div>
       </div>
 

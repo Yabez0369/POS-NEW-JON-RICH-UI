@@ -393,7 +393,7 @@ export const CategoryManagement = ({ t: globalT, addAudit, currentUser }) => {
 
   return (
     <div style={{ 
-      background: 'linear-gradient(180deg, #C4E8E7 0%, #FFFFFF 100%)',
+      background: 'transparent',
       minHeight: '100%', padding: '32px', borderRadius: 24,
       display: 'flex', flexDirection: 'column', gap: 24, position: 'relative' 
     }}>

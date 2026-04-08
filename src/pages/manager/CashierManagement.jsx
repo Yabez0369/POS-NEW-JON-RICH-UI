@@ -31,7 +31,7 @@ export const CashierManagement = ({ users, setUsers, counters, orders, addAudit,
 
   return (
     <div style={{ 
-      background: 'linear-gradient(180deg, #C4E8E7 0%, #FFFFFF 100%)',
+      background: 'transparent',
       minHeight: '100%', padding: '32px', borderRadius: 24,
       display: 'flex', flexDirection: 'column', gap: 20, boxSizing: 'border-box' 
     }}>

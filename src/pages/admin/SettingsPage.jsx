@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Btn, Input, Card, Toggle, Select } from '@/components/ui'
+import { Settings } from 'lucide-react'
 import { notify } from '@/components/shared'
 import { isOptimoEnabled, syncUsers, syncVenues, syncSites } from '@/services/optimo'
 import { upsertSetting } from '@/services/settings'
@@ -14,7 +15,14 @@ export const SettingsPage = ({ settings, setSettings, addAudit, currentUser, dar
   const [saved, setSaved] = useState(false)
   const [saving, setSaving] = useState(false)
   const [optimoSyncing, setOptimoSyncing] = useState(false)
+  const [isAddingOutlet, setIsAddingOutlet] = useState(false)
+  const [newOutletName, setNewOutletName] = useState('')
   const { selectedVenueId, selectedSiteId } = useVenueStore()
+  
+  // Dummy handlers for Outlet mapping since logic is missing
+  const activeVenue = { sites: [] }
+  const handleAddOutlet = () => { setIsAddingOutlet(false); setNewOutletName('') }
+  const handleDeleteOutlet = (id, name) => { console.log('Delete outlet', id) }
 
   const venueId = selectedVenueId || currentUser?.venue_id || currentUser?.venueId || DEFAULT_VENUE_ID
   const siteId = selectedSiteId || currentUser?.site_id || currentUser?.siteId || DEFAULT_SITE_ID
@@ -71,23 +79,35 @@ export const SettingsPage = ({ settings, setSettings, addAudit, currentUser, dar
       minHeight: 'calc(100vh - 64px)',
       animation: 'fadeIn 0.5s ease-out'
     }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: 16 }}>
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        alignItems: 'center', 
+        flexWrap: 'wrap', 
+        gap: 16,
+        position: 'sticky',
+        top: -32,
+        zIndex: 50,
+        background: '#f8fafc',
+        padding: '16px 0',
+        margin: '-16px 0 0 0'
+      }}>
         <div>
-          <h1 style={{ fontSize: 36, fontWeight: 900, color: '#0f172a', margin: 0, letterSpacing: '-0.03em' }}>System Settings</h1>
-          <p style={{ fontSize: 16, color: '#64748b', marginTop: 4, fontWeight: 600 }}>Configure your store identity, financial protocols, and localized outlets.</p>
+          <h1 style={{ fontSize: 24, fontWeight: 900, color: '#0f172a', margin: 0, letterSpacing: '-0.03em', display: 'flex', alignItems: 'center', gap: 12 }}>
+            <Settings size={24} color="#4f46e5" strokeWidth={2.5} /> System Settings
+          </h1>
         </div>
         <Btn t={t} onClick={handleSave} disabled={saving} style={{ 
           borderRadius: 14, 
           background: saved ? '#22c55e' : 'linear-gradient(135deg, #4f46e5, #4338ca)', 
           color: '#fff', 
-          padding: '12px 32px', 
+          padding: '10px 24px', 
           fontWeight: 900, 
-          fontSize: 15,
+          fontSize: 14,
           boxShadow: '0 8px 20px rgba(79, 70, 229, 0.25)',
-          border: 'none',
-          minWidth: 160
+          border: 'none'
         }}>
-          {saving ? '⏳ Saving...' : saved ? '✓ Settings Saved' : 'Save All Changes'}
+          {saving ? '⏳ Saving...' : saved ? '✓ Saved' : 'Save Changes'}
         </Btn>
       </div>
 
