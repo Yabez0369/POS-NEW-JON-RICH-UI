@@ -29,10 +29,12 @@ import { updateProfile, createStaffMember } from '@/services/users'
 export const UserManagement = ({ users = [], setUsers, venues = [], t }) => {
   const [searchTerm, setSearchTerm] = useState('')
   const [filterRole, setFilterRole] = useState('all')
+  const [filterSite, setFilterSite] = useState('all')
   const [showInvite, setShowInvite] = useState(false)
   const [showAssign, setShowAssign] = useState(false)
   const [selectedUser, setSelectedUser] = useState(null)
   const [assignForm, setAssignForm] = useState({ venue_id: '', site_id: '' })
+  const [detailUser, setDetailUser] = useState(null)
   
   // Face Recognition State
   const [showFaceScanner, setShowFaceScanner] = useState(false)
@@ -46,14 +48,22 @@ export const UserManagement = ({ users = [], setUsers, venues = [], t }) => {
   // Use local state if venues is missing
   const allVenues = venues || []
 
+  // Flatten all sites for the filter dropdown
+  const allSitesList = useMemo(() => {
+    return allVenues.flatMap(v =>
+      (v.sites || []).map(s => ({ ...s, venueName: v.name, venueId: v.id }))
+    )
+  }, [allVenues])
+
   const filteredUsers = useMemo(() => {
     return users.filter(u => {
       const matchSearch = (u.name || '').toLowerCase().includes(searchTerm.toLowerCase()) || 
                           (u.email || '').toLowerCase().includes(searchTerm.toLowerCase())
       const matchRole = filterRole === 'all' || u.role === filterRole
-      return matchSearch && matchRole
+      const matchSite = filterSite === 'all' || u.site_id === filterSite
+      return matchSearch && matchRole && matchSite
     })
-  }, [users, searchTerm, filterRole])
+  }, [users, searchTerm, filterRole, filterSite])
 
   const stats = useMemo(() => {
     const roles = { admin: 0, manager: 0, cashier: 0, staff: 0, customer: 0 }
@@ -184,23 +194,22 @@ export const UserManagement = ({ users = [], setUsers, venues = [], t }) => {
     }
   }
 
-  const [inviteForm, setInviteForm] = useState({ email: '', role: 'cashier', venue_id: '', site_id: '' })
+  const [inviteForm, setInviteForm] = useState({ name: '', email: '', phone: '', password: '', role: 'cashier', venue_id: '', site_id: '' })
 
   const handleInvite = async () => {
     try {
-      if (!inviteForm.email.includes('@')) {
-         notify('Enter a valid email address', 'error')
-         return
-      }
+      if (!inviteForm.name.trim()) { notify('Full name is required', 'error'); return }
+      if (!inviteForm.email.includes('@')) { notify('Enter a valid email address', 'error'); return }
+      if (!inviteForm.password || inviteForm.password.length < 6) { notify('Password must be at least 6 characters', 'error'); return }
       
       const payload = {
-        name: inviteForm.email.split('@')[0].replace('.', ' '),
+        name: inviteForm.name.trim(),
         email: inviteForm.email,
-        password: 'ChangeMe123!', // Standard initial password for staff
+        password: inviteForm.password,
         role: inviteForm.role,
         venueId: inviteForm.venue_id,
         siteId: inviteForm.site_id,
-        phone: null
+        phone: inviteForm.phone || null
       }
       
       let finalData = { id: `USR-${Date.now()}`, ...payload }
@@ -216,16 +225,16 @@ export const UserManagement = ({ users = [], setUsers, venues = [], t }) => {
         site_id: payload.siteId,
         active: true,
         joinDate: new Date().toLocaleDateString('en-GB', { month: 'short', year: 'numeric' }),
-        avatar: finalData.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()
+        avatar: payload.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()
       }
       
       setUsers(us => [...us, newUser])
-      notify('Invitation dispatched!', 'success');
+      notify(`${payload.name} added successfully!`, 'success');
       setShowInvite(false);
-      setInviteForm({ email: '', role: 'cashier', venue_id: '', site_id: '' })
+      setInviteForm({ name: '', email: '', phone: '', password: '', role: 'cashier', venue_id: '', site_id: '' })
     } catch (err) {
       console.error(err)
-      notify('Failed to invite user via database', 'error')
+      notify('Failed to add user', 'error')
     }
   }
 
@@ -240,215 +249,233 @@ export const UserManagement = ({ users = [], setUsers, venues = [], t }) => {
       minHeight: 'calc(100vh - 64px)',
       animation: 'fadeIn 0.5s ease-out' 
     }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: 16 }}>
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        alignItems: 'center', 
+        flexWrap: 'wrap', 
+        gap: 16,
+        position: 'sticky',
+        top: -32,
+        zIndex: 50,
+        background: '#f8fafc',
+        padding: '16px 0',
+        margin: '-16px 0 0 0'
+      }}>
         <div>
-          <h1 style={{ fontSize: 36, fontWeight: 900, color: '#0f172a', margin: 0, letterSpacing: '-0.03em' }}>User RBAC</h1>
-          <p style={{ fontSize: 16, color: '#64748b', marginTop: 4, fontWeight: 600 }}>Manage system access, roles, and security permissions.</p>
+          <h1 style={{ fontSize: 24, fontWeight: 900, color: '#0f172a', margin: 0, letterSpacing: '-0.03em', display: 'flex', alignItems: 'center', gap: 12 }}>
+            <Users size={24} color="#4f46e5" strokeWidth={2.5} /> User Management
+          </h1>
         </div>
-        <Btn t={t} onClick={() => setShowInvite(true)} style={{ 
-          borderRadius: 14, 
-          background: 'linear-gradient(135deg, #4f46e5, #4338ca)', 
-          color: '#fff', 
-          padding: '12px 28px', 
-          fontWeight: 900,
-          fontSize: 14,
-          boxShadow: '0 8px 20px rgba(79, 70, 229, 0.25)',
-          border: 'none'
-        }}>
-          <UserPlus size={20} style={{ marginRight: 8 }} /> Invite New User
-        </Btn>
+        <div style={{ display: 'flex', gap: 12 }}>
+          <Btn t={t} onClick={() => setShowInvite(true)} style={{ 
+            borderRadius: 14, 
+            background: 'linear-gradient(135deg, #4f46e5, #4338ca)', 
+            color: '#fff', 
+            padding: '8px 20px', 
+            fontWeight: 900,
+            fontSize: 13,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 10,
+            boxShadow: '0 8px 20px rgba(79, 70, 229, 0.25)',
+            border: 'none'
+          }}>
+            <UserPlus size={18} /> Add User
+          </Btn>
+        </div>
       </div>
 
-      {/* Role Summary Stats */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 24 }}>
-        {[
-            { label: 'Total Accounts', value: stats.total, color: '#4f46e5', icon: <Users size={24} /> },
-            { label: 'Active Sessions', value: stats.active, color: '#22c55e', icon: <Activity size={24} /> },
-            { label: 'Administrators', value: stats.admin, color: '#ef4444', icon: <Shield size={24} /> },
-            { label: 'Managers', value: stats.manager, color: '#f59e0b', icon: <ShieldCheck size={24} /> },
-        ].map(({ label, value, color, icon }) => (
-            <div key={label} style={{ background: '#fff', borderRadius: 24, padding: '24px 32px', boxShadow: '0 12px 40px rgba(0,0,0,0.06)', display: 'flex', alignItems: 'center', gap: 20, position: 'relative', overflow: 'hidden' }}>
-              <div style={{ position: 'absolute', top: 0, left: 0, width: 6, height: '100%', background: color }} />
-              <div style={{ width: 56, height: 56, borderRadius: 16, background: `${color}10`, display: 'flex', alignItems: 'center', justifyContent: 'center', color, flexShrink: 0 }}>
-                {icon}
-              </div>
-              <div>
-                <div style={{ fontSize: 12, fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: 1 }}>{label}</div>
-                <div style={{ fontSize: 32, fontWeight: 900, color: '#0f172a', marginTop: 4, letterSpacing: '-0.02em' }}>{value}</div>
-              </div>
-            </div>
-        ))}
-      </div>
 
       {/* Search and Filters */}
-      <div style={{ background: '#fff', borderRadius: 24, padding: '24px 32px', boxShadow: '0 12px 40px rgba(0,0,0,0.06)', display: 'flex', gap: 24, alignItems: 'center', flexWrap: 'wrap' }}>
-        <div style={{ position: 'relative', flex: 1, minWidth: 320 }}>
-          <Search size={18} style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
+      <div style={{ background: '#fff', borderRadius: 24, padding: '20px 28px', boxShadow: '0 4px 20px rgba(0,0,0,0.05)', display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap' }}>
+        {/* Search */}
+        <div style={{ position: 'relative', flex: 1, minWidth: 220 }}>
+          <Search size={16} style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', pointerEvents: 'none' }} />
           <input 
             type="text" 
-            placeholder="Search by name, email, or role..." 
+            placeholder="Search by name or email..." 
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             style={{ 
               width: '100%', 
-              padding: '14px 16px 14px 52px', 
-              borderRadius: 16, 
-              border: '1px solid #e2e8f0', 
+              padding: '11px 14px 11px 42px', 
+              borderRadius: 14, 
+              border: '1.5px solid #e2e8f0', 
               background: '#f8fafc', 
               color: '#0f172a',
-              fontSize: 14,
+              fontSize: 13,
               outline: 'none',
-              fontWeight: 600,
-              transition: 'all 0.2s'
+              fontWeight: 700,
+              transition: 'border-color 0.2s',
+              boxSizing: 'border-box'
             }}
+            onFocus={e => e.target.style.borderColor = '#4f46e5'}
+            onBlur={e => e.target.style.borderColor = '#e2e8f0'}
           />
         </div>
-        
-        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', background: '#f1f5f9', padding: 6, borderRadius: 16 }}>
-          {[
-            { id: 'all', label: 'All Roles' },
-            { id: 'admin', label: 'Admins' },
-            { id: 'manager', label: 'Managers' },
-            { id: 'cashier', label: 'Cashiers' },
-            { id: 'staff', label: 'Staff' }
-          ].map(tab => (
-            <button key={tab.id} onClick={() => setFilterRole(tab.id)} style={{
-              padding: '10px 20px', borderRadius: 12,
-              border: 'none',
-              background: filterRole === tab.id ? '#fff' : 'transparent',
-              color: filterRole === tab.id ? '#4f46e5' : '#64748b',
-              boxShadow: filterRole === tab.id ? '0 4px 10px rgba(0,0,0,0.08)' : 'none',
-              fontSize: 12, fontWeight: 800, cursor: 'pointer', transition: 'all 0.2s'
-            }}>
-              {tab.label}
-            </button>
-          ))}
+
+        {/* Role Dropdown */}
+        <div style={{ position: 'relative' }}>
+          <select
+            value={filterRole}
+            onChange={e => setFilterRole(e.target.value)}
+            style={{
+              padding: '11px 40px 11px 14px',
+              borderRadius: 14,
+              border: `1.5px solid ${filterRole !== 'all' ? '#4f46e5' : '#e2e8f0'}`,
+              background: filterRole !== 'all' ? '#eef2ff' : '#f8fafc',
+              color: filterRole !== 'all' ? '#4f46e5' : '#0f172a',
+              fontSize: 13,
+              fontWeight: 800,
+              outline: 'none',
+              cursor: 'pointer',
+              appearance: 'none',
+              backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2.5'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`,
+              backgroundRepeat: 'no-repeat',
+              backgroundPosition: 'right 12px center',
+              minWidth: 140
+            }}
+          >
+            <option value="all">All Roles</option>
+            <option value="admin">Admins</option>
+            <option value="manager">Managers</option>
+            <option value="cashier">Cashiers</option>
+            <option value="staff">Staff</option>
+          </select>
+        </div>
+
+        {/* Site Dropdown */}
+        <div style={{ position: 'relative' }}>
+          <select
+            value={filterSite}
+            onChange={e => setFilterSite(e.target.value)}
+            style={{
+              padding: '11px 40px 11px 14px',
+              borderRadius: 14,
+              border: `1.5px solid ${filterSite !== 'all' ? '#22c55e' : '#e2e8f0'}`,
+              background: filterSite !== 'all' ? '#f0fdf4' : '#f8fafc',
+              color: filterSite !== 'all' ? '#16a34a' : '#0f172a',
+              fontSize: 13,
+              fontWeight: 800,
+              outline: 'none',
+              cursor: 'pointer',
+              appearance: 'none',
+              backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2.5'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`,
+              backgroundRepeat: 'no-repeat',
+              backgroundPosition: 'right 12px center',
+              minWidth: 160
+            }}
+          >
+            <option value="all">All Sites</option>
+            {allVenues.map(v =>
+              (v.sites || []).map(s => (
+                <option key={s.id} value={s.id}>{s.name} — {v.name}</option>
+              ))
+            )}
+          </select>
         </div>
       </div>
 
-      {/* Users Table */}
-      <div style={{ background: '#fff', borderRadius: 24, boxShadow: '0 12px 40px rgba(0,0,0,0.06)', overflow: 'hidden' }}>
-        <Table 
-          t={t}
-          cols={['User Account', 'Contact Info', 'Role & Access', 'Biometrics', 'Location Assignment', 'Activity Status', 'Actions']}
-          rows={filteredUsers.map(u => [
-            <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-                <div 
-                  className="avatar-container"
-                  onClick={() => handleAvatarChange(u)}
-                  style={{ 
-                    width: 48, 
-                    height: 48, 
-                    borderRadius: 14, 
-                    overflow: 'hidden',
-                    background: '#f8fafc', 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    justifyContent: 'center',
-                    fontSize: 18,
-                    fontWeight: 900,
-                    color: '#4f46e5',
-                    border: '1px solid #e2e8f0',
-                    cursor: 'pointer',
-                    position: 'relative'
-                  }}
-                >
-                  {/* Hover Overlay */}
-                  <div className="avatar-overlay" style={{
-                    position: 'absolute',
-                    inset: 0,
-                    background: 'rgba(79, 70, 229, 0.4)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: '#fff',
-                    opacity: 0,
-                    transition: 'opacity 0.2s',
-                    zIndex: 2
-                  }}>
-                    <CameraIcon size={18} />
-                  </div>
-                  
-                  <ImgWithFallback 
-                    src={ (u.avatar?.length > 4 || (u.avatar?.startsWith('http') || u.avatar?.startsWith('file:') || u.avatar?.startsWith('data:'))) ? u.avatar : null} 
-                    alt={u.name} 
-                    emoji={u.avatar?.length <= 2 ? u.avatar : (u.name?.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() || 'U')}
-                    style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
-                  />
-                  
-                  {uploadingAvatar === u.id && (
-                    <div style={{ position: 'absolute', inset: 0, background: 'rgba(255,255,255,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <div className="spinner-mini" style={{ width: 20, height: 20, border: '2px solid #4f46e5', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.6s linear infinite' }} />
-                    </div>
-                  )}
-                </div>
-                <div>
-                  <div style={{ fontSize: 14, fontWeight: 900, color: '#0f172a' }}>{u.name}</div>
-                  <div style={{ fontSize: 12, color: '#94a3b8', fontWeight: 600, marginTop: 2 }}>Joined {u.joinDate || 'Jan 2024'}</div>
-                </div>
-              </div>,
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                 <div style={{ fontSize: 13, color: '#445569', display: 'flex', alignItems: 'center', gap: 6, fontWeight: 700 }}>
-                   <Mail size={14} color="#94a3b8" /> {u.email}
-                 </div>
-                 <div style={{ fontSize: 13, color: '#64748b', display: 'flex', alignItems: 'center', gap: 6, fontWeight: 600 }}>
-                   <Smartphone size={14} color="#94a3b8" /> {u.phone || '—'}
-                 </div>
-              </div>,
-              <Badge t={t} text={(u.role || 'user').toUpperCase()} color={roleColors[u.role] || 'blue'} style={{ fontWeight: 900, fontSize: 11, borderRadius: 8, padding: '4px 10px' }} />,
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <div style={{ width: 10, height: 10, borderRadius: '50%', background: u.faceIdActive ? '#22c55e' : '#e2e8f0', boxShadow: u.faceIdActive ? '0 0 10px rgba(34, 197, 94, 0.4)' : 'none' }} />
-                <span style={{ fontSize: 12, fontWeight: 800, color: u.faceIdActive ? '#0f172a' : '#94a3b8' }}>{u.faceIdActive ? 'ACTIVE' : 'PENDING'}</span>
-              </div>,
-              u.role === 'manager' || u.role === 'admin' ? (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                  {u.venue_id ? (
-                    <>
-                      <div style={{ fontSize: 13, fontWeight: 800, color: '#0f172a', display: 'flex', alignItems: 'center', gap: 6 }}>
-                        <Building size={14} color="#4f46e5" /> {allVenues.find(v => v.id === u.venue_id)?.name || 'Unknown Venue'}
-                      </div>
-                      <div style={{ fontSize: 12, color: '#64748b', display: 'flex', alignItems: 'center', gap: 6, fontWeight: 600 }}>
-                        <MapPin size={12} color="#94a3b8" /> {allVenues.find(v => v.id === u.venue_id)?.sites?.find(s => s.id === u.site_id)?.name || 'Unassigned Site'}
-                      </div>
-                    </>
-                  ) : (
-                    <span style={{ fontSize: 12, color: '#94a3b8', fontStyle: 'italic', fontWeight: 600 }}>Global Account</span>
-                  )}
-                </div>
-              ) : (
-                <span style={{ fontSize: 12, color: '#cbd5e1', fontWeight: 600 }}>N/A</span>
-              ),
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                 <div style={{ width: 8, height: 8, borderRadius: '50%', background: u.active ? '#22c55e' : '#ef4444' }} />
-                 <div style={{ display: 'flex', flexDirection: 'column' }}>
-                    <span style={{ fontSize: 13, fontWeight: 800, color: '#0f172a' }}>{u.active ? 'Active' : 'Offline'}</span>
-                    <span style={{ fontSize: 11, color: '#94a3b8', fontWeight: 600 }}>Last: {u.lastSeen || '2m ago'}</span>
-                 </div>
-              </div>,
-            <div style={{ display: 'flex', gap: 8 }}>
-              {u.role === 'manager' && (
-                <Btn t={t} variant="ghost" style={{ width: 36, height: 36, padding: 0, color: '#8b5cf6', background: '#f5f3ff', borderRadius: 8 }} onClick={() => handleAssign(u)}>
-                  <MapPin size={16} />
-                </Btn>
-              )}
-              <Btn t={t} variant="ghost" style={{ width: 36, height: 36, padding: 0, color: '#4f46e5', background: '#eef2ff', borderRadius: 8 }} onClick={() => handleStartScanner(u)}>
-                <ScanFace size={16} />
-              </Btn>
-              <Btn t={t} variant="ghost" style={{ width: 36, height: 36, padding: 0, color: u.active ? '#ef4444' : '#22c55e', background: u.active ? '#fef2f2' : '#f0fdf4', borderRadius: 8 }} onClick={() => handleToggleActive(u)}>
-                {u.active ? <Lock size={16} /> : <Unlock size={16} />}
-              </Btn>
-              <Btn t={t} variant="ghost" style={{ width: 36, height: 36, padding: 0, color: '#ef4444', background: '#fef2f2', borderRadius: 8 }} onClick={() => handleDeleteUser(u)}>
-                <Trash2 size={16} />
-              </Btn>
-            </div>
-          ])}
-        />
+      {/* Directory Listing Count */}
+      <div style={{ fontSize: 11, fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: -16 }}>
+        Directory Listing ({filteredUsers.length})
+      </div>
+
+      {/* User Cards List */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         {filteredUsers.length === 0 && (
-          <div style={{ padding: 60, textAlign: 'center', color: t.text4 }}>
-             <Users size={40} strokeWidth={1} style={{ marginBottom: 12, opacity: 0.5 }} />
-             <div style={{ fontSize: 14 }}>No users found matching your search.</div>
+          <div style={{ background: '#fff', borderRadius: 20, padding: 60, textAlign: 'center', boxShadow: '0 4px 20px rgba(0,0,0,0.04)' }}>
+            <Users size={40} strokeWidth={1} style={{ marginBottom: 12, opacity: 0.3, color: '#94a3b8' }} />
+            <div style={{ fontSize: 15, fontWeight: 700, color: '#64748b' }}>No users found</div>
           </div>
         )}
+        {filteredUsers.map((u, idx) => {
+          const initials = u.name?.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() || 'U'
+          const roleColor = { admin: '#ef4444', manager: '#f59e0b', cashier: '#22c55e', staff: '#3b82f6', customer: '#8b5cf6' }[u.role] || '#64748b'
+          const avatarSrc = (u.avatar?.length > 4 && (u.avatar?.startsWith('http') || u.avatar?.startsWith('data:'))) ? u.avatar : null
+          return (
+            <div
+              key={u.id}
+              onClick={() => setDetailUser(u)}
+              style={{
+                background: u.active ? '#fff' : '#f8fafc',
+                borderRadius: 20,
+                padding: '18px 24px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 16,
+                boxShadow: '0 2px 12px rgba(0,0,0,0.05)',
+                border: '1px solid',
+                borderColor: u.active ? '#f1f5f9' : '#e2e8f0',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                opacity: u.active ? 1 : 0.7,
+                animation: `slideInUp 0.3s ease-out ${idx * 0.04}s both`
+              }}
+              onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 8px 30px rgba(79,70,229,0.12)'; e.currentTarget.style.borderColor = '#c7d2fe'; e.currentTarget.style.transform = 'translateY(-1px)' }}
+              onMouseLeave={e => { e.currentTarget.style.boxShadow = '0 2px 12px rgba(0,0,0,0.05)'; e.currentTarget.style.borderColor = u.active ? '#f1f5f9' : '#e2e8f0'; e.currentTarget.style.transform = 'translateY(0)' }}
+            >
+              {/* Avatar */}
+              <div style={{ position: 'relative', flexShrink: 0 }}>
+                <div style={{
+                  width: 52, height: 52, borderRadius: 16, overflow: 'hidden',
+                  background: `${roleColor}15`, border: `2px solid ${roleColor}30`,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 18, fontWeight: 900, color: roleColor
+                }}>
+                  {avatarSrc
+                    ? <img src={avatarSrc} alt={u.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    : initials
+                  }
+                </div>
+                {/* Online dot */}
+                <div style={{
+                  position: 'absolute', bottom: 2, right: 2,
+                  width: 12, height: 12, borderRadius: '50%',
+                  background: u.active ? '#22c55e' : '#cbd5e1',
+                  border: '2px solid #fff',
+                  boxShadow: u.active ? '0 0 6px rgba(34,197,94,0.5)' : 'none'
+                }} />
+              </div>
+
+              {/* Name & Email */}
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 15, fontWeight: 800, color: '#0f172a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{u.name}</div>
+                <div style={{ fontSize: 12, color: '#94a3b8', fontWeight: 600, marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{u.email}</div>
+              </div>
+
+              {/* Role badge + Site + Status */}
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4, flexShrink: 0 }}>
+                <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                  <div style={{
+                    padding: '3px 8px', borderRadius: 6,
+                    background: `${roleColor}15`, color: roleColor,
+                    fontSize: 10, fontWeight: 900, textTransform: 'uppercase', letterSpacing: 0.5
+                  }}>
+                    {u.role || 'user'}
+                  </div>
+                </div>
+                {(() => {
+                  const site = allSitesList.find(s => s.id === u.site_id)
+                  return site ? (
+                    <div style={{ fontSize: 10, fontWeight: 700, color: '#64748b', display: 'flex', alignItems: 'center', gap: 4 }}>
+                      <MapPin size={10} color="#94a3b8" /> {site.name}
+                    </div>
+                  ) : null
+                })()}
+                <div style={{ fontSize: 10, fontWeight: 700, color: u.active ? '#22c55e' : '#94a3b8' }}>
+                  {u.active ? 'Active' : 'Inactive'}
+                </div>
+              </div>
+
+              {/* Chevron */}
+              <div style={{ color: '#cbd5e1', flexShrink: 0 }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+              </div>
+            </div>
+          )
+        })}
       </div>
 
       {/* RBAC Quick Tip */}
@@ -469,106 +496,428 @@ export const UserManagement = ({ users = [], setUsers, venues = [], t }) => {
         </div>
       </div>
 
+      {/* ============ USER DETAIL POPUP ============ */}
+      {detailUser && (() => {
+        const u = detailUser
+        const roleColor = { admin: '#ef4444', manager: '#f59e0b', cashier: '#22c55e', staff: '#3b82f6', customer: '#8b5cf6' }[u.role] || '#64748b'
+        const initials = u.name?.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() || 'U'
+        const avatarSrc = (u.avatar?.length > 4 && (u.avatar?.startsWith('http') || u.avatar?.startsWith('data:'))) ? u.avatar : null
+        const venueName = allVenues.find(v => v.id === u.venue_id)?.name
+        const siteName = allVenues.find(v => v.id === u.venue_id)?.sites?.find(s => s.id === u.site_id)?.name
+        return (
+          <div
+            onClick={() => setDetailUser(null)}
+            style={{
+              position: 'fixed', inset: 0, zIndex: 9999,
+              background: 'rgba(15, 23, 42, 0.55)',
+              backdropFilter: 'blur(10px)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              padding: 24
+            }}
+          >
+            <div
+              onClick={e => e.stopPropagation()}
+              style={{
+                width: '100%', maxWidth: 460,
+                background: '#fff',
+                borderRadius: 32,
+                overflow: 'hidden',
+                boxShadow: '0 40px 100px rgba(0,0,0,0.25)',
+                animation: 'modalSlideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1)'
+              }}
+            >
+              {/* Hero Banner */}
+              <div style={{
+                height: 100,
+                background: `linear-gradient(135deg, ${roleColor}cc, ${roleColor}55)`,
+                position: 'relative'
+              }}>
+                {/* Close */}
+                <button
+                  onClick={() => setDetailUser(null)}
+                  style={{
+                    position: 'absolute', top: 16, right: 16,
+                    width: 36, height: 36, borderRadius: '50%',
+                    border: 'none', background: 'rgba(255,255,255,0.25)',
+                    color: '#fff', cursor: 'pointer', fontSize: 18,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    backdropFilter: 'blur(4px)'
+                  }}>
+                  ✕
+                </button>
+                {/* Avatar (overlapping) */}
+                <div
+                  onClick={() => { setSelectedUser(u); avatarInputRef.current?.click() }}
+                  style={{
+                    position: 'absolute', bottom: -28, left: 28,
+                    width: 72, height: 72, borderRadius: 22, overflow: 'hidden',
+                    background: `${roleColor}22`, border: `3px solid #fff`,
+                    boxShadow: '0 8px 24px rgba(0,0,0,0.15)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: 28, fontWeight: 900, color: roleColor, cursor: 'pointer'
+                  }}>
+                  {avatarSrc
+                    ? <img src={avatarSrc} alt={u.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    : initials
+                  }
+                  {/* Camera hover overlay */}
+                  <div style={{
+                    position: 'absolute', inset: 0,
+                    background: 'rgba(0,0,0,0.35)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    color: '#fff', opacity: 0, transition: 'opacity 0.2s',
+                    borderRadius: 20
+                  }} className="avatar-overlay">
+                    <CameraIcon size={20} />
+                  </div>
+                </div>
+                {/* Online dot on hero avatar */}
+                <div style={{
+                  position: 'absolute', bottom: -20, left: 84,
+                  width: 14, height: 14, borderRadius: '50%',
+                  background: u.active ? '#22c55e' : '#94a3b8',
+                  border: '3px solid #fff',
+                  boxShadow: u.active ? '0 0 8px rgba(34,197,94,0.6)' : 'none'
+                }} />
+              </div>
+
+              {/* Identity section */}
+              <div style={{ padding: '44px 28px 24px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                  <div>
+                    <h2 style={{ fontSize: 22, fontWeight: 900, color: '#0f172a', margin: 0, letterSpacing: '-0.02em' }}>{u.name}</h2>
+                    <div style={{ fontSize: 13, color: '#94a3b8', fontWeight: 600, marginTop: 2 }}>Joined {u.joinDate || 'Jan 2024'}</div>
+                  </div>
+                  <div style={{
+                    padding: '6px 14px', borderRadius: 10,
+                    background: `${roleColor}12`, color: roleColor,
+                    fontSize: 11, fontWeight: 900, textTransform: 'uppercase', letterSpacing: 0.8
+                  }}>
+                    {u.role || 'user'}
+                  </div>
+                </div>
+
+                {/* Detail rows */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 0, marginTop: 20, borderRadius: 16, border: '1px solid #f1f5f9', overflow: 'hidden' }}>
+                  {[
+                    { icon: <Mail size={15} color="#94a3b8" />, label: 'Email', value: u.email },
+                    { icon: <Smartphone size={15} color="#94a3b8" />, label: 'Phone', value: u.phone || '—' },
+                    { icon: <Activity size={15} color={u.active ? '#22c55e' : '#94a3b8'} />, label: 'Status', value: u.active ? 'Active' : 'Inactive', valueColor: u.active ? '#22c55e' : '#94a3b8' },
+                    { icon: <ScanFace size={15} color="#94a3b8" />, label: 'Face ID', value: u.faceIdActive ? 'Enrolled' : 'Not enrolled', valueColor: u.faceIdActive ? '#22c55e' : '#94a3b8' },
+                    venueName ? { icon: <Building size={15} color="#94a3b8" />, label: 'Venue', value: venueName } : null,
+                    siteName ? { icon: <MapPin size={15} color="#94a3b8" />, label: 'Site', value: siteName } : null,
+                  ].filter(Boolean).map((row, i, arr) => (
+                    <div key={row.label} style={{
+                      display: 'flex', alignItems: 'center', gap: 12,
+                      padding: '13px 16px',
+                      background: i % 2 === 0 ? '#fff' : '#fafbfe',
+                      borderBottom: i < arr.length - 1 ? '1px solid #f1f5f9' : 'none'
+                    }}>
+                      {row.icon}
+                      <span style={{ fontSize: 12, color: '#94a3b8', fontWeight: 700, minWidth: 60 }}>{row.label}</span>
+                      <span style={{ fontSize: 13, color: row.valueColor || '#0f172a', fontWeight: 700, flex: 1, textAlign: 'right' }}>{row.value}</span>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Action Buttons */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 20 }}>
+                  <button
+                    onClick={() => { handleToggleActive(u); setDetailUser(prev => ({ ...prev, active: !prev.active })) }}
+                    style={{
+                      padding: '12px 16px', borderRadius: 14, border: 'none', cursor: 'pointer',
+                      background: u.active ? '#fef2f2' : '#f0fdf4',
+                      color: u.active ? '#ef4444' : '#22c55e',
+                      fontSize: 13, fontWeight: 800,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                      transition: 'all 0.2s'
+                    }}
+                  >
+                    {u.active ? <><Lock size={15} /> Deactivate</> : <><Unlock size={15} /> Activate</>}
+                  </button>
+
+                  <button
+                    onClick={() => { setSelectedUser(u); setBiometricForm({ name: u.name || '', age: u.age || '', phone: u.phone || '', email: u.email || '' }); setScanningStatus('idle'); setShowFaceScanner(true); setDetailUser(null) }}
+                    style={{
+                      padding: '12px 16px', borderRadius: 14, border: 'none', cursor: 'pointer',
+                      background: '#eef2ff', color: '#4f46e5',
+                      fontSize: 13, fontWeight: 800,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                      transition: 'all 0.2s'
+                    }}
+                  >
+                    <ScanFace size={15} /> Face ID
+                  </button>
+
+                  {(u.role === 'manager' || u.role === 'admin') && (
+                    <button
+                      onClick={() => { handleAssign(u); setDetailUser(null) }}
+                      style={{
+                        padding: '12px 16px', borderRadius: 14, border: 'none', cursor: 'pointer',
+                        background: '#f5f3ff', color: '#7c3aed',
+                        fontSize: 13, fontWeight: 800,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                        transition: 'all 0.2s'
+                      }}
+                    >
+                      <MapPin size={15} /> Assign Location
+                    </button>
+                  )}
+
+                  <button
+                    onClick={() => { handleDeleteUser(u); setDetailUser(null) }}
+                    style={{
+                      padding: '12px 16px', borderRadius: 14, border: 'none', cursor: 'pointer',
+                      background: '#fef2f2', color: '#ef4444',
+                      fontSize: 13, fontWeight: 800,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                      transition: 'all 0.2s',
+                      gridColumn: (u.role === 'manager' || u.role === 'admin') ? 'auto' : 'span 2'
+                    }}
+                  >
+                    <Trash2 size={15} /> Delete User
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )
+      })()}
+
       {showInvite && (
-        <div style={{ 
-          position: 'fixed', 
-          inset: 0, 
-          zIndex: 9999, 
-          background: 'rgba(15, 23, 42, 0.6)', 
-          backdropFilter: 'blur(12px)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: 24
-        }} onClick={() => setShowInvite(false)}>
-          <div style={{ 
-            maxWidth: 480, 
-            width: '100%', 
-            borderRadius: 40, 
-            padding: 48, 
-            background: '#fff',
-            boxShadow: '0 40px 100px rgba(0,0,0,0.25)',
-            position: 'relative',
-            animation: 'modalSlideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1)'
-          }} onClick={e => e.stopPropagation()}>
-            <div style={{ textAlign: 'center', marginBottom: 32 }}>
-              <h2 style={{ fontSize: 28, fontWeight: 900, color: '#0f172a', margin: '0 0 8px 0', letterSpacing: '-0.03em' }}>Invite New User</h2>
-              <p style={{ fontSize: 14, color: '#64748b', fontWeight: 600 }}>Grant infrastructure access to a new team member.</p>
+        <div
+          onClick={() => setShowInvite(false)}
+          style={{
+            position: 'fixed', inset: 0, zIndex: 9999,
+            background: 'rgba(15, 23, 42, 0.6)',
+            backdropFilter: 'blur(12px)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            padding: 24
+          }}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{
+              width: '100%', maxWidth: 500,
+              background: '#fff',
+              borderRadius: 32,
+              overflow: 'hidden',
+              boxShadow: '0 40px 100px rgba(0,0,0,0.22)',
+              animation: 'modalSlideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1)'
+            }}
+          >
+            {/* Modal Header */}
+            <div style={{
+              background: 'linear-gradient(135deg, #4f46e5, #4338ca)',
+              padding: '28px 32px',
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                <div style={{ width: 44, height: 44, borderRadius: 14, background: 'rgba(255,255,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <UserPlus size={22} color="#fff" />
+                </div>
+                <div>
+                  <div style={{ fontSize: 18, fontWeight: 900, color: '#fff', letterSpacing: '-0.02em' }}>Add New User</div>
+                  <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)', fontWeight: 600, marginTop: 2 }}>Fill in the details to create an account</div>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowInvite(false)}
+                style={{ width: 36, height: 36, borderRadius: '50%', border: 'none', background: 'rgba(255,255,255,0.2)', color: '#fff', cursor: 'pointer', fontSize: 18, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+              >✕</button>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-              <div>
-                <label style={{ display: 'block', fontSize: 11, fontWeight: 900, color: '#64748b', marginBottom: 10, textTransform: 'uppercase', letterSpacing: 1 }}>User Identity (Email)</label>
-                <input 
-                  type="email"
-                  placeholder="e.g. j.doe@fanstore.com" 
-                  value={inviteForm.email}
-                  onChange={e => setInviteForm(f => ({ ...f, email: e.target.value }))}
-                  style={{ 
-                    width: '100%', padding: '14px 18px', borderRadius: 16, border: '1px solid #e2e8f0', 
-                    background: '#f8fafc', color: '#0f172a', fontSize: 14, outline: 'none', fontWeight: 700
-                  }}
-                />
-              </div>
-              
-              <div>
-                <label style={{ display: 'block', fontSize: 11, fontWeight: 900, color: '#64748b', marginBottom: 10, textTransform: 'uppercase', letterSpacing: 1 }}>Assigned Security Role</label>
-                <Select t={t} label="" options={[
-                  { label: 'Admin (Full Infrastructure)', value: 'admin' },
-                  { label: 'Manager (Operations & Reports)', value: 'manager' },
-                  { label: 'Cashier (POS & Sales Only)', value: 'cashier' },
-                  { label: 'Staff (Stock & Logistics)', value: 'staff' },
-                ]} value={inviteForm.role} onChange={val => setInviteForm(f => ({ ...f, role: val }))} />
-              </div>
-
-              {inviteForm.role === 'manager' && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-                  <div>
-                    <label style={{ display: 'block', fontSize: 11, fontWeight: 900, color: '#64748b', marginBottom: 10, textTransform: 'uppercase', letterSpacing: 1 }}>Initial Venue Assignment</label>
-                    <Select 
-                      t={t} 
-                      options={[
-                        { label: '— Global Access —', value: '' },
-                        ...allVenues.map(v => ({ label: v.name, value: v.id }))
-                      ]} 
-                      value={inviteForm.venue_id} 
-                      onChange={val => setInviteForm(f => ({ ...f, venue_id: val, site_id: '' }))}
-                    />
-                  </div>
-                  {inviteForm.venue_id && (
-                    <div>
-                      <label style={{ display: 'block', fontSize: 11, fontWeight: 900, color: '#64748b', marginBottom: 10, textTransform: 'uppercase', letterSpacing: 1 }}>Initial Site Assignment</label>
-                      <Select 
-                        t={t} 
-                        options={[
-                          { label: '— All Sites —', value: '' },
-                          ...(allVenues.find(v => v.id === inviteForm.venue_id)?.sites || []).map(s => ({ label: s.name, value: s.id }))
-                        ]} 
-                        value={inviteForm.site_id} 
-                        onChange={val => setInviteForm(f => ({ ...f, site_id: val }))}
-                      />
-                    </div>
-                  )}
+            {/* Form Body */}
+            <div style={{ padding: '28px 32px 32px', display: 'flex', flexDirection: 'column', gap: 18 }}>
+              {/* Name + Phone */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: 11, fontWeight: 800, color: '#64748b', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.8 }}>Full Name *</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. John Doe"
+                    value={inviteForm.name}
+                    onChange={e => setInviteForm(f => ({ ...f, name: e.target.value }))}
+                    autoFocus
+                    style={{ width: '100%', padding: '12px 16px', borderRadius: 14, border: '1.5px solid #e2e8f0', background: '#f8fafc', color: '#0f172a', fontSize: 14, fontWeight: 700, outline: 'none', boxSizing: 'border-box', transition: 'border-color 0.2s' }}
+                    onFocus={e => e.target.style.borderColor = '#4f46e5'}
+                    onBlur={e => e.target.style.borderColor = '#e2e8f0'}
+                  />
                 </div>
-              )}
-
-              <div style={{ padding: 16, background: '#fff9eb', borderRadius: 16, border: '1px dashed #fcd34d', fontSize: 13, color: '#92400e', fontWeight: 600, lineHeight: 1.5 }}>
-                🔒 This user will inherit all permissions associated with the selected role.
+                <div>
+                  <label style={{ display: 'block', fontSize: 11, fontWeight: 800, color: '#64748b', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.8 }}>Phone</label>
+                  <input
+                    type="tel"
+                    placeholder="e.g. +44 7700 900123"
+                    value={inviteForm.phone}
+                    onChange={e => setInviteForm(f => ({ ...f, phone: e.target.value }))}
+                    style={{ width: '100%', padding: '12px 16px', borderRadius: 14, border: '1.5px solid #e2e8f0', background: '#f8fafc', color: '#0f172a', fontSize: 14, fontWeight: 700, outline: 'none', boxSizing: 'border-box', transition: 'border-color 0.2s' }}
+                    onFocus={e => e.target.style.borderColor = '#4f46e5'}
+                    onBlur={e => e.target.style.borderColor = '#e2e8f0'}
+                  />
+                </div>
               </div>
 
-              <Btn t={t} style={{ 
-                marginTop: 8, 
-                padding: 18, 
-                background: 'linear-gradient(135deg, #4f46e5, #4338ca)', 
-                color: '#fff', 
-                borderRadius: 18, 
-                fontWeight: 900,
-                fontSize: 15,
-                boxShadow: '0 10px 25px rgba(79, 70, 229, 0.3)',
-                border: 'none'
-              }} onClick={handleInvite}>
-                <Mail size={18} style={{ marginRight: 10 }} /> Send Digital Invite
-              </Btn>
+              {/* Email */}
+              <div>
+                <label style={{ display: 'block', fontSize: 11, fontWeight: 800, color: '#64748b', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.8 }}>Email Address *</label>
+                <div style={{ position: 'relative' }}>
+                  <Mail size={16} style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', pointerEvents: 'none' }} />
+                  <input
+                    type="email"
+                    placeholder="e.g. john@company.com"
+                    value={inviteForm.email}
+                    onChange={e => setInviteForm(f => ({ ...f, email: e.target.value }))}
+                    style={{ width: '100%', padding: '12px 16px 12px 42px', borderRadius: 14, border: '1.5px solid #e2e8f0', background: '#f8fafc', color: '#0f172a', fontSize: 14, fontWeight: 700, outline: 'none', boxSizing: 'border-box', transition: 'border-color 0.2s' }}
+                    onFocus={e => e.target.style.borderColor = '#4f46e5'}
+                    onBlur={e => e.target.style.borderColor = '#e2e8f0'}
+                  />
+                </div>
+              </div>
+
+              {/* Password */}
+              <div>
+                <label style={{ display: 'block', fontSize: 11, fontWeight: 800, color: '#64748b', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.8 }}>Password *</label>
+                <div style={{ position: 'relative' }}>
+                  <Lock size={16} style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', pointerEvents: 'none' }} />
+                  <input
+                    type="password"
+                    placeholder="Min. 6 characters"
+                    value={inviteForm.password}
+                    onChange={e => setInviteForm(f => ({ ...f, password: e.target.value }))}
+                    style={{ width: '100%', padding: '12px 16px 12px 42px', borderRadius: 14, border: '1.5px solid #e2e8f0', background: '#f8fafc', color: '#0f172a', fontSize: 14, fontWeight: 700, outline: 'none', boxSizing: 'border-box', transition: 'border-color 0.2s' }}
+                    onFocus={e => e.target.style.borderColor = '#4f46e5'}
+                    onBlur={e => e.target.style.borderColor = '#e2e8f0'}
+                  />
+                </div>
+              </div>
+
+              {/* Role selector */}
+              <div>
+                <label style={{ display: 'block', fontSize: 11, fontWeight: 800, color: '#64748b', marginBottom: 10, textTransform: 'uppercase', letterSpacing: 0.8 }}>Role</label>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
+                  {[
+                    { value: 'admin', label: 'Admin', color: '#ef4444', emoji: '👑' },
+                    { value: 'manager', label: 'Manager', color: '#f59e0b', emoji: '🏆' },
+                    { value: 'cashier', label: 'Cashier', color: '#22c55e', emoji: '💳' },
+                    { value: 'staff', label: 'Staff', color: '#3b82f6', emoji: '📦' },
+                  ].map(r => (
+                    <button
+                      key={r.value}
+                      onClick={() => setInviteForm(f => ({ ...f, role: r.value }))}
+                      style={{
+                        padding: '10px 8px',
+                        borderRadius: 14,
+                        border: `2px solid ${inviteForm.role === r.value ? r.color : '#e2e8f0'}`,
+                        background: inviteForm.role === r.value ? `${r.color}12` : '#f8fafc',
+                        cursor: 'pointer',
+                        transition: 'all 0.18s',
+                        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4
+                      }}
+                    >
+                      <span style={{ fontSize: 20 }}>{r.emoji}</span>
+                      <span style={{ fontSize: 11, fontWeight: 800, color: inviteForm.role === r.value ? r.color : '#94a3b8' }}>{r.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Outlet Assignment — for cashier & staff */}
+              {(inviteForm.role === 'cashier' || inviteForm.role === 'staff') && (() => {
+                // Flatten all sites across all venues
+                const allSites = allVenues.flatMap(v =>
+                  (v.sites || []).map(s => ({ ...s, venueName: v.name, venueId: v.id }))
+                )
+                return (
+                  <div style={{
+                    background: '#f0fdf4',
+                    border: '1.5px solid #bbf7d0',
+                    borderRadius: 16,
+                    padding: '16px 18px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 10,
+                    animation: 'fadeIn 0.25s ease'
+                  }}>
+                    {allSites.length === 0 ? (
+                      <div style={{ fontSize: 13, color: '#94a3b8', fontWeight: 600, fontStyle: 'italic' }}>
+                        No outlets configured yet. Add outlets in Outlet Management.
+                      </div>
+                    ) : (
+                      <select
+                        value={inviteForm.site_id || ''}
+                        onChange={e => {
+                          const selected = allSites.find(s => s.id === e.target.value)
+                          setInviteForm(f => ({
+                            ...f,
+                            site_id: e.target.value,
+                            venue_id: selected?.venueId || ''
+                          }))
+                        }}
+                        style={{
+                          width: '100%',
+                          padding: '11px 14px',
+                          borderRadius: 12,
+                          border: `1.5px solid ${inviteForm.site_id ? '#22c55e' : '#e2e8f0'}`,
+                          background: '#fff',
+                          color: '#0f172a',
+                          fontSize: 14,
+                          fontWeight: 700,
+                          outline: 'none',
+                          cursor: 'pointer',
+                          appearance: 'none',
+                          backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2.5'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`,
+                          backgroundRepeat: 'no-repeat',
+                          backgroundPosition: 'right 14px center',
+                          paddingRight: 40
+                        }}
+                      >
+                        <option value="">— Select outlet (optional) —</option>
+                        {allVenues.map(v => (
+                          (v.sites || []).length > 0 && (
+                            <optgroup key={v.id} label={v.name}>
+                              {(v.sites || []).map(s => (
+                                <option key={s.id} value={s.id}>{s.name}</option>
+                              ))}
+                            </optgroup>
+                          )
+                        ))}
+                      </select>
+                    )}
+                    {inviteForm.site_id && (() => {
+                      const picked = allSites.find(s => s.id === inviteForm.site_id)
+                      return picked ? (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: '#16a34a', fontWeight: 700 }}>
+                          <MapPin size={13} /> Assigned to: <strong>{picked.name}</strong> · {picked.venueName}
+                        </div>
+                      ) : null
+                    })()}
+                  </div>
+                )
+              })()}
+
+              <button
+                onClick={handleInvite}
+                disabled={!inviteForm.name || !inviteForm.email || !inviteForm.password}
+                style={{
+                  marginTop: 4,
+                  padding: '15px 24px',
+                  borderRadius: 16,
+                  border: 'none',
+                  cursor: (!inviteForm.name || !inviteForm.email || !inviteForm.password) ? 'not-allowed' : 'pointer',
+                  background: (!inviteForm.name || !inviteForm.email || !inviteForm.password)
+                    ? '#e2e8f0'
+                    : 'linear-gradient(135deg, #4f46e5, #4338ca)',
+                  color: (!inviteForm.name || !inviteForm.email || !inviteForm.password) ? '#94a3b8' : '#fff',
+                  fontSize: 15,
+                  fontWeight: 900,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
+                  boxShadow: (!inviteForm.name || !inviteForm.email || !inviteForm.password) ? 'none' : '0 10px 25px rgba(79,70,229,0.3)',
+                  transition: 'all 0.2s'
+                }}
+              >
+                <UserPlus size={18} /> Add User
+              </button>
             </div>
           </div>
         </div>

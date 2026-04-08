@@ -29,8 +29,9 @@ const REASON_CODES = [
 const STEPS = [
   { id: 1, label: 'Find Order', icon: Search },
   { id: 2, label: 'Select Items', icon: Package },
-  { id: 3, label: 'Return Type', icon: RotateCcw },
-  { id: 4, label: 'Confirmation', icon: CheckCircle2 },
+  { id: 3, label: 'Return Reason', icon: RotateCcw },
+  { id: 4, label: 'Action Selection', icon: ArrowLeftRight },
+  { id: 5, label: 'Confirmation', icon: CheckCircle2 },
 ]
 
 function getOrderItems(order) {
@@ -77,6 +78,7 @@ export const CashierReturns = ({
   const [selectedOrder, setSelectedOrder] = useState(null)
   const [selItemQtys, setSelItemQtys] = useState({})
   const [reasonCode, setReasonCode] = useState('')
+  const [returnComment, setReturnComment] = useState('')
   const [refundMethod, setRefundMethod] = useState('')
   const [processMode, setProcessMode] = useState('')
   const [processing, setProcessing] = useState(false)
@@ -84,6 +86,8 @@ export const CashierReturns = ({
   const [isSuccess, setIsSuccess] = useState(false)
   const [showReceiptModal, setShowReceiptModal] = useState(false)
   const [showFullKeyboard, setShowFullKeyboard] = useState(false)
+  const [replacementItems, setReplacementItems] = useState([])
+  const [replacmentSearch, setReplacmentSearch] = useState('')
 
   const returnDays = settings?.returnDays ?? 30
   const effectiveSiteId = siteId || 'b0000000-0000-0000-0000-000000000001'
@@ -176,6 +180,7 @@ export const CashierReturns = ({
         type: selectedItems.length === items.length ? 'full' : 'partial',
         reasonCode,
         reason: REASON_CODES.find((r) => r.value === reasonCode)?.label || reasonCode || 'Other',
+        comment: returnComment,
         refundMethod: effectiveRefundMethod,
         items: returnItems,
         processedBy: user?.id,
@@ -187,21 +192,25 @@ export const CashierReturns = ({
         if (setProducts) setProducts((ps) =>
           (ps || []).map((p) => {
             const inc = returnItems.find((ri) => (ri.productId || ri.product_id) === p.id)
-            return inc ? { ...p, stock: (p.stock ?? 0) + inc.qty } : p
+            const dec = isExchange ? replacementItems.find(ri => ri.id === p.id) : null
+            let stock = p.stock ?? 0
+            if (inc) stock += inc.qty
+            if (dec) stock = Math.max(0, stock - dec.qty)
+            return (inc || dec) ? { ...p, stock } : p
           })
         )
 
         if (isExchange) {
-          const exchangeItems = selectedItems.map(({ item, qty }) => ({
-            productId: item.product_id || item.productId,
-            product_id: item.product_id || item.productId,
-            name: itemName(item),
-            qty,
-            price: itemPrice(item),
-            discount: itemDiscount(item),
+          const exchangeItems = replacementItems.map(ri => ({
+            productId: ri.id,
+            product_id: ri.id,
+            name: ri.name,
+            qty: ri.qty,
+            price: ri.price,
+            discount: 0,
           }))
-          const subtotal = exchangeItems.reduce((s, i) => s + i.price * (1 - i.discount / 100) * i.qty, 0)
-          const taxAmount = Math.round(exchangeItems.reduce((s, i) => { const p = (products || []).find(pr => pr.id === (i.productId || i.product_id)); const lineNet = i.price * (1 - i.discount / 100) * i.qty; return s + lineNet * ((p?.taxPct ?? 20) / 100) }, 0) * 100) / 100
+          const subtotal = exchangeItems.reduce((s, i) => s + i.price * i.qty, 0)
+          const taxAmount = Math.round(exchangeItems.reduce((s, i) => { const p = (products || []).find(pr => pr.id === (i.productId || i.product_id)); const lineNet = i.price * i.qty; return s + lineNet * ((p?.taxPct ?? 20) / 100) }, 0) * 100) / 100
           const total = Math.round((subtotal + taxAmount) * 100) / 100
 
           const exchangeOrder = await ordersService.createOrderWithItems({
@@ -228,8 +237,13 @@ export const CashierReturns = ({
           }
         } else {
           const origPayment = selectedOrder.payment_method || selectedOrder.payment
-          if ((origPayment === 'Cash' || origPayment === 'Split') && refundMethod === 'original' && refundAmount > 0) {
-            useCashStore.getState().addMovement('refund', refundAmount, `Refund: ${ret.return_number || ret.id}`, user)
+          if (((origPayment === 'Cash' || origPayment === 'Split') || refundMethod === 'store_credit') && refundAmount > 0) {
+            // If store credit, we typically add to customer wallet, but here we just record it 
+            if (refundMethod === 'store_credit') {
+               // Logic to add to wallet could go here if service exists
+            } else if (refundMethod === 'original') {
+              useCashStore.getState().addMovement('refund', refundAmount, `Refund: ${ret.return_number || ret.id}`, user)
+            }
           }
           if (addAudit) addAudit(user, 'Return Processed', 'Returns', `${ret.return_number || ret.id}`)
         }
@@ -256,7 +270,8 @@ export const CashierReturns = ({
 
   const resetFlow = () => {
     setCurrentStep(1); setSelectedOrder(null); setOrderSearch(''); setSelItemQtys({});
-    setReasonCode(''); setRefundMethod(''); setProcessMode(''); setIsSuccess(false);
+    setReasonCode(''); setReturnComment(''); setRefundMethod(''); setProcessMode(''); setIsSuccess(false);
+    setReplacementItems([]);
   }
 
   const handleExit = () => onClose ? onClose() : navigate('/app/home')
@@ -377,53 +392,133 @@ export const CashierReturns = ({
           )}
 
           {currentStep === 3 && !isSuccess && (
-            <div className="step-view type-view">
+            <div className="step-view reason-view">
               <div className="section-intro centered">
-                <h2>Select Compensation</h2>
-                <p>How would you like to handle this return?</p>
+                <div className="order-chip">Mandatory Requirement</div>
+                <h2>Capture Return Reason</h2>
+                <p>Select the most accurate reason and add optional details.</p>
               </div>
 
-              <div className="type-selection-cards">
-                <button 
-                  className={`type-hero-card ${processMode === 'return' && refundMethod === 'original' ? 'active' : ''}`}
-                  onClick={() => { setProcessMode('return'); setRefundMethod('original'); setCurrentStep(4); }}
-                >
-                  <div className="type-icon-box original"><CreditCard size={40} /></div>
-                  <div className="type-info">
-                    <h3>Original Refund</h3>
-                    <p>Process back to original payment method</p>
-                  </div>
-                  <ChevronRight className="arrow" />
-                </button>
+              <div className="reason-capture-layout">
+                <div className="reason-pill-grid large">
+                  {REASON_CODES.map(rc => (
+                    <button
+                      key={rc.value}
+                      className={`reason-pill-large ${reasonCode === rc.value ? 'active' : ''}`}
+                      onClick={() => setReasonCode(rc.value)}
+                    >
+                      <div className="pill-circle"><Check size={20} /></div>
+                      <span className="pill-label">{rc.label}</span>
+                    </button>
+                  ))}
+                </div>
 
-                <button 
-                  className={`type-hero-card ${processMode === 'exchange' ? 'active' : ''}`}
-                  onClick={() => { setProcessMode('exchange'); setRefundMethod('exchange'); setCurrentStep(4); }}
-                >
-                  <div className="type-icon-box exchange"><ArrowLeftRight size={40} /></div>
-                  <div className="type-info">
-                    <h3>Exchange</h3>
-                    <p>Swap items for new products or size</p>
-                  </div>
-                  <ChevronRight className="arrow" />
-                </button>
-
-                <button 
-                  className={`type-hero-card ${refundMethod === 'store_credit' ? 'active' : ''}`}
-                  onClick={() => { setProcessMode('return'); setRefundMethod('store_credit'); setCurrentStep(4); }}
-                >
-                  <div className="type-icon-box credit"><Ticket size={40} /></div>
-                  <div className="type-info">
-                    <h3>Store Credit</h3>
-                    <p>Issue digital credit for future purchase</p>
-                  </div>
-                  <ChevronRight className="arrow" />
-                </button>
+                <div className="comment-box-wrap">
+                  <label>Optional Comments</label>
+                  <textarea 
+                    placeholder="Provide additional context for this return..."
+                    value={returnComment}
+                    onChange={(e) => setReturnComment(e.target.value)}
+                  />
+                </div>
               </div>
             </div>
           )}
 
           {currentStep === 4 && !isSuccess && (
+            <div className="step-view action-selection-view">
+              <div className="section-intro centered">
+                <h2>Select Action</h2>
+                <p>Choose how to compensate the customer based on the reason.</p>
+              </div>
+
+              <div className="type-selection-cards">
+                <button 
+                  className={`type-hero-card ${processMode === 'refund' ? 'active' : ''}`}
+                  onClick={() => { setProcessMode('refund'); setRefundMethod('original'); }}
+                >
+                  <div className="type-icon-box original"><CreditCard size={40} /></div>
+                  <div className="type-info">
+                    <h3>Refund</h3>
+                    <p>Return funds to the customer</p>
+                  </div>
+                  {processMode === 'refund' && (
+                    <div className="refund-method-sub" onClick={e => e.stopPropagation()}>
+                      <button className={refundMethod === 'original' ? 'active' : ''} onClick={() => setRefundMethod('original')}>Original Payment</button>
+                      <button className={refundMethod === 'store_credit' ? 'active' : ''} onClick={() => setRefundMethod('store_credit')}>Store Credit</button>
+                    </div>
+                  )}
+                </button>
+
+                <button 
+                  className={`type-hero-card ${processMode === 'exchange' ? 'active' : ''}`}
+                  onClick={() => { setProcessMode('exchange'); setRefundMethod('exchange'); }}
+                >
+                  <div className="type-icon-box exchange"><ArrowLeftRight size={40} /></div>
+                  <div className="type-info">
+                    <h3>Exchange</h3>
+                    <p>Replace with other products from stock</p>
+                  </div>
+                </button>
+
+                <button 
+                  className={`type-hero-card ${processMode === 'store_credit_only' ? 'active' : ''}`}
+                  onClick={() => { setProcessMode('store_credit_only'); setRefundMethod('store_credit'); }}
+                >
+                  <div className="type-icon-box credit"><Ticket size={40} /></div>
+                  <div className="type-info">
+                    <h3>Store Credit Only</h3>
+                    <p>Issue full credit to customer wallet</p>
+                  </div>
+                </button>
+              </div>
+
+              {processMode === 'exchange' && (
+                <div className="exchange-product-browser animate-up">
+                  <div className="browser-header">
+                    <h3>Select Replacement Items</h3>
+                    <div className="browser-search-wrap">
+                      <Search size={18} />
+                      <input 
+                        placeholder="Search product name or SKU..." 
+                        value={replacmentSearch}
+                        onChange={(e) => setReplacmentSearch(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                  <div className="browser-grid">
+                    {products.filter(p => !replacmentSearch || p.name.toLowerCase().includes(replacmentSearch.toLowerCase()) || p.sku?.toLowerCase().includes(replacmentSearch.toLowerCase())).slice(0, 8).map(p => {
+                      const inRepl = replacementItems.find(ri => ri.id === p.id)
+                      return (
+                        <div key={p.id} className={`browser-item ${inRepl ? 'selected' : ''}`} onClick={() => {
+                          if (inRepl) {
+                            setReplacementItems(prev => prev.filter(ri => ri.id !== p.id))
+                          } else {
+                            setReplacementItems(prev => [...prev, { ...p, qty: 1 }])
+                          }
+                        }}>
+                          <div className="item-img">{p.emoji || '📦'}</div>
+                          <div className="item-meta">
+                            <span className="name">{p.name}</span>
+                            <span className="price">{fmt(p.price, settings?.sym)}</span>
+                          </div>
+                          {inRepl && (
+                            <div className="repl-qty-ctrl" onClick={e => e.stopPropagation()}>
+                              <button onClick={() => setReplacementItems(prev => prev.map(ri => ri.id === p.id ? { ...ri, qty: Math.max(1, ri.qty - 1) } : ri))}>-</button>
+                              <span>{inRepl.qty}</span>
+                              <button onClick={() => setReplacementItems(prev => prev.map(ri => ri.id === p.id ? { ...ri, qty: ri.qty + 1 } : ri))}>+</button>
+                            </div>
+                          )}
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {currentStep === 5 && !isSuccess && (
             <div className="step-view confirm-view">
               <div className="confirm-layout">
                 <div className="confirm-summary">
@@ -433,6 +528,7 @@ export const CashierReturns = ({
                   </div>
 
                   <div className="summary-scrollable">
+                    <div className="summary-section-label">Returning Items</div>
                     {selectedItems.map(({ item, qty }) => (
                       <div key={item.id} className="summary-line">
                         <div className="line-item-info">
@@ -442,25 +538,56 @@ export const CashierReturns = ({
                         <div className="line-price">{fmt(itemPrice(item) * (1 - itemDiscount(item) / 100) * qty, settings?.sym)}</div>
                       </div>
                     ))}
+
+                    {processMode === 'exchange' && replacementItems.length > 0 && (
+                      <>
+                        <div className="summary-section-label margin-top">Replacement Items</div>
+                        {replacementItems.map(ri => (
+                          <div key={ri.id} className="summary-line replacement">
+                            <div className="line-item-info">
+                              <span className="name">{ri.name}</span>
+                              <span className="detail">{ri.qty} unit(s) @ {fmt(ri.price, settings?.sym)}</span>
+                            </div>
+                            <div className="line-price">+{fmt(ri.price * ri.qty, settings?.sym)}</div>
+                          </div>
+                        ))}
+                      </>
+                    )}
                   </div>
                 </div>
 
                 <div className="confirm-logic">
-                  <span className="logic-label">Select Return Reason</span>
-                  <div className="reason-pill-grid">
-                    {REASON_CODES.map(rc => (
-                      <button
-                        key={rc.value}
-                        className={`reason-pill ${reasonCode === rc.value ? 'active' : ''}`}
-                        onClick={() => setReasonCode(rc.value)}
-                      >
-                        {rc.label}
-                      </button>
-                    ))}
+                  <div className="audit-preview-card">
+                    <div className="audit-row">
+                      <span className="label">Reason:</span>
+                      <span className="val">{REASON_CODES.find(r => r.value === reasonCode)?.label}</span>
+                    </div>
+                    {returnComment && (
+                      <div className="audit-row">
+                        <span className="label">Note:</span>
+                        <span className="val italic">“{returnComment}”</span>
+                      </div>
+                    )}
+                    <div className="audit-row">
+                      <span className="label">Action:</span>
+                      <span className="val uppercase font-bold text-indigo">{processMode.replace(/_/g, ' ')} ({refundMethod.replace(/_/g, ' ')})</span>
+                    </div>
                   </div>
 
-                  <div className="method-preview-chip">
-                    Refund via <strong>{processMode === 'exchange' ? 'Exchange' : refundMethod.replace('_', ' ')}</strong>
+                  <div className="pricing-math-box">
+                    <div className="math-row"><span>Returned Value</span><span>-{fmt(refundAmount, settings?.sym)}</span></div>
+                    {processMode === 'exchange' && (
+                      <>
+                        <div className="math-row"><span>Replacement Value</span><span>+{fmt(replacementItems.reduce((s, i) => s + (i.price * i.qty), 0), settings?.sym)}</span></div>
+                        <div className="math-divider" />
+                        <div className="math-total-row">
+                          <span>Difference</span>
+                          <span className={replacementItems.reduce((s, i) => s + (i.price * i.qty), 0) - refundAmount > 0 ? 'text-red' : 'text-green'}>
+                            {fmt(replacementItems.reduce((s, i) => s + (i.price * i.qty), 0) - refundAmount, settings?.sym)}
+                          </span>
+                        </div>
+                      </>
+                    )}
                   </div>
                 </div>
               </div>
@@ -504,13 +631,20 @@ export const CashierReturns = ({
             </button>
             <button 
               className="footer-primary-btn"
-              disabled={selectedItems.length === 0 || processing || hasNonReturnable || !withinWindow}
+              disabled={
+                processing || 
+                (currentStep === 2 && selectedItems.length === 0) ||
+                (currentStep === 3 && !reasonCode) ||
+                (currentStep === 4 && (!processMode || (processMode === 'exchange' && replacementItems.length === 0))) ||
+                hasNonReturnable || 
+                !withinWindow
+              }
               onClick={() => {
-                if (currentStep === 4) handleProcessReturn()
+                if (currentStep === 5) handleProcessReturn()
                 else setCurrentStep(currentStep + 1)
               }}
             >
-              {processing ? 'Processing...' : currentStep === 4 ? `Process ${processMode === 'exchange' ? 'Exchange' : 'Refund'}` : 'Next Step'}
+              {processing ? 'Processing...' : currentStep === 5 ? `Confirm & Process` : 'Next Step'}
               <ChevronRight size={20} />
             </button>
           </div>

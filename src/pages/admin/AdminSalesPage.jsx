@@ -54,17 +54,30 @@ export const AdminSalesPage = ({ orders = [], setOrders, addAudit, currentUser, 
       minHeight: 'calc(100vh - 64px)',
       animation: 'fadeIn 0.5s ease-out' 
     }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: 16 }}>
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        alignItems: 'center', 
+        flexWrap: 'wrap', 
+        gap: 16,
+        position: 'sticky',
+        top: -32,
+        zIndex: 50,
+        background: '#f8fafc',
+        padding: '16px 0',
+        margin: '-16px 0 0 0'
+      }}>
         <div>
-          <h1 style={{ fontSize: 36, fontWeight: 900, color: '#0f172a', margin: 0, letterSpacing: '-0.03em' }}>Sales Hub</h1>
-          <p style={{ fontSize: 16, color: '#64748b', marginTop: 4, fontWeight: 600 }}>Manage transactions, refunds, and performance.</p>
+          <h1 style={{ fontSize: 24, fontWeight: 900, color: '#0f172a', margin: 0, letterSpacing: '-0.03em', display: 'flex', alignItems: 'center', gap: 12 }}>
+            <RotateCcw size={24} color="#4f46e5" strokeWidth={2.5} /> Sales Hub
+          </h1>
         </div>
         <div style={{ display: 'flex', gap: 12 }}>
-          <Btn t={t} variant="outline" style={{ borderRadius: 12, padding: '10px 20px', fontSize: 14, fontWeight: 800, display: 'flex', alignItems: 'center', gap: 8, background: '#fff', border: '1px solid #e2e8f0', color: '#475569' }}>
-            <Download size={18} /> Export CSV
+          <Btn t={t} variant="outline" style={{ borderRadius: 12, padding: '8px 16px', fontSize: 13, fontWeight: 800, display: 'flex', alignItems: 'center', gap: 8, background: '#fff', border: '1px solid #e2e8f0', color: '#475569' }}>
+            <Download size={16} /> Export
           </Btn>
-          <Btn t={t} style={{ borderRadius: 12, padding: '10px 24px', fontSize: 14, fontWeight: 900, background: 'linear-gradient(135deg, #4f46e5, #4338ca)', color: '#fff', boxShadow: '0 8px 20px rgba(79, 70, 229, 0.25)', border: 'none' }}>
-            + New Simulation
+          <Btn t={t} style={{ borderRadius: 12, padding: '8px 20px', fontSize: 13, fontWeight: 900, background: 'linear-gradient(135deg, #4f46e5, #4338ca)', color: '#fff', boxShadow: '0 8px 20px rgba(79, 70, 229, 0.25)', border: 'none' }}>
+            + New Sale
           </Btn>
         </div>
       </div>

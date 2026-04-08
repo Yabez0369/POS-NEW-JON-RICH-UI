@@ -3,10 +3,12 @@
 // ═══════════════════════════════════════════════════════════════
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { X, UserPlus, Pause, FolderOpen } from 'lucide-react'
 import { ImgWithFallback } from '@/components/shared'
 import { fmt } from '@/lib/utils'
 import { NumberPadModal } from '@/components/ui/NumberPadModal'
 import { FullKeyboard } from '@/components/ui/FullKeyboard'
+import { POSItemDetails } from './POSItemDetails'
 import './POSFlowTerminal.css'
 
 const STEP_LABELS = { scan: 'Scan', payment: 'Pay', processing: 'Process', success: 'Done' }
@@ -40,6 +42,7 @@ export function POSFlowView({
   // Settings
   settings, t,
   products,
+  setShowReturnModal,
 }) {
   const navigate = useNavigate()
   const [showMenu, setShowMenu] = useState(false)
@@ -49,6 +52,8 @@ export function POSFlowView({
   const [showNumpad, setShowNumpad] = useState(false)
   const [numpadConfig, setNumpadConfig] = useState({ target: null, itemId: null, initialValue: '' })
   const [showFullKeyboard, setShowFullKeyboard] = useState(false)
+  const [isTyping, setIsTyping] = useState(false)
+  const [showDetails, setShowDetails] = useState(null)
 
   // Auto-focus search / barcode input
   useEffect(() => {
@@ -88,14 +93,9 @@ export function POSFlowView({
       <div className="pos-scan-left">
         <div className="pos-scan-hero-zone">
           <div className="pos-scan-main-input-wrap">
-            <div className="pos-scan-ready-pulse">
-              <div className="pulse-1"></div>
-              <div className="pulse-2"></div>
-              <div className="pulse-3"></div>
-            </div>
             <div className="pos-scan-input-container">
               <div className="pos-scan-icon-large">
-                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#4F46E5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#4F46E5" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M3 7V5a2 2 0 012-2h2m10 0h2a2 2 0 012 2v2m0 10v2a2 2 0 01-2 2h-2M7 21H5a2 2 0 01-2-2v-2M7 12h10" />
                 </svg>
               </div>
@@ -104,44 +104,92 @@ export function POSFlowView({
                 className="pos-scan-hero-input"
                 value={search}
                 onChange={e => setSearch(e.target.value)}
-                onClick={() => setShowFullKeyboard(true)}
-                placeholder="Ready to scan"
+                onClick={() => { setShowFullKeyboard(true); setIsTyping(true); }}
+                placeholder="Scan, Product Name or SKU to add product..."
                 autoFocus
                 readOnly={showFullKeyboard}
               />
-              {search && <button className="pos-scan-hero-clear" onClick={() => setSearch('')}>✕</button>}
+              {search && <button className="pos-scan-hero-clear" onClick={() => { setSearch(''); setIsTyping(false); }}>✕</button>}
             </div>
+          </div>
+          <div className="pos-scan-status-badge">
+            <span className="status-dot"></span>
+            <span className="status-text">Scanning Mode Active</span>
           </div>
         </div>
 
-        <div className="pos-scan-product-grid-header"><span>Quick Selection</span></div>
-        <div className="pos-product-grid">
-          {filteredProds.map(p => {
-            const disc = getItemDiscount(p)
-            const isOOS = p.stock === 0
-            return (
-              <div key={p.id} className={`pos-product-card${isOOS ? ' oos' : ''}`} onClick={() => !isOOS && handleProductClick(p)}>
-                {disc > 0 && <div className="pos-product-badge">-{disc}%</div>}
-                <div className="pos-product-card-image">
-                  <ImgWithFallback src={p.image_url || p.image} alt={p.name} emoji={p.emoji} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
-                </div>
-                <div className="pos-product-card-info">
-                  <div className="pos-product-card-name">{p.name}</div>
-                  <div className="pos-product-card-bottom">
-                    <div className="pos-product-card-price">{fmt(p.price * (1 - disc / 100), settings?.sym)}</div>
-                    <div className={`pos-product-card-stock ${p.stock <= 5 ? 'low' : 'ok'}`}>{p.stock}</div>
+        <div className={`pos-scan-workspace ${isTyping ? 'is-typing' : ''}`}>
+          <div className="pos-product-section">
+            <div className="pos-scan-product-grid-header"><span>Quick Selection</span></div>
+            <div className="pos-product-grid">
+              {filteredProds.map(p => {
+                const disc = getItemDiscount(p)
+                const isOOS = p.stock === 0
+                return (
+                  <div key={p.id} className={`pos-product-card${isOOS ? ' oos' : ''}`} onClick={() => !isOOS && handleProductClick(p)}>
+                    {disc > 0 && <div className="pos-product-badge">-{disc}%</div>}
+                    <div className="pos-product-card-image">
+                      <ImgWithFallback src={p.image_url || p.image} alt={p.name} emoji={p.emoji} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                    </div>
+                    <div className="pos-product-card-info">
+                      <div className="pos-product-card-name">{p.name}</div>
+                      <div className="pos-product-card-bottom">
+                        <div className="pos-product-card-price">{fmt(p.price * (1 - disc / 100), settings?.sym)}</div>
+                        <div className={`pos-product-card-stock ${p.stock <= 5 ? 'low' : 'ok'}`}>{p.stock}</div>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </div>
-            )
-          })}
+                )
+              })}
+            </div>
+          </div>
+          {isTyping && (
+            <div className="pos-input-section">
+              <FullKeyboard
+                t={t}
+                initialValue={search}
+                isInline
+                hidePreview
+                onClose={() => { setShowFullKeyboard(false); setIsTyping(false); }}
+                onSave={(val) => { setSearch(val); setShowFullKeyboard(false); setIsTyping(false); }}
+                onChange={(val) => setSearch(val)}
+              />
+            </div>
+          )}
+
+          <POSItemDetails
+            item={showDetails}
+            onClose={() => setShowDetails(null)}
+            settings={settings}
+          />
         </div>
       </div>
 
       <div className="pos-scan-right">
         <div className="pos-cart-header">
-          <div className="pos-cart-title">Cart {cart.length > 0 && <span className="pos-cart-count">{cart.reduce((s, i) => s + i.qty, 0)}</span>}</div>
-          {selCust && <div className="pos-active-customer"><div className="pos-active-customer-dot" />{selCust.name}</div>}
+          <div className="pos-cart-title-wrap">
+            <div className="pos-cart-title">Cart {cart.length > 0 && <span className="pos-cart-count">{cart.reduce((s, i) => s + i.qty, 0)}</span>}</div>
+            {selCust && <div className="pos-active-customer"><div className="pos-active-customer-dot" />{selCust.name}</div>}
+          </div>
+          <div className="pos-cart-actions">
+            <button className="pos-cart-action-btn" onClick={() => setShowNewCust(true)}>
+              Search / Add Customer
+            </button>
+            <button
+              className="pos-cart-action-btn"
+              onClick={() => parkBill()}
+              disabled={cart.length === 0}
+            >
+              New Sale
+            </button>
+            <button
+              className="pos-cart-action-btn"
+              onClick={() => setShowParkedDropdown(true)}
+              disabled={cart.length > 0}
+            >
+              Recall {parked.length > 0 && <span className="recall-badge">{parked.length}</span>}
+            </button>
+          </div>
         </div>
 
         <div className="pos-cart-items">
@@ -157,9 +205,13 @@ export function POSFlowView({
             </div>
           ) : (
             cart.map(item => (
-              <div key={item.id} className={`pos-cart-item${lastAddedId === item.id ? ' highlighted' : ''}`}>
+              <div
+                key={item.id}
+                className={`pos-cart-item${lastAddedId === item.id ? ' highlighted' : ''}`}
+                onClick={() => setShowDetails(item)}
+              >
                 <div className="pos-cart-item-main">
-                  <div className="pos-cart-item-name">{item.name}</div>
+                  <div className="pos-cart-item-name">{item.name.split('(')[0].trim()}</div>
                 </div>
                 <div className="pos-cart-qty-zone">
                   <button className="pos-qty-action-btn" onClick={(e) => { e.stopPropagation(); updateQty(item.id, -1) }}>−</button>
@@ -327,29 +379,16 @@ export function POSFlowView({
         </div>
         {scanMsg && <div className={`pos-floating-msg ${scanMsg.includes('❌') ? 'err' : 'ok'}`}>{scanMsg}</div>}
         <div className="pos-flow-header-right">
-          <button className={`pos-utility-btn${showMenu ? ' open' : ''}`} onClick={() => setShowMenu(v => !v)}>
-            <span>More</span><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="1" /><circle cx="12" cy="5" r="1" /><circle cx="12" cy="19" r="1" /></svg>
-          </button>
-          {showMenu && (
-            <>
-              <div className="pos-menu-backdrop" onClick={() => setShowMenu(false)} />
-              <div className="pos-menu-dropdown">
-                <button className="pos-menu-item" onClick={() => { setShowNewCust(true); setShowMenu(false) }}>👤 Add Customer</button>
-                <div className="pos-menu-divider" />
-                <button className="pos-menu-item" onClick={() => { parkBill(); setShowMenu(false) }} disabled={cart.length === 0}>⏸ Park Sale</button>
-                <button className="pos-menu-item" onClick={() => { setShowParkedDropdown(true); setShowMenu(false) }} disabled={cart.length > 0}>📂 Recall Sale {parked.length > 0 && <span className="m-badge">{parked.length}</span>}</button>
-              </div>
-            </>
-          )}
+          {/* Menu Actions moved to Cart Header */}
         </div>
       </div>
       <div className="pos-flow-body">
         <div className={`pos-step-view animate-${animDir}`} key={posStep}>{renderStep()}</div>
       </div>
       {showNumpad && (
-        <NumberPadModal t={t} title={numpadConfig.target === 'qty' ? 'Enter Quantity' : 'Enter Amount'} 
-          initialValue={numpadConfig.initialValue} 
-          isDecimal={numpadConfig.target !== 'qty'} 
+        <NumberPadModal t={t} title={numpadConfig.target === 'qty' ? 'Enter Quantity' : 'Enter Amount'}
+          initialValue={numpadConfig.initialValue}
+          isDecimal={numpadConfig.target !== 'qty'}
           showCurrency={numpadConfig.target !== 'qty'}
           onClose={() => setShowNumpad(false)}
           onSave={(val) => {
@@ -364,7 +403,7 @@ export function POSFlowView({
           }}
         />
       )}
-      {showFullKeyboard && <FullKeyboard t={t} initialValue={search} onClose={() => setShowFullKeyboard(false)} onSave={(val) => { setSearch(val); setShowFullKeyboard(false) }} onChange={(val) => setSearch(val)} />}
+      {/* Removed FullKeyboard overlay rendering as it is now inline */}
     </div>
   )
 }

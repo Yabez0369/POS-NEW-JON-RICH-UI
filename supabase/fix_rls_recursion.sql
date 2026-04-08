@@ -66,6 +66,7 @@ DROP POLICY IF EXISTS "Admins can read audit_logs" ON audit_logs;
 
 -- settings
 DROP POLICY IF EXISTS "Admins can read settings" ON settings;
+DROP POLICY IF EXISTS "Authenticated users can read settings" ON settings;
 DROP POLICY IF EXISTS "Admins can manage settings" ON settings;
 
 -- venues

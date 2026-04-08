@@ -1,107 +1,87 @@
-import { useState, useMemo } from 'react'
+import { useState } from 'react'
 import { Btn, Badge, Card, StatCard, Modal, Table } from '@/components/ui'
 import { fmt } from '@/lib/utils'
-import {
-  Users, Search, Star, ShoppingBag, Wifi, Store,
-  Truck, Filter, Eye, TrendingUp, Award, Phone, Mail
-} from 'lucide-react'
+import { Users, Wifi, Truck, Award, Star, TrendingUp, Search, Eye, Mail, Phone, ShoppingBag } from 'lucide-react'
 
-const TIER_COLORS = { Gold: '#f59e0b', Silver: '#9ca3af', Bronze: '#cd7f32' }
-const TIER_ICONS = { Gold: '🥇', Silver: '🥈', Bronze: '🥉' }
+const TIER_ICONS = { Gold: '👑', Silver: '🥈', Bronze: '🥉' }
+const TIER_COLORS = { Gold: '#f59e0b', Silver: '#64748b', Bronze: '#b45309' }
 
-function getCustomerType(orders = []) {
-  const hasDelivery = orders.some(o => {
-    const type = (o.orderType || o.order_type || '').toLowerCase()
-    const addr = o.deliveryAddress || o.delivery_address || o.address
-    const fee = o.deliveryCharge || o.delivery_charge || 0
-    const status = (o.deliveryStatus || o.delivery_status || '').toLowerCase()
-    return type === 'delivery' || !!addr || fee > 0 || !!status
-  })
-
-  const hasOnline = orders.some(o => {
-    const type = (o.orderType || o.order_type || '').toLowerCase()
-    const pay = (o.payment || o.payment_method || '').toLowerCase()
-    const ctr = (o.counter || o.counter_name || '').toLowerCase()
-    const cash = (o.cashierName || o.cashier_name || '').toLowerCase()
-    return type === 'online' || type === 'pickup' || pay === 'online' || ctr === 'online' || cash === 'online'
-  })
-
-  const hasInStore = orders.some(o => {
-    const type = (o.orderType || o.order_type || '').toLowerCase()
-    return type === 'in-store' || type === 'walk-in' || type === 'pos'
-  })
-
-  if (hasDelivery) return 'delivery'
-  if (hasOnline) return 'online'
-  if (hasInStore) return 'walk-in'
-  return 'unknown'
-}
-
-function CustomerTypeBadge({ type, t }) {
-  const config = {
-    online: { label: 'Online', color: t.blue, icon: <Wifi size={11} /> },
-    delivery: { label: 'Delivery', color: t.accent, icon: <Truck size={11} /> },
-    'walk-in': { label: 'Walk-in', color: t.green, icon: <Store size={11} /> },
-    unknown: { label: 'New', color: t.text4, icon: <Star size={11} /> },
-  }
-  const { label, color, icon } = config[type] || config.unknown
-  return (
-    <span style={{
-      display: 'inline-flex', alignItems: 'center', gap: 4,
-      padding: '3px 8px', borderRadius: 20, fontSize: 11, fontWeight: 700,
-      background: `${color}15`, color, border: `1px solid ${color}30`
-    }}>
-      {icon} {label}
-    </span>
-  )
-}
-
-export const AdminCustomers = ({ users = [], orders = [], t, settings }) => {
+export const AdminCustomers = ({ users, orders, t, settings }) => {
   const [selected, setSelected] = useState(null)
   const [search, setSearch] = useState('')
   const [filterType, setFilterType] = useState('all')
   const [filterTier, setFilterTier] = useState('all')
   const [sortBy, setSortBy] = useState('spent')
 
-  const enriched = useMemo(() => {
-    return (users || []).filter(u => u.role === 'customer').map(u => {
-      const myOrders = (orders || []).filter(o => o.customerId === u.id || o.customer_id === u.id)
-      const dynSpent = myOrders.reduce((s, o) => s + (o.total || 0), 0)
-      const spent = Math.max(u.totalSpent || u.total_spent || 0, dynSpent)
-      const tier = spent >= 1500 ? 'Gold' : spent >= 500 ? 'Silver' : 'Bronze'
-      const pts = u.loyaltyPoints || u.loyalty_points || 0
-      const custType = myOrders.length > 0 ? getCustomerType(myOrders) : 'unknown'
-      return { ...u, spent, tier, pts, myOrders, custType }
-    })
-  }, [users, orders])
+  const baseCustomers = users.filter(u => u.role === 'customer').map(u => {
+    const myOrders = orders.filter(o => o.customerId === u.id || o.customer_id === u.id)
+    const dynamicSpent = myOrders.reduce((s, o) => s + (o.total || 0), 0)
+    const spent = Math.max(u.totalSpent || u.total_spent || 0, dynamicSpent)
+    
+    let tier = u.tier || 'Bronze'
+    if (spent >= 1500) tier = 'Gold'
+    else if (spent >= 500) tier = 'Silver'
+    else tier = 'Bronze'
+    
+    return { ...u, dynamicSpent: spent, dynamicTier: tier, myOrders }
+  })
 
-  const stats = useMemo(() => ({
-    total: enriched.length,
-    online: enriched.filter(u => u.custType === 'online').length,
-    delivery: enriched.filter(u => u.custType === 'delivery').length,
-    gold: enriched.filter(u => u.tier === 'Gold').length,
-    totalPts: enriched.reduce((s, u) => s + u.pts, 0),
-    totalSpent: enriched.reduce((s, u) => s + u.spent, 0),
-  }), [enriched])
+  // Calculate stats for all customers (ignore search/filter)
+  const totalCustomers = baseCustomers.length
+  const goldMembers = baseCustomers.filter(u => u.dynamicTier === 'Gold').length
+  const silverMembers = baseCustomers.filter(u => u.dynamicTier === 'Silver').length
+  const totalPoints = baseCustomers.reduce((s, u) => s + (u.loyaltyPoints || u.loyalty_points || 0), 0)
 
-  const filtered = useMemo(() => {
-    let list = enriched.filter(u => {
-      const q = search.toLowerCase()
-      const matchSearch = !q ||
-        u.name?.toLowerCase().includes(q) ||
-        u.email?.toLowerCase().includes(q) ||
-        String(u.phone || '').includes(q)
-      const matchType = filterType === 'all' || u.custType === filterType
-      const matchTier = filterTier === 'all' || u.tier === filterTier
-      return matchSearch && matchType && matchTier
-    })
+  // Filter customers based on search and selected filter type
+  const filtered = baseCustomers.filter(u => {
+    // Basic search filtering (Name, Email, Phone)
+    const matchesSearch = search === '' || 
+      (u.name || '').toLowerCase().includes(search.toLowerCase()) || 
+      (u.email || '').toLowerCase().includes(search.toLowerCase()) || 
+      (u.phone && String(u.phone).includes(search))
 
-    if (sortBy === 'spent') list = [...list].sort((a, b) => b.spent - a.spent)
-    else if (sortBy === 'pts') list = [...list].sort((a, b) => b.pts - a.pts)
-    else if (sortBy === 'orders') list = [...list].sort((a, b) => b.myOrders.length - a.myOrders.length)
-    else if (sortBy === 'name') list = [...list].sort((a, b) => (a.name || '').localeCompare(b.name || ''))
-    return list
-  }, [enriched, search, filterType, filterTier, sortBy])
+    if (!matchesSearch) return false
+    
+    // Tier filter
+    if (filterTier !== 'all' && u.dynamicTier !== filterTier) return false;
+
+    // Filter by order types using their order history
+    if (filterType === 'all') return true
+    
+    const myOrders = u.myOrders || []
+    
+    if (filterType === 'walk-in') {
+      return myOrders.some(o => (o.orderType || o.order_type) === 'in-store')
+    }
+    if (filterType === 'online') {
+      return myOrders.some(o => (o.payment || o.payment_method) === 'Online' || (o.orderType || o.order_type) === 'online')
+    }
+    if (filterType === 'delivery') {
+      return myOrders.some(o => (o.orderType || o.order_type) === 'delivery')
+    }
+    if (filterType === 'unknown') { // new/unknown
+      return myOrders.length === 0
+    }
+    
+    return true
+  }).sort((a, b) => {
+    if (sortBy === 'spent') return (b.dynamicSpent || 0) - (a.dynamicSpent || 0)
+    if (sortBy === 'pts') return (b.loyaltyPoints || b.loyalty_points || 0) - (a.loyaltyPoints || a.loyalty_points || 0)
+    if (sortBy === 'orders') return (b.myOrders?.length || 0) - (a.myOrders?.length || 0)
+    if (sortBy === 'name') return (a.name || '').localeCompare(b.name || '')
+    return 0
+  })
+
+  const enriched = baseCustomers;
+
+  const stats = {
+    total: totalCustomers,
+    online: baseCustomers.filter(u => u.myOrders.some(o => (o.orderType || o.order_type) === 'online' || (o.payment || o.payment_method) === 'Online')).length,
+    delivery: baseCustomers.filter(u => u.myOrders.some(o => (o.orderType || o.order_type) === 'delivery')).length,
+    gold: goldMembers,
+    totalPts: totalPoints,
+    totalSpent: baseCustomers.reduce((s, u) => s + (u.dynamicSpent || 0), 0)
+  }
 
   return (
     <div style={{ 
@@ -116,14 +96,23 @@ export const AdminCustomers = ({ users = [], orders = [], t, settings }) => {
     }}>
 
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: 16 }}>
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        alignItems: 'center', 
+        flexWrap: 'wrap', 
+        gap: 16,
+        position: 'sticky',
+        top: -32,
+        zIndex: 50,
+        background: '#f8fafc',
+        padding: '16px 0',
+        margin: '-16px 0 0 0'
+      }}>
         <div>
-          <h1 style={{ fontSize: 36, fontWeight: 900, color: '#0f172a', margin: 0, display: 'flex', alignItems: 'center', gap: 12, letterSpacing: '-0.03em' }}>
-            <Users size={32} color="#4f46e5" strokeWidth={2.5} /> Customer Intelligence
+          <h1 style={{ fontSize: 24, fontWeight: 900, color: '#0f172a', margin: 0, display: 'flex', alignItems: 'center', gap: 12, letterSpacing: '-0.03em' }}>
+            <Users size={24} color="#4f46e5" strokeWidth={2.5} /> Customer Intelligence
           </h1>
-          <p style={{ fontSize: 16, color: '#64748b', marginTop: 4, fontWeight: 600 }}>
-            Manage loyalty tiers, track spending, and analyse online vs walk-in behaviour.
-          </p>
         </div>
       </div>
 
@@ -280,7 +269,6 @@ export const AdminCustomers = ({ users = [], orders = [], t, settings }) => {
         )}
       </div>
 
-      {/* Customer Profile Modal */}
       {selected && (
         <div style={{ 
           position: 'fixed', 

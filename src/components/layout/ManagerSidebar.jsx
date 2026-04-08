@@ -61,28 +61,28 @@ export function ManagerSidebar() {
   return (
     <div style={{
       width: '100%', height: '100%',
-      background: '#FFFFFF',
-      borderRight: '1px solid rgba(0,0,0,0.05)',
+      background: 'var(--theme-sidebar)',
+      borderRight: '1px solid var(--theme-border)',
       display: 'flex', flexDirection: 'column',
-      color: '#0F172A',
+      color: 'var(--theme-sidebar-text)',
       fontFamily: "'Inter', system-ui, sans-serif"
     }}>
       <div style={{ padding: '24px', borderBottom: '1px solid rgba(0,0,0,0.05)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div style={{ width: 40, height: 40, borderRadius: 12, background: 'linear-gradient(135deg, #22D3EE, #14B8A6)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: 18 }}>
+          <div style={{ width: 36, height: 36, borderRadius: 10, background: 'linear-gradient(135deg, #22D3EE, #14B8A6)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' }}>
             M
           </div>
           <div className="sidebar-label">
             <div style={{ fontSize: 14, fontWeight: 700, letterSpacing: -0.3 }}>Manager Pro</div>
-            <div style={{ fontSize: 11, color: '#475569' }}>{currentUser?.name || 'Administrator'}</div>
+            <div style={{ fontSize: 11, color: 'var(--theme-sidebar-text-muted)' }}>{currentUser?.name || 'Administrator'}</div>
           </div>
         </div>
       </div>
 
-      <div style={{ flex: 1, overflowY: 'auto', padding: '20px 16px' }}>
+      <div style={{ flex: 1, overflowY: 'auto', padding: '20px 14px' }}>
         {managerNav.map((item, i) => {
           if (item.type === 'group') {
-            return <div key={i} className="sidebar-label" style={{ fontSize: 11, fontWeight: 600, color: '#64748B', letterSpacing: 0.5, textTransform: 'uppercase', marginTop: i === 0 ? 0 : 24, marginBottom: 8, paddingLeft: 12 }}>{item.l}</div>
+            return <div key={i} className="sidebar-label" style={{ fontSize: 11, fontWeight: 600, color: 'var(--theme-sidebar-text-muted)', letterSpacing: 0.5, textTransform: 'uppercase', marginTop: i === 0 ? 0 : 24, marginBottom: 8, paddingLeft: 10 }}>{item.l}</div>
           }
           const active = isActive(item.key)
           const isHovered = hovered === item.key
@@ -94,8 +94,8 @@ export function ManagerSidebar() {
               onMouseLeave={() => setHovered(null)}
               style={{
                 display: 'flex', alignItems: 'center', gap: 12, width: '100%', padding: '10px 12px',
-                borderRadius: 12, background: (active || isHovered) ? '#C4E8E7' : 'transparent',
-                color: (active || isHovered) ? '#0D9488' : '#475569',
+                borderRadius: 12, background: (active || isHovered) ? 'rgba(255, 255, 255, 0.1)' : 'transparent',
+                color: (active || isHovered) ? 'var(--theme-primary)' : 'var(--theme-sidebar-text-muted)',
                 border: '1px solid transparent',
                 cursor: 'pointer', textAlign: 'left', fontWeight: (active || isHovered) ? 600 : 500, fontSize: 13,
                 transition: 'all 0.2s', marginBottom: 4, transform: (active || isHovered) ? 'scale(1.02)' : 'none',
@@ -111,13 +111,13 @@ export function ManagerSidebar() {
         })}
       </div>
 
-      <div style={{ padding: '20px', borderTop: '1px solid rgba(0,0,0,0.05)' }}>
+      <div style={{ padding: '20px', borderTop: '1px solid var(--theme-border)' }}>
         <button onClick={logout} style={{
           display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '12px 14px',
-          background: 'transparent', border: 'none', color: '#F87171', fontSize: 14, fontWeight: 600,
+          background: 'transparent', border: 'none', color: 'var(--theme-error)', fontSize: 13, fontWeight: 600,
           cursor: 'pointer', marginTop: 16, borderRadius: 12, transition: 'all 0.2s',
-        }} onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(248, 113, 113, 0.1)' }} onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}>
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+        }} onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)' }} onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
           <span className="sidebar-label">Sign Out</span>
         </button>
       </div>

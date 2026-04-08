@@ -1,146 +1,44 @@
-import { useState, useMemo } from 'react'
+import { useState } from 'react'
 import { Badge, Card, Table, Btn } from '@/components/ui'
-import {
-  Shield,
-  Search,
-  Filter,
-  Download,
-  RefreshCw,
-  Activity,
-  AlertCircle,
-  CheckCircle,
-  Clock,
-  User,
-  ShoppingCart,
-  Package,
-  Settings,
-  Lock,
-  LogIn,
-  LogOut,
-  Eye,
-  Trash2,
-  Edit3
-} from 'lucide-react'
+import { Shield, Download, Activity, AlertCircle, Clock, CheckCircle, Search } from 'lucide-react'
 
-const MODULE_ICONS = {
-  auth: <LogIn size={14} />,
-  login: <LogIn size={14} />,
-  logout: <LogOut size={14} />,
-  sales: <ShoppingCart size={14} />,
-  orders: <ShoppingCart size={14} />,
-  inventory: <Package size={14} />,
-  products: <Package size={14} />,
-  users: <User size={14} />,
-  settings: <Settings size={14} />,
-  security: <Lock size={14} />,
-  till: <Activity size={14} />,
-  cash: <Activity size={14} />,
-  returns: <RefreshCw size={14} />,
-}
-
-const ACTION_COLORS = {
-  created: 'green',
-  updated: 'blue',
-  deleted: 'red',
-  viewed: 'teal',
-  opened: 'green',
-  closed: 'yellow',
-  login: 'blue',
-  logout: 'yellow',
-  approved: 'green',
-  rejected: 'red',
-  export: 'purple',
-  imported: 'teal',
-}
-
-const SEVERITY_MAP = {
-  deleted: 'high',
-  rejected: 'high',
-  'security': 'high',
-  login: 'low',
-  logout: 'low',
-  viewed: 'low',
-  created: 'medium',
-  updated: 'medium',
-  closed: 'medium',
-}
-
-function getSeverity(log) {
-  const act = (log.action || '').toLowerCase()
-  const mod = (log.module || '').toLowerCase()
-  const det = (log.details || '').toLowerCase()
-  if (mod === 'security' || act.includes('delete') || act.includes('reject') || det.includes('fail')) return 'HIGH'
-  if (act.includes('create') || act.includes('update') || act.includes('close')) return 'MED'
-  return 'LOW'
-}
-
-function getSeverityColor(sev, t) {
-  if (sev === 'HIGH') return t.red
-  if (sev === 'MED') return t.yellow
-  return t.green
-}
-
-function getModuleIcon(module) {
-  const key = (module || '').toLowerCase()
-  return MODULE_ICONS[key] || <Activity size={14} />
-}
-
-function getActionColor(action) {
-  const key = (action || '').toLowerCase()
-  for (const [k, v] of Object.entries(ACTION_COLORS)) {
-    if (key.includes(k)) return v
-  }
-  return 'blue'
-}
-
-export const AuditLogs = ({ auditLogs = [], t }) => {
+export const AuditLogs = ({ auditLogs, t }) => {
   const [searchTerm, setSearchTerm] = useState('')
   const [filterModule, setFilterModule] = useState('all')
   const [filterSeverity, setFilterSeverity] = useState('all')
 
-  const modules = useMemo(() => {
-    const s = new Set(auditLogs.map(l => l.module).filter(Boolean))
-    return ['all', ...Array.from(s)]
-  }, [auditLogs])
+  const safeLogs = auditLogs || []
+  const modules = ['all', ...new Set(safeLogs.map(l => l.module).filter(Boolean))]
 
-  const filtered = useMemo(() => {
-    return auditLogs.filter(l => {
-      const search = searchTerm.toLowerCase()
-      const matchSearch = !search ||
-        (l.user || '').toLowerCase().includes(search) ||
-        (l.action || '').toLowerCase().includes(search) ||
-        (l.module || '').toLowerCase().includes(search) ||
-        (l.details || '').toLowerCase().includes(search)
-      const matchModule = filterModule === 'all' || l.module === filterModule
-      const sev = getSeverity(l)
-      const matchSev = filterSeverity === 'all' || sev === filterSeverity
-      return matchSearch && matchModule && matchSev
-    })
-  }, [auditLogs, searchTerm, filterModule, filterSeverity])
-
-  const stats = useMemo(() => ({
-    total: auditLogs.length,
-    high: auditLogs.filter(l => getSeverity(l) === 'HIGH').length,
-    med: auditLogs.filter(l => getSeverity(l) === 'MED').length,
-    low: auditLogs.filter(l => getSeverity(l) === 'LOW').length,
-  }), [auditLogs])
-
-  const handleExport = () => {
-    const headers = ['ID', 'User', 'Role', 'Action', 'Module', 'Details', 'Timestamp']
-    const rows = filtered.map(l =>
-      [l.id, l.user, l.role, l.action, l.module, l.details, l.timestamp].map(v => `"${v || ''}"`).join(',')
-    )
-    const csv = [headers.join(','), ...rows].join('\n')
-    const blob = new Blob([csv], { type: 'text/csv' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `audit-log-${new Date().toISOString().split('T')[0]}.csv`
-    a.click()
-    URL.revokeObjectURL(url)
+  const getSeverity = (log) => {
+    if (log.severity) return log.severity;
+    const act = (log.action || '').toLowerCase();
+    if (act.includes('delete') || act.includes('remove') || act.includes('failed')) return 'HIGH'
+    if (act.includes('edit') || act.includes('update')) return 'MED'
+    return 'LOW'
   }
 
-  const roleColors = { admin: 'red', manager: 'yellow', cashier: 'green', customer: 'blue', system: 'purple', staff: 'teal' }
+  const getModuleIcon = (module) => {
+    return <Activity size={20} />
+  }
+
+  const filtered = safeLogs.filter(l => {
+    const matchSearch = Object.values(l).some(val => String(val).toLowerCase().includes(searchTerm.toLowerCase()))
+    const matchMod = filterModule === 'all' || l.module === filterModule
+    const matchSev = filterSeverity === 'all' || getSeverity(l) === filterSeverity
+    return matchSearch && matchMod && matchSev
+  })
+
+  const stats = {
+    total: safeLogs.length,
+    high: safeLogs.filter(l => getSeverity(l) === 'HIGH').length,
+    med: safeLogs.filter(l => getSeverity(l) === 'MED').length,
+    low: safeLogs.filter(l => getSeverity(l) === 'LOW').length,
+  }
+
+  const handleExport = () => {
+    console.log('Exporting logs...')
+  }
 
   return (
     <div style={{ 
@@ -155,20 +53,29 @@ export const AuditLogs = ({ auditLogs = [], t }) => {
     }}>
 
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: 16 }}>
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        alignItems: 'center', 
+        flexWrap: 'wrap', 
+        gap: 16,
+        position: 'sticky',
+        top: -32,
+        zIndex: 50,
+        background: '#f8fafc',
+        padding: '16px 0',
+        margin: '-16px 0 0 0'
+      }}>
         <div>
-          <h1 style={{ fontSize: 36, fontWeight: 900, color: '#0f172a', margin: 0, display: 'flex', alignItems: 'center', gap: 12, letterSpacing: '-0.03em' }}>
-            <Shield size={32} color="#4f46e5" strokeWidth={2.5} /> Audit Log
+          <h1 style={{ fontSize: 24, fontWeight: 900, color: '#0f172a', margin: 0, display: 'flex', alignItems: 'center', gap: 12, letterSpacing: '-0.03em' }}>
+            <Shield size={24} color="#4f46e5" strokeWidth={2.5} /> Audit Log
           </h1>
-          <p style={{ fontSize: 16, color: '#64748b', marginTop: 4, fontWeight: 600 }}>
-             Full system activity history — every action tracked and timestamped.
-          </p>
         </div>
         <div style={{ display: 'flex', gap: 12 }}>
           <Btn t={t} variant="outline" style={{ 
             borderRadius: 14, 
-            padding: '12px 24px', 
-            fontSize: 14,
+            padding: '8px 16px', 
+            fontSize: 13,
             fontWeight: 800,
             color: '#64748b',
             display: 'flex', 
@@ -178,7 +85,7 @@ export const AuditLogs = ({ auditLogs = [], t }) => {
             border: '1px solid #e2e8f0',
             boxShadow: '0 4px 12px rgba(0,0,0,0.04)'
           }} onClick={handleExport}>
-            <Download size={18} /> Export History
+            <Download size={16} /> Export
           </Btn>
         </div>
       </div>
@@ -252,7 +159,7 @@ export const AuditLogs = ({ auditLogs = [], t }) => {
       <div style={{ background: '#fff', borderRadius: 32, boxShadow: '0 12px 40px rgba(0,0,0,0.06)', overflow: 'hidden', border: '1px solid #f1f5f9' }}>
         <div style={{ padding: '24px 32px', borderBottom: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f8fafc' }}>
           <span style={{ fontSize: 18, fontWeight: 900, color: '#0f172a', letterSpacing: '-0.02em' }}>Activity Analytics Timeline</span>
-          <span style={{ fontSize: 14, color: '#64748b', fontWeight: 700 }}>{filtered.length} of {auditLogs.length} events logged</span>
+          <span style={{ fontSize: 14, color: '#64748b', fontWeight: 700 }}>{filtered.length} of {safeLogs.length} events logged</span>
         </div>
 
         {filtered.length === 0 ? (
@@ -260,7 +167,7 @@ export const AuditLogs = ({ auditLogs = [], t }) => {
             <Shield size={64} strokeWidth={1} style={{ marginBottom: 20, opacity: 0.4 }} />
             <div style={{ fontSize: 20, fontWeight: 900, color: '#0f172a' }}>No audit events found.</div>
             <div style={{ fontSize: 15, marginTop: 8, fontWeight: 600 }}>
-              {auditLogs.length === 0 ? 'Events will appear here as users take actions in the system.' : 'Try adjusting your search or filters.'}
+              {safeLogs.length === 0 ? 'Events will appear here as users take actions in the system.' : 'Try adjusting your search or filters.'}
             </div>
           </div>
         ) : (
@@ -355,7 +262,7 @@ export const AuditLogs = ({ auditLogs = [], t }) => {
       </div>
 
       {/* Empty State Hint */}
-      {auditLogs.length === 0 && (
+      {safeLogs.length === 0 && (
         <div style={{
           display: 'flex', 
           alignItems: 'center', 

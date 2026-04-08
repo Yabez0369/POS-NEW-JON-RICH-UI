@@ -5,7 +5,7 @@ import { Search, Delete, Space, DeleteIcon, ArrowBigRightDash, X, ChevronLeft, C
 /*  PREMIUM POS KEYBOARD — Apple/Square/Lightspeed Style   */
 /* ═══════════════════════════════════════════════════════ */
 
-export const FullKeyboard = ({ initialValue = '', onClose, onSave, onChange, t }) => {
+export const FullKeyboard = ({ initialValue = '', onClose, onSave, onChange, t, isInline = false, hidePreview = false }) => {
   const [val, setVal] = useState(String(initialValue))
   const [layout, setLayout] = useState('ABC') // ABC or 123
   const [pressedKey, setPressedKey] = useState(null)
@@ -52,6 +52,7 @@ export const FullKeyboard = ({ initialValue = '', onClose, onSave, onChange, t }
     }
 
     const handleClickOutside = (e) => {
+      if (isInline) return
       if (keyboardRef.current && !keyboardRef.current.contains(e.target) && !isDragging) {
         onClose()
       }
@@ -77,7 +78,7 @@ export const FullKeyboard = ({ initialValue = '', onClose, onSave, onChange, t }
       window.removeEventListener("touchend", handleMouseUp)
       document.removeEventListener("mousedown", handleClickOutside, true)
     }
-  }, [onClose, onSave, val, isDragging, dragStart, pos])
+  }, [onClose, onSave, val, isDragging, dragStart, pos, isInline])
 
   const startDrag = (e) => {
     const clientX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX
@@ -106,50 +107,65 @@ export const FullKeyboard = ({ initialValue = '', onClose, onSave, onChange, t }
     setVal(newVal)
     if (onChange) onChange(newVal)
 
+    // Haptic Feedback
+    if (window.navigator.vibrate) window.navigator.vibrate(40)
+
     // Pulse feedback
     setPressedKey(key)
     setTimeout(() => setPressedKey(null), 150)
   }
 
   const rows = layout === 'ABC' ? [
-    ['Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P'],
-    ['A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L'],
-    ['Z', 'X', 'C', 'V', 'B', 'N', 'M', '⌫']
+    ['Q', 'W', 'E', 'R', 'T'],
+    ['Y', 'U', 'I', 'O', 'P'],
+    ['A', 'S', 'D', 'F', 'G'],
+    ['H', 'J', 'K', 'L', 'M'],
+    ['N', 'B', 'V', 'C', 'X'],
+    ['Z', '⌫']
   ] : [
-    ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'],
-    ['-', '/', ':', ';', '(', ')', '$', '&', '@', '"'],
-    ['.', ',', '?', '!', "'", '⌫']
+    ['1', '2', '3', '4', '5'],
+    ['6', '7', '8', '9', '0'],
+    ['-', '/', ':', ';', '('],
+    [')', '$', '&', '@', '"'],
+    ['.', '?', '!', "'", ','],
+    ['⌫']
   ]
 
   return (
-    <div style={overlayStyle}>
+    <div style={isInline ? inlineOverlayStyle : overlayStyle}>
       <div
         ref={keyboardRef}
         style={{
-          ...keyboardContainerStyle,
-          transform: `translate(${pos.x}px, ${pos.y}px)`,
+          ...(isInline ? inlineContainerStyle : keyboardContainerStyle),
+          transform: isInline ? 'none' : `translate(${pos.x}px, ${pos.y}px)`,
           transition: isDragging ? 'none' : 'transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.5s ease'
         }}
         onClick={e => e.stopPropagation()}
       >
+        {/* — Close Button (Always visible now) — */}
+        <button onClick={onClose} style={topCloseBtnStyle}>
+          <X size={24} />
+        </button>
+
         {/* — Input Preview Bar — */}
-        <div 
-          style={{ ...previewBarStyle, cursor: isDragging ? 'grabbing' : 'grab' }}
-          onMouseDown={startDrag}
-          onTouchStart={startDrag}
-        >
-          <div style={previewLabel}>INPUT PREVIEW</div>
-          <div style={previewValueBox}>
-            <span style={previewText}>{val || '...'}</span>
-            <span style={cursorStyle} />
+        {!hidePreview && (
+          <div 
+            style={{ ...previewBarStyle, cursor: isDragging ? 'grabbing' : 'grab' }}
+            onMouseDown={startDrag}
+            onTouchStart={startDrag}
+          >
+            <div style={previewLabel}>INPUT PREVIEW</div>
+            <div style={previewValueBox}>
+              <span style={previewText}>{val || '...'}</span>
+              <span style={cursorStyle} />
+            </div>
           </div>
-          <button onClick={onClose} style={closeBtnStyle}><X size={18} /></button>
-        </div>
+        )}
 
         {/* — Key Grid — */}
         <div style={keysWrapper}>
           {rows.map((row, i) => (
-            <div key={i} style={{ ...rowStyle, paddingLeft: i === 1 ? '4%' : 0 }}>
+            <div key={i} style={rowStyle}>
               {row.map(k => (
                 <Key
                   key={k}
@@ -186,8 +202,8 @@ export const FullKeyboard = ({ initialValue = '', onClose, onSave, onChange, t }
           </div>
         </div>
 
-        {/* — Subtle Branding / Info — */}
-        <div style={footerStyle}>TOUCH OPTIMIZED POS SYSTEM</div>
+        {/* — Footer Simplified — */}
+        <div style={{ height: '8px' }} />
       </div>
 
       <style dangerouslySetInnerHTML={{ __html: animations }} />
@@ -242,36 +258,58 @@ const overlayStyle = {
   inset: 0,
   zIndex: 20000,
   display: 'flex',
-  alignItems: 'flex-end',
+  alignItems: 'center',
   justifyContent: 'center',
-  paddingBottom: '2vh',
   pointerEvents: 'none',
   background: 'rgba(0,0,0,0.1)',
   animation: 'overlayFade 0.4s ease'
 }
 
-const keyboardContainerStyle = {
-  pointerEvents: 'auto',
-  width: '94%',
-  maxWidth: '900px',
-  background: 'rgba(15, 23, 42, 0.85)', // Deep Slate Navy
-  backdropFilter: 'blur(30px) saturate(150%)',
-  borderRadius: '40px',
-  border: '1px solid rgba(255, 255, 255, 0.12)',
-  boxShadow: '0 40px 100px rgba(0,0,0,0.7), inset 0 0 40px rgba(255,255,255,0.02)',
-  padding: '30px',
+const inlineOverlayStyle = {
+  width: '100%',
+  height: '100%',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  pointerEvents: 'auto'
+}
+
+const inlineContainerStyle = {
+  width: '100%',
+  height: '100%',
+  background: 'rgba(15, 23, 42, 0.98)',
+  borderRadius: '24px',
+  border: '1px solid rgba(255, 255, 255, 0.1)',
+  padding: '24px',
   display: 'flex',
   flexDirection: 'column',
-  gap: '20px'
+  justifyContent: 'center',
+  gap: '16px',
+  boxShadow: 'none'
+}
+
+const keyboardContainerStyle = {
+  pointerEvents: 'auto',
+  width: '90%',
+  maxWidth: '580px',
+  background: 'rgba(15, 23, 42, 0.95)',
+  backdropFilter: 'blur(30px) saturate(150%)',
+  borderRadius: '32px',
+  border: '1px solid rgba(255, 255, 255, 0.15)',
+  boxShadow: '0 50px 120px rgba(0,0,0,0.8), inset 0 0 40px rgba(255,255,255,0.02)',
+  padding: '20px',
+  display: 'flex',
+  flexDirection: 'column',
+  gap: '12px'
 }
 
 const previewBarStyle = {
   background: 'rgba(255, 255, 255, 0.04)',
-  borderRadius: '24px',
-  height: '90px',
+  borderRadius: '16px',
+  height: '60px',
   display: 'flex',
   alignItems: 'center',
-  padding: '0 30px',
+  padding: '0 20px',
   position: 'relative',
   border: '1px solid rgba(255,255,255,0.05)',
   userSelect: 'none'
@@ -297,7 +335,7 @@ const previewValueBox = {
 }
 
 const previewText = {
-  fontSize: '32px',
+  fontSize: '20px',
   fontWeight: '900',
   color: '#fff',
   letterSpacing: '1px',
@@ -325,24 +363,43 @@ const closeBtnStyle = {
   cursor: 'pointer'
 }
 
+const topCloseBtnStyle = {
+  position: 'absolute',
+  top: '12px',
+  right: '12px',
+  width: '44px',
+  height: '44px',
+  borderRadius: '14px',
+  background: 'rgba(255,255,255,0.08)',
+  border: '1px solid rgba(255,255,255,0.1)',
+  color: 'rgba(255,255,255,0.6)',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  cursor: 'pointer',
+  zIndex: 100,
+  transition: 'all 0.2s'
+}
+
 const keysWrapper = {
   display: 'flex',
   flexDirection: 'column',
-  gap: '12px'
+  gap: '18px',
+  marginTop: '20px'
 }
 
 const rowStyle = {
   display: 'flex',
-  gap: '10px',
+  gap: '16px',
   justifyContent: 'center'
 }
 
 const keyBaseStyle = {
-  width: '100%',
-  height: '74px',
-  background: 'rgba(255, 255, 255, 0.08)',
-  border: '1px solid rgba(255, 255, 255, 0.05)',
-  borderRadius: '18px',
+  width: '64px',
+  height: '64px',
+  background: 'rgba(255, 255, 255, 0.1)',
+  border: '1px solid rgba(255, 255, 255, 0.08)',
+  borderRadius: '50%', // PERFECT CIRCLE
   color: '#fff',
   fontSize: '24px',
   fontWeight: '800',
@@ -357,76 +414,77 @@ const keyBaseStyle = {
 }
 
 const functionalKeyStyles = {
-  background: 'rgba(255, 255, 255, 0.15)',
+  background: 'rgba(255, 255, 255, 0.18)',
   boxShadow: '0 6px 16px rgba(0,0,0,0.4)',
 }
 
 const keyPressStyle = {
-  transform: 'scale(0.95)',
-  background: 'rgba(255, 255, 255, 0.2)',
+  transform: 'scale(0.9)',
+  background: 'rgba(255, 255, 255, 0.25)',
   boxShadow: 'inset 0 4px 10px rgba(0,0,0,0.5)',
-  color: '#fff'
 }
 
 const keyFlashStyle = {
-  background: 'rgba(79, 70, 229, 0.4)', // POS Indigo
-  boxShadow: '0 0 20px rgba(79, 70, 229, 0.6)',
+  background: 'rgba(79, 70, 229, 0.5)',
+  boxShadow: '0 0 20px rgba(79, 70, 229, 0.7)',
 }
 
 const keyPopupStyle = {
   position: 'absolute',
-  bottom: '110%',
+  bottom: '120%',
   left: '50%',
-  transform: 'translateX(-50%) scale(1.1)',
-  width: '80px',
-  height: '100px',
+  transform: 'translateX(-50%)',
+  width: '70px',
+  height: '70px',
   background: '#fff',
-  borderRadius: '20px',
+  borderRadius: '50%', // Circle feedback
   color: '#0F172A',
-  fontSize: '44px',
+  fontSize: '32px',
   fontWeight: '900',
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
-  boxShadow: '0 20px 40px rgba(0,0,0,0.5)',
+  boxShadow: '0 15px 30px rgba(0,0,0,0.5)',
   zIndex: 10,
   animation: 'popIn 0.1s ease-out'
 }
 
 const functionalKeyStyle = {
   ...keyBaseStyle,
-  flex: 1.5,
-  background: 'rgba(255, 255, 255, 0.12)',
-  fontSize: '18px',
-  fontWeight: '900',
-  letterSpacing: '1px'
+  width: '80px',
+  borderRadius: '40px',
+  background: 'rgba(255, 255, 255, 0.15)',
+  fontSize: '16px',
+  fontWeight: '900'
 }
 
 const spaceKeyStyle = {
   ...keyBaseStyle,
-  flex: 5,
-  borderRadius: '24px',
-  background: 'rgba(255, 255, 255, 0.08)',
+  flex: 1,
+  maxWidth: '240px',
+  borderRadius: '40px',
+  background: 'rgba(255, 255, 255, 0.1)',
 }
 
 const searchBtnStyle = {
   ...keyBaseStyle,
-  flex: 2.5,
-  background: 'linear-gradient(135deg, #4F46E5, #3730A3)',
+  flex: 1.5,
+  borderRadius: '40px',
+  background: 'linear-gradient(135deg, #6366F1, #4F46E5)',
   border: 'none',
-  fontSize: '18px',
+  fontSize: '16px',
   fontWeight: '900',
-  letterSpacing: '1px',
-  boxShadow: '0 10px 30px rgba(79, 70, 229, 0.4)',
+  boxShadow: '0 8px 20px rgba(79, 70, 229, 0.3)',
 }
 
 const footerStyle = {
-  paddingTop: '10px',
+  paddingTop: '16px',
   textAlign: 'center',
   fontSize: '10px',
   fontWeight: '900',
   color: 'rgba(255,255,255,0.2)',
-  letterSpacing: '3px'
+  letterSpacing: '4px',
+  textTransform: 'uppercase'
 }
 
 const animations = `

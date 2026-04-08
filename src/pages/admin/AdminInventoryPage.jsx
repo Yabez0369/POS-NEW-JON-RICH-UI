@@ -94,17 +94,30 @@ export const AdminInventoryPage = ({ products = [], settings, t }) => {
       minHeight: 'calc(100vh - 64px)',
       animation: 'fadeIn 0.5s ease-out' 
     }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: 16 }}>
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        alignItems: 'center', 
+        flexWrap: 'wrap', 
+        gap: 16,
+        position: 'sticky',
+        top: -32,
+        zIndex: 50,
+        background: '#f8fafc',
+        padding: '16px 0',
+        margin: '-16px 0 0 0'
+      }}>
         <div>
-          <h1 style={{ fontSize: 36, fontWeight: 900, color: '#0f172a', margin: 0, letterSpacing: '-0.03em' }}>Inventory Hub</h1>
-          <p style={{ fontSize: 16, color: '#64748b', marginTop: 4, fontWeight: 600 }}>Track stock levels, manage alerts, and optimize inventory.</p>
+          <h1 style={{ fontSize: 24, fontWeight: 900, color: '#0f172a', margin: 0, letterSpacing: '-0.03em', display: 'flex', alignItems: 'center', gap: 12 }}>
+            <Package size={24} color="#4f46e5" strokeWidth={2.5} /> Inventory Hub
+          </h1>
         </div>
         <div style={{ display: 'flex', gap: 12 }}>
-          <Btn t={t} variant="outline" style={{ borderRadius: 12, padding: '10px 20px', fontSize: 14, fontWeight: 800, display: 'flex', gap: 8, alignItems: 'center', background: '#fff', border: '1px solid #e2e8f0', color: '#475569' }} onClick={() => setShowScanner(true)}>
-             <Camera size={18} /> Scan Barcode
+          <Btn t={t} variant="outline" style={{ borderRadius: 12, padding: '8px 16px', fontSize: 13, fontWeight: 800, display: 'flex', gap: 8, alignItems: 'center', background: '#fff', border: '1px solid #e2e8f0', color: '#475569' }} onClick={() => setShowScanner(true)}>
+             <Camera size={16} /> Scan
           </Btn>
-          <Btn t={t} style={{ borderRadius: 12, padding: '10px 24px', fontSize: 14, fontWeight: 900, background: 'linear-gradient(135deg, #4f46e5, #4338ca)', color: '#fff', boxShadow: '0 8px 20px rgba(79, 70, 229, 0.25)', border: 'none' }} onClick={() => handleEditProduct(null)}>
-            + Add/Edit Products
+          <Btn t={t} style={{ borderRadius: 12, padding: '8px 20px', fontSize: 13, fontWeight: 900, background: 'linear-gradient(135deg, #4f46e5, #4338ca)', color: '#fff', boxShadow: '0 8px 20px rgba(79, 70, 229, 0.25)', border: 'none' }} onClick={() => handleEditProduct(null)}>
+            + New Product
           </Btn>
         </div>
       </div>

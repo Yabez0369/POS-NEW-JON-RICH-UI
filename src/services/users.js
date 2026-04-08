@@ -7,7 +7,7 @@ export async function fetchProfiles(filters = {}) {
     if (filters.venueId) q = q.eq('venue_id', filters.venueId)
     if (filters.siteId) q = q.eq('site_id', filters.siteId)
     if (filters.active !== undefined) q = q.eq('active', filters.active)
-    const { data, error } = await q.order('display_name')
+    const { data, error } = await q
     if (error) throw error
     return data
   }

@@ -801,6 +801,7 @@ export const POSTerminal = ({ products, setProducts, orders, setOrders, returns 
         showParkedDropdown={showParkedDropdown} setShowParkedDropdown={setShowParkedDropdown}
         settings={settings} t={t}
         products={products}
+        setShowReturnModal={setShowReturnModal}
       />
 
       {variantProduct && (

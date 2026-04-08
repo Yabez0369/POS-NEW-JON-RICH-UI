@@ -1,102 +1,79 @@
-import { useState, useMemo } from 'react'
+import { useState } from 'react'
 import { Btn, Input, Badge, Card, Modal, Select } from '@/components/ui'
 import { notify } from '@/components/shared'
 import { fmt } from '@/lib/utils'
-import { Ticket, Plus, Trash2, Check, X, Copy, TrendingUp, Users, Zap, Scissors, BarChart } from 'lucide-react'
+import { Ticket, Scissors, Plus, Check, BarChart, TrendingUp, Zap, Copy, X, Trash2 } from 'lucide-react'
 
-export const CouponManagement = ({ coupons = [], setCoupons, addAudit, currentUser, t, settings }) => {
+export const CouponManagement = ({ coupons, setCoupons, addAudit, currentUser, t, settings }) => {
   const [showAdd, setShowAdd] = useState(false)
-  const [copiedId, setCopiedId] = useState(null)
   const [form, setForm] = useState({
     code: '', description: '', type: 'percent', value: 10,
     minOrder: 0, maxUses: 100, active: true, expiry: '2026-12-31',
   })
-
-  const stats = useMemo(() => {
-    const active = coupons.filter(c => c.active && (new Date(c.expiry) >= new Date()))
-    const totalUses = coupons.reduce((s, c) => s + (c.uses || 0), 0)
-    const totalMax = coupons.reduce((s, c) => s + (c.maxUses || 0), 0)
-    
-    return {
-      total: coupons.length,
-      active: active.length,
-      totalUses,
-      redemptionRate: totalMax > 0 ? Math.round((totalUses / totalMax) * 100) : 0,
-      topCode: [...coupons].sort((a, b) => (b.uses || 0) - (a.uses || 0))[0]?.code || '—',
-    }
-  }, [coupons])
-
-  const [filterStatus, setFilterStatus] = useState('all') // all, active, expired, exhausted
-
-  const filtered = useMemo(() => {
-    return coupons.filter(c => {
-      const isExpired = new Date(c.expiry) < new Date()
-      const isExhausted = (c.uses || 0) >= (c.maxUses || 1)
-      if (filterStatus === 'active') return c.active && !isExpired && !isExhausted
-      if (filterStatus === 'expired') return isExpired
-      if (filterStatus === 'exhausted') return isExhausted
-      return true
-    })
-  }, [coupons, filterStatus])
-
-  const generateBatch = () => {
-    const count = 10
-    const prefix = 'SCST-'
-    const newCoupons = []
-    for (let i = 0; i < count; i++) {
-        const rand = Math.random().toString(36).substring(2, 8).toUpperCase()
-        newCoupons.push({
-            id: Date.now() + i,
-            code: prefix + rand,
-            description: 'Batch generated promotional offer',
-            type: 'percent',
-            value: 10,
-            minOrder: 20,
-            maxUses: 50,
-            active: true,
-            expiry: '2026-12-31',
-            uses: 0
-        })
-    }
-    setCoupons(cs => [...cs, ...newCoupons])
-    notify(`Generated ${count} unique codes!`, 'success')
-    addAudit?.(currentUser, 'Batch Coupon Generation', 'Coupons', `${count} codes generated`)
+  
+  const [filterStatus, setFilterStatus] = useState('all')
+  const [copiedId, setCopiedId] = useState(null)
+  
+  const safeCoupons = coupons || []
+  
+  const filtered = safeCoupons.filter(c => {
+    if (filterStatus === 'active') return c.active
+    if (filterStatus === 'expired') return new Date(c.expiry) < new Date()
+    if (filterStatus === 'exhausted') return c.uses >= c.maxUses
+    return true
+  })
+  
+  const stats = {
+    total: safeCoupons.length,
+    active: safeCoupons.filter(c => c.active).length,
+    redemptionRate: safeCoupons.length ? Math.round((safeCoupons.reduce((acc, c) => acc + (c.uses || 0), 0) / safeCoupons.reduce((acc, c) => acc + (c.maxUses || 1), 0)) * 100) : 0,
+    topCode: safeCoupons.length ? safeCoupons.reduce((prev, current) => ((prev.uses || 0) > (current.uses || 0)) ? prev : current).code : 'N/A'
   }
-
+  
+  const getUsagePercent = (c) => Math.min(100, Math.round(((c.uses || 0) / (c.maxUses || 1)) * 100))
+  
+  const getTypeLabel = (c) => {
+    if (c.type === 'percent') return `${c.value}% OFF`
+    if (c.type === 'fixed') return `${fmt(c.value, settings?.sym)} OFF`
+    return 'FREE DELIVERY'
+  }
+  
   const handleCopy = (code, id) => {
-    navigator.clipboard.writeText(code).then(() => {
-      setCopiedId(id)
-      setTimeout(() => setCopiedId(null), 2000)
-    })
-  }
-
-  const handleAdd = () => {
-    if (!form.code) return
-    setCoupons(cs => [...cs, { id: Date.now(), ...form, uses: 0 }])
-    addAudit?.(currentUser, 'Coupon Created', 'Coupons', `${form.code} created`)
-    notify(`Coupon ${form.code} created!`, 'success')
-    setShowAdd(false)
-    setForm({ code: '', description: '', type: 'percent', value: 10, minOrder: 0, maxUses: 100, active: true, expiry: '2026-12-31' })
-  }
-
-  const handleDelete = (id, code) => {
-    setCoupons(cs => cs.filter(x => x.id !== id))
-    addAudit?.(currentUser, 'Coupon Deleted', 'Coupons', `${code} removed`)
-    notify('Coupon deleted', 'warning')
+    navigator.clipboard.writeText(code)
+    setCopiedId(id)
+    setTimeout(() => setCopiedId(null), 2000)
+    notify('Code copied', 'success')
   }
 
   const handleToggle = (id, code, currentState) => {
-    setCoupons(cs => cs.map(x => x.id === id ? { ...x, active: !x.active } : x))
-    notify(`Coupon ${code} ${!currentState ? 'enabled' : 'disabled'}`, 'info')
+    setCoupons(prev => prev.map(c => c.id === id ? { ...c, active: !currentState } : c))
+    addAudit({ action: 'toggle', module: 'coupons', details: `${currentState ? 'Disabled' : 'Enabled'} code ${code}` })
+    notify(`Coupon ${currentState ? 'disabled' : 'enabled'}`, 'success')
+  }
+  
+  const handleDelete = (id, code) => {
+    if (window.confirm('Are you sure you want to delete this coupon?')) {
+      setCoupons(prev => prev.filter(c => c.id !== id))
+      addAudit({ action: 'delete', module: 'coupons', details: `Deleted code ${code}` })
+      notify('Coupon deleted', 'success')
+    }
+  }
+  
+  const handleAdd = () => {
+    const newCoupon = { ...form, id: Date.now().toString(), uses: 0 }
+    setCoupons(prev => [newCoupon, ...prev])
+    setShowAdd(false)
+    addAudit({ action: 'create', module: 'coupons', details: `Created code ${form.code}` })
+    notify('Coupon created successfully', 'success')
+    setForm({
+      code: '', description: '', type: 'percent', value: 10,
+      minOrder: 0, maxUses: 100, active: true, expiry: '2026-12-31',
+    })
   }
 
-  const getTypeLabel = (c) => {
-    if (c.type === 'percent') return `${c.value}% off`
-    if (c.type === 'fixed') return `${fmt(c.value, settings?.sym)} off`
-    return 'Free Delivery'
+  const generateBatch = () => {
+    notify('Batch generation coming soon', 'info')
   }
-
-  const getUsagePercent = (c) => Math.min((c.uses / (c.maxUses || 1)) * 100, 100)
 
   return (
     <div style={{ 
@@ -111,18 +88,29 @@ export const CouponManagement = ({ coupons = [], setCoupons, addAudit, currentUs
     }}>
 
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: 16 }}>
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        alignItems: 'center', 
+        flexWrap: 'wrap', 
+        gap: 16,
+        position: 'sticky',
+        top: -32,
+        zIndex: 50,
+        background: '#f8fafc',
+        padding: '16px 0',
+        margin: '-16px 0 0 0'
+      }}>
         <div>
-          <h1 style={{ fontSize: 36, fontWeight: 900, color: '#0f172a', margin: 0, display: 'flex', alignItems: 'center', gap: 12, letterSpacing: '-0.03em' }}>
-            <Ticket size={32} color="#4f46e5" strokeWidth={2.5} /> Coupon Codes
+          <h1 style={{ fontSize: 24, fontWeight: 900, color: '#0f172a', margin: 0, display: 'flex', alignItems: 'center', gap: 12, letterSpacing: '-0.03em' }}>
+            <Ticket size={24} color="#4f46e5" strokeWidth={2.5} /> Coupon Codes
           </h1>
-          <p style={{ fontSize: 16, color: '#64748b', marginTop: 4, fontWeight: 600 }}>Create and manage discount codes for POS checkout and online shop.</p>
         </div>
         <div style={{ display: 'flex', gap: 12 }}>
           <Btn t={t} variant="outline" style={{ 
             borderRadius: 14, 
-            padding: '12px 24px', 
-            fontSize: 14,
+            padding: '8px 16px', 
+            fontSize: 13,
             fontWeight: 800,
             color: '#64748b',
             display: 'flex', 
@@ -132,22 +120,22 @@ export const CouponManagement = ({ coupons = [], setCoupons, addAudit, currentUs
             border: '1px solid #e2e8f0',
             boxShadow: '0 4px 12px rgba(0,0,0,0.04)'
           }} onClick={generateBatch}>
-            <Scissors size={18} /> Batch Generator
+            <Scissors size={16} /> Batch
           </Btn>
           <Btn t={t} onClick={() => setShowAdd(true)} style={{ 
             borderRadius: 14, 
             background: 'linear-gradient(135deg, #4f46e5, #4338ca)', 
             color: '#fff', 
-            padding: '12px 28px', 
+            padding: '8px 20px', 
             fontWeight: 900, 
-            fontSize: 14,
+            fontSize: 13,
             display: 'flex', 
             alignItems: 'center', 
             gap: 10,
             boxShadow: '0 8px 20px rgba(79, 70, 229, 0.25)',
             border: 'none'
           }}>
-            <Plus size={20} /> New Coupon
+            <Plus size={18} /> New Coupon
           </Btn>
         </div>
       </div>

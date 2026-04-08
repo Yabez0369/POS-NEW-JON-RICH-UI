@@ -45,18 +45,37 @@ export const ZReport = ({ orders, settings, t }) => {
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
+    <div style={{ 
+      display: 'flex', 
+      flexDirection: 'column', 
+      gap: 32,
+      background: '#f8fafc',
+      margin: '-24px',
+      padding: '32px',
+      minHeight: 'calc(100vh - 64px)',
+      animation: 'fadeIn 0.5s ease-out' 
+    }}>
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        alignItems: 'center', 
+        flexWrap: 'wrap', 
+        gap: 16,
+        position: 'sticky',
+        top: -32,
+        zIndex: 50,
+        background: '#f8fafc',
+        padding: '16px 0',
+        margin: '-16px 0 0 0'
+      }}>
         <div>
-          <div style={{ fontSize: 22, fontWeight: 900, color: t.text }}>📑 End of Day Z-Report</div>
-          <div style={{ fontSize: 13, color: t.text3, marginTop: 3 }}>Daily trading summary — {dateLabel}</div>
+          <h1 style={{ fontSize: 24, fontWeight: 900, color: '#0f172a', margin: 0, letterSpacing: '-0.03em' }}>End-of-Day Z-Report</h1>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <div>
-            <label style={{ display: 'block', fontSize: 11, color: t.text3, fontWeight: 800, textTransform: 'uppercase', letterSpacing: 0.7, marginBottom: 4 }}>Date</label>
-            <input type="date" value={selectedDate} onChange={e => setSelectedDate(e.target.value)} style={{ background: t.input, border: `1px solid ${t.border}`, borderRadius: 9, padding: '8px 12px', color: t.text, fontSize: 13, outline: 'none' }} />
+            <input type="date" value={selectedDate} onChange={e => setSelectedDate(e.target.value)} style={{ background: '#fff', border: `1px solid #e2e8f0`, borderRadius: 12, padding: '8px 12px', color: '#0f172a', fontSize: 13, outline: 'none', fontWeight: 700 }} />
           </div>
-          <Btn t={t} onClick={exportCsv}>⬇ Export CSV</Btn>
+          <Btn t={t} onClick={exportCsv} style={{ borderRadius: 12, padding: '8px 16px', fontSize: 13, fontWeight: 900, background: '#4f46e5', color: '#fff', border: 'none' }}>⬇ Export CSV</Btn>
         </div>
       </div>
 

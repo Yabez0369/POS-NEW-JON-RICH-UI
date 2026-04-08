@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '@/context/AuthContext'
 import { useTheme } from '@/context/ThemeContext'
@@ -7,21 +8,28 @@ import {
   Image as ImageIcon, Ticket, ShieldCheck, Building2, Settings,
   FolderTree, Tags, AlertTriangle, Truck, ClipboardCheck,
   MonitorSmartphone, Undo2, Box, Home, Banknote, Receipt,
-  Printer, ListTodo, Store, ScrollText, MapPin, User, LogOut
+  Printer, ListTodo, Store, ScrollText, MapPin, User, LogOut,
+  ChevronDown, ChevronRight
 } from 'lucide-react'
 
 const navByRole = {
   admin: [
-    { type: 'group', l: 'Management' },
+    { type: 'group', l: 'MANAGEMENT' },
     { key: 'dashboard', l: 'Dashboard', i: LayoutDashboard },
-    { key: 'inventory', l: 'Inventory', i: Package },
+    { key: 'products', l: 'Product', i: Package },
+    { key: 'categories', l: 'Categories', i: FolderTree },
     { key: 'users', l: 'User RBAC', i: Users },
     { key: 'customers', l: 'Customers', i: UserSquare },
     { key: 'reports', l: 'Reports', i: BarChart3 },
-    { type: 'group', l: 'Marketing' },
+    { 
+      key: 'venues', 
+      l: 'Outlet Management', 
+      i: Building2
+    },
+    { type: 'group', l: 'MARKETING' },
     { key: 'banners', l: 'Banners', i: ImageIcon },
     { key: 'coupons', l: 'Coupon Codes', i: Ticket },
-    { type: 'group', l: 'System' },
+    { type: 'group', l: 'SYSTEM' },
     { key: 'audit', l: 'Audit Logs', i: ShieldCheck },
     { key: 'settings', l: 'Settings', i: Settings },
   ],
@@ -83,24 +91,39 @@ export function Sidebar() {
   const navigate = useNavigate()
   const location = useLocation()
   const closeSidebar = useAppStore((s) => s.closeSidebar)
+  const [expanded, setExpanded] = useState({})
 
   if (!currentUser) return null
 
   const theme = t
   const role = currentUser.role || 'customer'
   const nav = navByRole[role] || []
-  const rc = { admin: theme.red, manager: theme.yellow, cashier: theme.green, customer: theme.blue, staff: theme.teal }
-  const col = rc[role] || theme.accent
-  const tierC = { Bronze: '#cd7f32', Silver: '#9ca3af', Gold: '#f59e0b' }
+  const isAdmin = role === 'admin'
+
+  // Styles dynamically adjusted for Admin Dark Theme
+  const sbBg = isAdmin ? '#1F2937' : theme.sidebar
+  const sbTextActive = isAdmin ? '#EF4444' : (theme.accent || theme.primary)
+  const sbText = isAdmin ? '#D1D5DB' : theme.text3
+  const sbTextHover = isAdmin ? '#FFFFFF' : theme.text
+  const sbBorder = isAdmin ? '#374151' : theme.border
+  const sbGroupText = isAdmin ? '#9CA3AF' : theme.text4
+  const sbActiveBg = isAdmin ? '#EF44441A' : `${sbTextActive}15`
+  const sbHoverBg = isAdmin ? '#374151' : `${sbTextActive}08`
 
   const handleNav = (item) => {
+    if (item.sub) {
+      setExpanded(prev => ({ ...prev, [item.key]: !prev[item.key] }))
+      return
+    }
     const path = '/app/' + getPath(item.key)
     navigate(path)
     closeSidebar()
   }
 
-  const isActive = (item) => {
-    const path = '/app/' + getPath(item.key)
+  const isActive = (key) => {
+    // Note: handles query params in key like 'venues?action=new'
+    const cleanKey = key.split('?')[0]
+    const path = '/app/' + getPath(cleanKey)
     return location.pathname === path || location.pathname.startsWith(path + '/')
   }
 
@@ -109,52 +132,62 @@ export function Sidebar() {
       style={{
         width: '100%',
         height: '100%',
-        background: theme.sidebar,
-        borderRight: `1px solid ${theme.border}`,
+        background: sbBg,
+        borderRight: `1px solid ${sbBorder}`,
         display: 'flex',
         flexDirection: 'column',
-        boxShadow: theme.shadowMd,
+        boxShadow: isAdmin ? '2px 0 10px rgba(0,0,0,0.15)' : theme.shadowMd,
       }}
     >
-      <div style={{ padding: '24px 16px 16px', borderBottom: `1px solid ${theme.border}` }}>
+      <style>{`
+        .sidebar-item {
+          transition: all 0.2s ease;
+        }
+        .sidebar-item:hover {
+          background: ${sbHoverBg} !important;
+          color: ${sbTextHover} !important;
+        }
+      `}</style>
+      <div style={{ padding: '24px 16px', borderBottom: `1px solid ${sbBorder}` }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <div
             style={{
-              width: 40,
-              height: 40,
-              background: `linear-gradient(135deg,${theme.accent},${theme.accent2})`,
+              width: 42,
+              height: 42,
+              background: isAdmin ? '#EF4444' : `linear-gradient(135deg,${theme.accent},${theme.accent2})`,
               borderRadius: 12,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              fontSize: 18,
+              fontSize: 20,
               fontWeight: 900,
               color: '#fff',
               flexShrink: 0,
+              boxShadow: isAdmin ? '0 4px 12px rgba(239, 68, 68, 0.4)' : 'none'
             }}
           >
             S
           </div>
           <div className="sidebar-label">
-            <div style={{ fontSize: 16, fontWeight: 900, color: theme.text, letterSpacing: -0.3 }}>SCSTix</div>
-            <div style={{ fontSize: 11, color: theme.text4, fontWeight: 700 }}>EPOS v1.0</div>
+            <div style={{ fontSize: 16, fontWeight: 900, color: isAdmin ? '#FFFFFF' : theme.text, letterSpacing: -0.3 }}>SCSTIX</div>
+            <div style={{ fontSize: 11, color: sbGroupText, fontWeight: 600, marginTop: 2 }}>EPOS v1.0</div>
           </div>
         </div>
       </div>
-      <nav style={{ flex: 1, padding: '12px 12px', overflowY: 'auto' }}>
+      <nav style={{ flex: 1, padding: '16px 12px', overflowY: 'auto' }}>
         {nav.map((item, idx) => {
           if (item.type === 'group') {
             return (
               <div
                 key={`grp-${idx}`}
                 style={{
-                  fontSize: 11,
+                  fontSize: 10,
                   fontWeight: 800,
-                  color: theme.text4,
+                  color: sbGroupText,
                   textTransform: 'uppercase',
                   letterSpacing: '0.05em',
-                  padding: '20px 16px 8px',
-                  marginTop: idx === 0 ? 0 : 4,
+                  padding: '24px 12px 8px',
+                  marginTop: idx === 0 ? -12 : 0,
                 }}
               >
                 {item.l}
@@ -162,62 +195,104 @@ export function Sidebar() {
             )
           }
 
-          const active = isActive(item)
+          const hasSub = item.sub && item.sub.length > 0;
+          const isExpanded = expanded[item.key]
+          const isGroupActive = hasSub ? item.sub.some(s => isActive(s.key)) : false
+          const active = hasSub ? false : isActive(item.key)
+          
           return (
-            <button
-              key={item.key}
-              onClick={() => handleNav(item)}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 12,
-                width: '100%',
-                padding: '10px 12px',
-                borderRadius: 12,
-                border: active ? `1px solid ${col}35` : '1px solid transparent',
-                background: active ? col + '12' : 'transparent',
-                color: active ? col : theme.text3,
-                cursor: 'pointer',
-                marginBottom: 4,
-                textAlign: 'left',
-                fontWeight: active ? 800 : 500,
-                fontSize: 14,
-                transition: 'all 0.15s cubic-bezier(0.4, 0, 0.2, 1)',
-                fontFamily: 'inherit',
-              }}
-            >
-              {item.i && (
-                <span style={{ minWidth: 24, textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <item.i size={18} strokeWidth={1.8} />
-                </span>
+            <div key={item.key} style={{ marginBottom: 4 }}>
+              <button
+                className="sidebar-item"
+                onClick={() => handleNav(item)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 10,
+                  width: '100%',
+                  padding: '10px 12px',
+                  borderRadius: 8,
+                  border: 'none',
+                  background: active || isGroupActive ? sbActiveBg : 'transparent',
+                  color: active || isGroupActive ? sbTextActive : sbText,
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                  fontWeight: active || isGroupActive ? 700 : 500,
+                  fontSize: 13,
+                  fontFamily: 'inherit',
+                }}
+              >
+                {item.i && (
+                  <span style={{ minWidth: 24, textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <item.i size={18} strokeWidth={1.8} />
+                  </span>
+                )}
+                <span className="sidebar-label" style={{ flex: 1 }}>{item.l}</span>
+                {hasSub && (
+                  <span style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center' }}>
+                    {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                  </span>
+                )}
+              </button>
+              
+              {/* Expandable Sub-Menu */}
+              {hasSub && isExpanded && (
+                <div style={{ paddingLeft: 34, marginTop: 4, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                  {item.sub.map(subItem => {
+                    const subActive = isActive(subItem.key)
+                    return (
+                      <button
+                        key={subItem.key}
+                        className="sidebar-item"
+                        onClick={() => handleNav(subItem)}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          width: '100%',
+                          padding: '8px 12px',
+                          borderRadius: 6,
+                          border: 'none',
+                          background: subActive ? sbActiveBg : 'transparent',
+                          color: subActive ? sbTextActive : sbGroupText,
+                          cursor: 'pointer',
+                          textAlign: 'left',
+                          fontWeight: subActive ? 700 : 500,
+                          fontSize: 12,
+                          fontFamily: 'inherit',
+                        }}
+                      >
+                        {subItem.l}
+                      </button>
+                    )
+                  })}
+                </div>
               )}
-              <span className="sidebar-label">{item.l}</span>
-            </button>
+            </div>
           )
         })}
       </nav>
-      <div style={{ padding: '12px 12px', borderTop: `1px solid ${theme.border}`, background: theme.bg2 }}>
+      <div style={{ padding: '16px', borderTop: `1px solid ${sbBorder}` }}>
         <button
+          className="sidebar-item"
           onClick={logout}
           style={{
             display: 'flex',
             alignItems: 'center',
-            gap: 12,
+            gap: 10,
             width: '100%',
             padding: '10px 12px',
-            borderRadius: 12,
+            borderRadius: 8,
             border: 'none',
             background: 'transparent',
-            color: theme.red,
+            color: isAdmin ? '#EF4444' : theme.red,
             cursor: 'pointer',
-            fontSize: 14,
+            fontSize: 13,
             fontWeight: 700,
             fontFamily: 'inherit',
-            transition: 'all 0.15s',
           }}
         >
           <span style={{ minWidth: 24, textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <LogOut size={18} strokeWidth={1.8} />
+            <LogOut size={18} strokeWidth={2} />
           </span>
           <span className="sidebar-label">Sign Out</span>
         </button>

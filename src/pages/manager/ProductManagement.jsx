@@ -125,9 +125,9 @@ export const ProductManagement = ({ products, setProducts, addAudit, currentUser
 
   useEffect(() => { loadCats() }, [loadCats])
 
-  const parentCats = allCats.filter(c => c.status !== 'pending' || currentUser?.role === 'admin')
+  const parentCats = allCats
   const currentCategory = parentCats.find(c => c.name === form.category || c.id === form.category_id)
-  const subCats = currentCategory ? allSubs.filter(s => s.category_id === currentCategory.id && (s.status !== 'pending' || currentUser?.role === 'admin')) : []
+  const subCats = currentCategory ? allSubs.filter(s => s.category_id === currentCategory.id) : []
   const currentSub = subCats.find(s => s.name === form.subcategory || s.id === form.subcategory_id)
 
   const activeConfig = currentSub?.attribute_config || currentCategory?.attribute_config || []
@@ -234,7 +234,7 @@ export const ProductManagement = ({ products, setProducts, addAudit, currentUser
 
   return (
     <div style={{ 
-      background: 'linear-gradient(180deg, #C4E8E7 0%, #FFFFFF 100%)',
+      background: 'transparent',
       minHeight: '100%', padding: '32px', borderRadius: 24,
       display: 'flex', flexDirection: 'column', gap: 20 
     }}>

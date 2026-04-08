@@ -59,64 +59,45 @@ export function Topbar({ venues = [] }) {
 
   return (
     <div style={{
-      height: 48, background: t.topbar, borderBottom: `1px solid ${t.border}`,
-      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-      padding: '0 clamp(10px,2vw,24px)', position: 'sticky', top: 0, zIndex: 100,
+      height: 80, 
+      background: '#fff', 
+      display: 'flex', 
+      alignItems: 'center', 
+      justifyContent: 'space-between',
+      padding: '0 40px', 
+      position: 'sticky', 
+      top: 0, 
+      zIndex: 100,
+      borderBottom: '1px solid #f1f5f9',
     }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
         <button className="mob-menu-btn" onClick={toggleSidebar} style={{
-          background: t.bg3, border: `1px solid ${t.border}`, borderRadius: 8,
-          padding: '4px 10px', cursor: 'pointer', fontSize: 16, color: t.text,
+          background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 12,
+          padding: '8px 14px', cursor: 'pointer', fontSize: 20, color: '#1e293b',
         }}>☰</button>
-        <span style={{ color: t.accent, fontWeight: 900, fontSize: 14 }}>S</span>
-        <span style={{ color: t.text, fontWeight: 700 }}>SCSTix</span>
-        <span style={{ color: t.text4, fontSize: 12, marginLeft: 8 }}>›</span>
-        <span style={{ color: t.text2, fontSize: 13, fontWeight: 600 }}>{label}</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <span style={{ color: '#94a3b8', fontSize: 13, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Home</span>
+          <span style={{ color: '#cbd5e1', fontSize: 18, fontWeight: 300 }}>/</span>
+          <span style={{ color: '#0f172a', fontSize: 15, fontWeight: 800 }}>{label}</span>
+        </div>
       </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-        {isAdmin && venues.length > 0 && (
-          <div className="hide-mobile" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <select
-              value={selectedVenueId || ''}
-              onChange={e => { setVenue(e.target.value || null); setSite(null) }}
-              style={{
-                background: t.bg3, border: `1px solid ${t.border}`, borderRadius: 8,
-                padding: '4px 8px', fontSize: 11, color: t.text, cursor: 'pointer', maxWidth: 140,
-              }}
-            >
-              <option value="">All Venues</option>
-              {venues.map(v => <option key={v.id} value={v.id}>{v.name}</option>)}
-            </select>
-            {selectedVenue?.sites?.length > 0 && (
-              <select
-                value={selectedSiteId || ''}
-                onChange={e => setSite(e.target.value || null)}
-                style={{
-                  background: t.bg3, border: `1px solid ${t.border}`, borderRadius: 8,
-                  padding: '4px 8px', fontSize: 11, color: t.text, cursor: 'pointer', maxWidth: 130,
-                }}
-              >
-                <option value="">All Sites</option>
-                {selectedVenue.sites.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-              </select>
-            )}
-          </div>
-        )}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
         <button onClick={toggleDark} title="Toggle dark mode" style={{
-          background: t.bg3, border: `1px solid ${t.border}`, borderRadius: 8,
-          padding: '4px 10px', cursor: 'pointer', fontSize: 13, color: t.text,
+          background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 10,
+          padding: '6px 14px', cursor: 'pointer', fontSize: 16, color: '#1e293b',
         }}>{darkMode ? '☀️' : '🌙'}</button>
 
         <div ref={bellRef} style={{ position: 'relative' }}>
           <button onClick={() => setBellOpen(o => !o)} style={{
-            background: t.bg3, border: `1px solid ${t.border}`, borderRadius: 8,
-            padding: '4px 10px', cursor: 'pointer', fontSize: 14, color: t.text, position: 'relative',
+            background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 10,
+            padding: '6px 14px', cursor: 'pointer', fontSize: 16, color: '#1e293b', position: 'relative',
           }}>
             🔔
             {unread > 0 && <span style={{
-              position: 'absolute', top: -4, right: -4, background: t.accent, color: '#fff',
-              borderRadius: '50%', width: 16, height: 16, display: 'flex', alignItems: 'center',
-              justifyContent: 'center', fontSize: 9, fontWeight: 900,
+              position: 'absolute', top: -5, right: -5, background: '#ef4444', color: '#fff',
+              borderRadius: '50%', width: 18, height: 18, display: 'flex', alignItems: 'center',
+              justifyContent: 'center', fontSize: 10, fontWeight: 900,
+              border: '2px solid #fff'
             }}>{unread}</span>}
           </button>
           {bellOpen && (
@@ -172,14 +153,14 @@ export function Topbar({ venues = [] }) {
             }}
           >
             <div style={{
-              width: 32, height: 32, borderRadius: 10, background: 'linear-gradient(135deg, #4f46e5, #4338ca)',
+              width: 44, height: 44, borderRadius: 12, background: 'linear-gradient(135deg, #2563EB, #1e40af)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 12, fontWeight: 900, color: '#fff',
-              boxShadow: '0 2px 6px rgba(79, 70, 229, 0.3)'
+              fontSize: 16, fontWeight: 900, color: '#fff',
+              boxShadow: '0 4px 12px rgba(37, 99, 235, 0.2)'
             }}>{currentUser.avatar || currentUser.name?.charAt(0)}</div>
-            <div className="hide-mobile" style={{ display: 'flex', flexDirection: 'column' }}>
-              <span style={{ fontSize: 13, fontWeight: 800, color: '#0f172a', lineHeight: 1.2 }}>{currentUser.name}</span>
-              <span style={{ fontSize: 10, fontWeight: 700, color: '#4f46e5', textTransform: 'uppercase', letterSpacing: 0.5 }}>{currentUser.role}</span>
+            <div className="hide-mobile" style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <span style={{ fontSize: 15, fontWeight: 800, color: '#0f172a', lineHeight: 1 }}>{currentUser.name}</span>
+              <span style={{ fontSize: 11, fontWeight: 800, color: '#2563EB', textTransform: 'uppercase', letterSpacing: 0.5 }}>{currentUser.role}</span>
             </div>
           </div>
         )}

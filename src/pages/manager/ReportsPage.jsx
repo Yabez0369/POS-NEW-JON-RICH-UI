@@ -46,15 +46,7 @@ export const ReportsPage = ({ orders = [], users = [], products = [], t, setting
   const [dateFrom, setDateFrom] = useState(dayjs().subtract(30, 'day').format('YYYY-MM-DD'))
   const [dateTo, setDateTo] = useState(dayjs().format('YYYY-MM-DD'))
 
-  const venueId = currentUser?.venue_id || currentUser?.venueId
-  const siteId = currentUser?.site_id || currentUser?.siteId
-
   const filtered = (Array.isArray(orders) ? orders : []).filter(o => {
-    // Spatial Filtering
-    if (venueId && o.venue_id !== venueId) return false
-    if (siteId && o.site_id !== siteId) return false
-
-    // Temporal Filtering
     const dateStr = o.date || o.created_at
     if (!dateStr) return true
     const d = dayjs(dateStr).isValid() ? dayjs(dateStr) : dayjs(dateStr, 'DD/MM/YYYY, HH:mm:ss')
@@ -166,7 +158,7 @@ export const ReportsPage = ({ orders = [], users = [], products = [], t, setting
 
   return (
     <div style={{
-      background: isManager ? 'linear-gradient(180deg, #C4E8E7 0%, #FFFFFF 100%)' : 'transparent',
+      background: 'transparent',
       minHeight: '100%', padding: '24px', borderRadius: 24,
       display: 'flex', flexDirection: 'column', gap: 20
     }}>

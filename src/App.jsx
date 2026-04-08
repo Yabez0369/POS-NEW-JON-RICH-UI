@@ -28,9 +28,7 @@ import { ProfilePage } from '@/pages/shared/ProfilePage'
 import { CustomerDisplay } from '@/pages/shared/CustomerDisplay'
 
 const AdminDashboard = lazyRetry(() => import('@/pages/admin/AdminDashboard'), 'AdminDashboard')
-const AdminSalesPage = lazyRetry(() => import('@/pages/admin/AdminSalesPage'), 'AdminSalesPage')
-const AdminInventoryPage = lazyRetry(() => import('@/pages/admin/AdminInventoryPage'), 'AdminInventoryPage')
-const AdminReportsPage = lazyRetry(() => import('@/pages/admin/AdminReportsPage'), 'AdminReportsPage')
+const AdminAnalytics = lazyRetry(() => import('@/pages/admin/AdminAnalytics'), 'AdminAnalytics')
 const AdminCustomers = lazyRetry(() => import('@/pages/admin/AdminCustomers'), 'AdminCustomers')
 const UserManagement = lazyRetry(() => import('@/pages/admin/UserManagement'), 'UserManagement')
 const AuditLogs = lazyRetry(() => import('@/pages/admin/AuditLogs'), 'AuditLogs')
@@ -74,8 +72,8 @@ const PickupOrders = lazyRetry(() => import('@/pages/staff/PickupOrders'), 'Pick
 
 import {
   INITIAL_PRODUCTS, INITIAL_USERS, INITIAL_ORDERS, INITIAL_RETURNS,
-  INITIAL_BANNERS, INITIAL_COUPONS, INITIAL_COUNTERS, INITIAL_SETTINGS, INITIAL_AUDIT_LOGS,
-  INITIAL_VENUES
+  INITIAL_BANNERS, INITIAL_COUPONS, INITIAL_COUNTERS, INITIAL_SETTINGS,
+  INITIAL_VENUES,
 } from '@/core'
 import { supabase } from '@/lib/supabase'
 import { ts } from '@/lib/utils'
@@ -192,7 +190,11 @@ function useSupabaseSync(setter, table, seedData, fetchFn) {
       const error = res?.error
       if (!cancelled && !error && data?.length > 0) {
         setter(data)
+      } else if (error) {
+        console.warn(`Supabase sync failed for ${table}:`, error)
       }
+    }).catch(err => {
+      console.warn(`Supabase sync error for ${table}:`, err)
     })
     return () => { cancelled = true }
   }, [])
@@ -217,8 +219,9 @@ function AppContent({ users, setUsers }) {
   const [settings, setSettings] = useState(INITIAL_SETTINGS)
   const [banners, setBanners] = useState(() => isSupabaseConfigured() ? [] : INITIAL_BANNERS)
   const [coupons, setCoupons] = useState(() => isSupabaseConfigured() ? [] : INITIAL_COUPONS)
-  const [venues, setVenues] = useState(INITIAL_VENUES)
-  const [auditLogs, setAuditLogs] = useState(() => isSupabaseConfigured() ? [] : INITIAL_AUDIT_LOGS)
+  const [venues, setVenues] = useState(() => isSupabaseConfigured() ? [] : INITIAL_VENUES)
+  const [sites, setSites] = useState([])
+  const [auditLogs, setAuditLogs] = useState([])
 
   useSupabaseSync(setProducts, 'products', INITIAL_PRODUCTS, productsService.fetchProducts)
   useSupabaseSync(setOrders, 'orders', INITIAL_ORDERS, () => import('@/services').then(m => m.ordersService.fetchOrders()))
@@ -227,8 +230,9 @@ function AppContent({ users, setUsers }) {
   useSupabaseSync(setBanners, 'banners', INITIAL_BANNERS)
   useSupabaseSync(setCoupons, 'coupons', INITIAL_COUPONS)
   useSupabaseSync(setVenues, 'venues', INITIAL_VENUES, () => import('@/services').then(m => m.venuesService.fetchVenuesWithSites()))
+  useSupabaseSync(setSites, 'sites', [])
   // User sync moved to App
-  useSupabaseSync(setAuditLogs, 'audit_logs', INITIAL_AUDIT_LOGS, () =>
+  useSupabaseSync(setAuditLogs, 'audit_logs', [], () =>
     supabase.from('audit_logs').select('id,user_id,action,module,details,created_at').order('created_at', { ascending: false }).limit(200)
       .then(({ data, error }) => ({
         data: (data || []).map(l => ({
@@ -295,7 +299,7 @@ function AppContent({ users, setUsers }) {
   const commonProps = {
     products, setProducts, orders, setOrders, returns, setReturns,
     users, setUsers, counters, setCounters, settings, setSettings,
-    banners, setBanners, coupons, setCoupons, venues, setVenues,
+    banners, setBanners, coupons, setCoupons,
     auditLogs, addAudit, addGlobalNotif,
     currentUser, siteId: currentUser?.site_id || DEFAULT_SITE_ID,
     t, darkMode, setDarkMode
@@ -348,9 +352,9 @@ function AppContent({ users, setUsers }) {
             {/* Dashboard - role-specific */}
             <Route path="dashboard" element={
               currentUser?.role === 'admin'
-                ? <AdminDashboard {...commonProps} />
+                ? <AdminDashboard orders={orders} users={users} products={products} venues={venues} sites={sites} settings={settings} t={t} />
                 : currentUser?.role === 'manager'
-                  ? <ManagerDashboard orders={orders} products={products} users={users} counters={counters} settings={settings} currentUser={currentUser} t={t} />
+                  ? <ManagerDashboard orders={orders} products={products} users={users} counters={counters} settings={settings} t={t} />
                   : <Navigate to="/app" replace />
             } />
 
@@ -369,14 +373,9 @@ function AppContent({ users, setUsers }) {
             } />
 
             {/* Admin Routes */}
-            <Route path="sales" element={
+            <Route path="analytics" element={
               <ProtectedRoute allowedRoles={['admin']}>
-                <AdminSalesPage {...commonProps} />
-              </ProtectedRoute>
-            } />
-            <Route path="inventory" element={
-              <ProtectedRoute allowedRoles={['admin', 'manager']}>
-                <AdminInventoryPage {...commonProps} />
+                <AdminAnalytics orders={orders} products={products} settings={settings} t={t} />
               </ProtectedRoute>
             } />
             <Route path="customers" element={
@@ -386,14 +385,7 @@ function AppContent({ users, setUsers }) {
             } />
             <Route path="users" element={
               <ProtectedRoute allowedRoles={['admin']}>
-                <UserManagement {...commonProps} />
-              </ProtectedRoute>
-            } />
-            <Route path="reports" element={
-              <ProtectedRoute allowedRoles={['admin', 'manager']}>
-                {currentUser?.role === 'admin' 
-                  ? <AdminReportsPage {...commonProps} /> 
-                  : <ReportsPage orders={orders} users={users} products={products} settings={settings} t={t} />}
+                <UserManagement users={users} setUsers={setUsers} venues={venues} t={t} />
               </ProtectedRoute>
             } />
             <Route path="audit" element={
@@ -418,7 +410,7 @@ function AppContent({ users, setUsers }) {
             } />
             <Route path="settings" element={
               <ProtectedRoute allowedRoles={['admin']}>
-                <SettingsPage settings={settings} setSettings={setSettings} addAudit={addAudit} currentUser={currentUser} darkMode={darkMode} setDarkMode={setDarkMode} t={t} venues={venues} setVenues={setVenues} />
+                <SettingsPage settings={settings} setSettings={setSettings} addAudit={addAudit} currentUser={currentUser} darkMode={darkMode} setDarkMode={setDarkMode} t={t} />
               </ProtectedRoute>
             } />
             <Route path="venues" element={
@@ -440,7 +432,7 @@ function AppContent({ users, setUsers }) {
             } />
             <Route path="inventory" element={
               <ProtectedRoute allowedRoles={['manager', 'admin']}>
-                <InventoryManagement products={products} setProducts={setProducts} addAudit={addAudit} currentUser={currentUser} settings={settings} t={t} siteId={currentUser?.site_id || DEFAULT_SITE_ID} />
+                <InventoryManagement products={products} setProducts={setProducts} addAudit={addAudit} currentUser={currentUser} t={t} siteId={currentUser?.site_id || DEFAULT_SITE_ID} />
               </ProtectedRoute>
             } />
             <Route path="team" element={
@@ -460,7 +452,11 @@ function AppContent({ users, setUsers }) {
                   ? <CashierReturns orders={orders} setOrders={setOrders} returns={returns} setReturns={setReturns} products={products} setProducts={setProducts} settings={settings} addAudit={addAudit} currentUser={currentUser} t={t} siteId={currentUser?.site_id || DEFAULT_SITE_ID} />
                   : <CustomerReturns orders={orders} returns={returns} setReturns={setReturns} products={products} setProducts={setProducts} addAudit={addAudit} currentUser={currentUser} settings={settings} t={t} />
             } />
-
+            <Route path="reports" element={
+              <ProtectedRoute allowedRoles={['manager', 'admin']}>
+                <ReportsPage orders={orders} users={users} products={products} settings={settings} t={t} />
+              </ProtectedRoute>
+            } />
             <Route path="damage-lost" element={
               <ProtectedRoute allowedRoles={['manager', 'admin']}>
                 <DamageManagement t={t} currentUser={currentUser} />
