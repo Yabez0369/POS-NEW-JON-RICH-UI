@@ -58,6 +58,7 @@ const ReturnToSupplier = lazyRetry(() => import('@/pages/manager/ReturnToSupplie
 const POSTerminal = lazyRetry(() => import('@/pages/pos/POSTerminal'), 'POSTerminal')
 const CashierDashboard = lazyRetry(() => import('@/pages/cashier/CashierDashboard'), 'CashierDashboard')
 const CashierOrders = lazyRetry(() => import('@/pages/cashier/CashierOrders'), 'CashierOrders')
+const CashierHistory = lazyRetry(() => import('@/pages/cashier/CashierHistory'), 'CashierHistory')
 const CashierReturns = lazyRetry(() => import('@/pages/cashier/CashierReturns'), 'CashierReturns')
 const HardwarePanel = lazyRetry(() => import('@/pages/cashier/HardwarePanel'), 'HardwarePanel')
 const CashManagement = lazyRetry(() => import('@/pages/cashier/CashManagement'), 'CashManagement')
@@ -147,6 +148,7 @@ function PageLoader() {
 
 function ProtectedRoute({ children, allowedRoles }) {
   const { currentUser, isAuthenticated } = useAuth()
+  const { session } = useCashStore()
   const location = useLocation()
 
   if (!isAuthenticated) {
@@ -161,6 +163,15 @@ function ProtectedRoute({ children, allowedRoles }) {
       </div>
     )
   }
+
+  // Cashier shift enforcement
+  if (currentUser?.role === 'cashier') {
+    const isCashPage = location.pathname === '/app/cash'
+    if (!session && !isCashPage) {
+      return <Navigate to="/app/cash" replace />
+    }
+  }
+
   return children
 }
 
@@ -323,7 +334,8 @@ function AppContent({ users, setUsers }) {
         <Routes>
           {/* Guest Routes */}
           <Route element={<GuestLayout />}>
-            <Route index element={<GuestHomePage products={products} banners={banners} settings={settings} />} />
+            <Route index element={<GuestHomePage />} />
+
             <Route path="shop" element={<GuestShopPage products={products} banners={banners} settings={settings} />} />
             <Route path="product/:productId" element={<GuestProductDetail products={products} settings={settings} />} />
           </Route>
@@ -358,10 +370,9 @@ function AppContent({ users, setUsers }) {
                   : <Navigate to="/app" replace />
             } />
 
-            {/* Cashier Home */}
             <Route path="home" element={
               <ProtectedRoute allowedRoles={['cashier', 'admin', 'manager']}>
-                <CashierDashboard />
+                <CashierDashboard orders={orders} settings={settings} />
               </ProtectedRoute>
             } />
 
@@ -500,6 +511,11 @@ function AppContent({ users, setUsers }) {
 
             {/* Cashier Routes */}
             <Route path="orders" element={<CashierOrders orders={orders} setOrders={setOrders} settings={settings} t={t} />} />
+            <Route path="history" element={
+              <ProtectedRoute allowedRoles={['cashier', 'admin', 'manager']}>
+                <CashierHistory orders={orders} settings={settings} />
+              </ProtectedRoute>
+            } />
             <Route path="hardware" element={<HardwarePanel addAudit={addAudit} settings={settings} t={t} />} />
             <Route path="cash" element={
               <ProtectedRoute allowedRoles={['cashier', 'admin', 'manager']}>

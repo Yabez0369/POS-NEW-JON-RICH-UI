@@ -147,9 +147,9 @@ CREATE POLICY "Cashiers can create orders"
   ON orders FOR INSERT
   WITH CHECK (get_my_role() IN ('admin', 'manager', 'cashier'));
 
-CREATE POLICY "Managers and admins can read all orders"
+CREATE POLICY "Staff can read all orders"
   ON orders FOR SELECT
-  USING (get_my_role() IN ('admin', 'manager'));
+  USING (get_my_role() IN ('admin', 'manager', 'cashier'));
 
 CREATE POLICY "Managers and admins can update orders"
   ON orders FOR UPDATE
@@ -165,9 +165,13 @@ CREATE POLICY "Cashiers can create order items"
   WITH CHECK (get_my_role() IN ('admin', 'manager', 'cashier'));
 
 -- returns
-CREATE POLICY "Managers and admins can read all returns"
+CREATE POLICY "Staff can read all returns"
   ON returns FOR SELECT
-  USING (get_my_role() IN ('admin', 'manager'));
+  USING (get_my_role() IN ('admin', 'manager', 'cashier'));
+
+CREATE POLICY "Cashiers can create returns"
+  ON returns FOR INSERT
+  WITH CHECK (get_my_role() IN ('admin', 'manager', 'cashier'));
 
 CREATE POLICY "Managers and admins can update returns (approve/reject)"
   ON returns FOR UPDATE

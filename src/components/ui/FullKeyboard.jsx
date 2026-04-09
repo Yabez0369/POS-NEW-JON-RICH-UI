@@ -1,11 +1,11 @@
 import { useState, useEffect, useRef } from 'react'
-import { Search, Delete, Space, DeleteIcon, ArrowBigRightDash, X, ChevronLeft, ChevronRight, CornerDownLeft } from 'lucide-react'
+import { X, Space, CornerDownLeft, Delete } from 'lucide-react'
 
 /* ═══════════════════════════════════════════════════════ */
-/*  PREMIUM POS KEYBOARD — Apple/Square/Lightspeed Style   */
+/*  PREMIUM POS KEYBOARD — Rapoo Style, Draggable & Compact */
 /* ═══════════════════════════════════════════════════════ */
 
-export const FullKeyboard = ({ initialValue = '', onClose, onSave, onChange, t, isInline = false, hidePreview = false }) => {
+export const FullKeyboard = ({ initialValue = '', onClose, onSave, onChange, t, isInline = false, hidePreview = false, position = 'center' }) => {
   const [val, setVal] = useState(String(initialValue))
   const [layout, setLayout] = useState('ABC') // ABC or 123
   const [pressedKey, setPressedKey] = useState(null)
@@ -17,16 +17,8 @@ export const FullKeyboard = ({ initialValue = '', onClose, onSave, onChange, t, 
   
   const keyboardRef = useRef(null)
 
-  // Sync val with initialValue if needed, but usually it's managed internally
   useEffect(() => {
-    if (initialValue !== undefined && initialValue !== val) {
-      // setVal(String(initialValue)) // Optional: sync from parent
-    }
-  }, [initialValue])
-
-  // Handle Physical Keyboard & Dragging
-  useEffect(() => {
-    const h = (e) => {
+    const handleKeyDown = (e) => {
       if (e.key === "Escape") onClose()
       if (e.key === "Enter") onSave(val)
 
@@ -43,11 +35,24 @@ export const FullKeyboard = ({ initialValue = '', onClose, onSave, onChange, t, 
       if (!isDragging) return
       const dx = e.clientX - dragStart.x
       const dy = e.clientY - dragStart.y
-      setPos({ x: pos.x + dx, y: pos.y + dy })
+      setPos(prev => ({ x: prev.x + dx, y: prev.y + dy }))
       setDragStart({ x: e.clientX, y: e.clientY })
     }
 
     const handleMouseUp = () => {
+      setIsDragging(false)
+    }
+
+    const handleTouchMove = (e) => {
+      if (!isDragging) return
+      const touch = e.touches[0]
+      const dx = touch.clientX - dragStart.x
+      const dy = touch.clientY - dragStart.y
+      setPos(prev => ({ x: prev.x + dx, y: prev.y + dy }))
+      setDragStart({ x: touch.clientX, y: touch.clientY })
+    }
+
+    const handleTouchEnd = () => {
       setIsDragging(false)
     }
 
@@ -58,29 +63,28 @@ export const FullKeyboard = ({ initialValue = '', onClose, onSave, onChange, t, 
       }
     }
 
-    window.addEventListener("keydown", h)
+    window.addEventListener("keydown", handleKeyDown)
     if (isDragging) {
       window.addEventListener("mousemove", handleMouseMove)
       window.addEventListener("mouseup", handleMouseUp)
-      window.addEventListener("touchmove", (e) => {
-        const touch = e.touches[0]
-        handleMouseMove({ clientX: touch.clientX, clientY: touch.clientY })
-      }, { passive: false })
-      window.addEventListener("touchend", handleMouseUp)
+      window.addEventListener("touchmove", handleTouchMove, { passive: false })
+      window.addEventListener("touchend", handleTouchEnd)
     }
     document.addEventListener("mousedown", handleClickOutside, true)
     
     return () => {
-      window.removeEventListener("keydown", h)
+      window.removeEventListener("keydown", handleKeyDown)
       window.removeEventListener("mousemove", handleMouseMove)
       window.removeEventListener("mouseup", handleMouseUp)
-      window.removeEventListener("touchmove", handleMouseMove)
-      window.removeEventListener("touchend", handleMouseUp)
+      window.removeEventListener("touchmove", handleTouchMove)
+      window.removeEventListener("touchend", handleTouchEnd)
       document.removeEventListener("mousedown", handleClickOutside, true)
     }
-  }, [onClose, onSave, val, isDragging, dragStart, pos, isInline])
+  }, [onClose, onSave, val, isDragging, dragStart, isInline])
 
   const startDrag = (e) => {
+    // Only drag from the handle or non-button areas
+    if (e.target.closest('button')) return
     const clientX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX
     const clientY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY
     setIsDragging(true)
@@ -91,15 +95,13 @@ export const FullKeyboard = ({ initialValue = '', onClose, onSave, onChange, t, 
     let newVal = val
     if (key === '⌫') {
       newVal = val.slice(0, -1)
-    } else if (key === 'C') {
-      newVal = ''
     } else if (key === 'SPACE') {
       newVal = val + ' '
     } else if (key === '123') {
       setLayout('123'); return
     } else if (key === 'ABC') {
       setLayout('ABC'); return
-    } else if (key === 'DONE' || key === 'SEARCH') {
+    } else if (key === 'SEARCH') {
       onSave(val); return
     } else {
       newVal = val + key
@@ -107,147 +109,125 @@ export const FullKeyboard = ({ initialValue = '', onClose, onSave, onChange, t, 
     setVal(newVal)
     if (onChange) onChange(newVal)
 
-    // Haptic Feedback
-    if (window.navigator.vibrate) window.navigator.vibrate(40)
-
-    // Pulse feedback
     setPressedKey(key)
-    setTimeout(() => setPressedKey(null), 150)
+    setTimeout(() => setPressedKey(null), 100)
   }
 
   const rows = layout === 'ABC' ? [
-    ['Q', 'W', 'E', 'R', 'T'],
-    ['Y', 'U', 'I', 'O', 'P'],
-    ['A', 'S', 'D', 'F', 'G'],
-    ['H', 'J', 'K', 'L', 'M'],
-    ['N', 'B', 'V', 'C', 'X'],
-    ['Z', '⌫']
+    ['Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P'],
+    ['A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L', '⌫'],
+    ['Z', 'X', 'C', 'V', 'B', 'N', 'M', '.', ',', '?']
   ] : [
-    ['1', '2', '3', '4', '5'],
-    ['6', '7', '8', '9', '0'],
-    ['-', '/', ':', ';', '('],
-    [')', '$', '&', '@', '"'],
-    ['.', '?', '!', "'", ','],
-    ['⌫']
+    ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'],
+    ['!', '@', '#', '$', '%', '^', '&', '*', '(', ')'],
+    ['-', '=', '+', '[', ']', '{', '}', ';', ':', '⌫']
   ]
 
-  return (
-    <div style={isInline ? inlineOverlayStyle : overlayStyle}>
-      <div
-        ref={keyboardRef}
-        style={{
-          ...(isInline ? inlineContainerStyle : keyboardContainerStyle),
-          transform: isInline ? 'none' : `translate(${pos.x}px, ${pos.y}px)`,
-          transition: isDragging ? 'none' : 'transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.5s ease'
-        }}
-        onClick={e => e.stopPropagation()}
-      >
-        {/* — Close Button (Always visible now) — */}
-        <button onClick={onClose} style={topCloseBtnStyle}>
-          <X size={24} />
-        </button>
+  const finalOverlayStyle = isInline ? inlineOverlayStyle : {
+    ...overlayStyle,
+    justifyContent: position === 'left' ? 'flex-start' : position === 'right' ? 'flex-end' : 'center',
+    paddingLeft: position === 'left' ? '40px' : '0',
+    paddingRight: position === 'right' ? '40px' : '0',
+  }
 
-        {/* — Input Preview Bar — */}
-        {!hidePreview && (
-          <div 
-            style={{ ...previewBarStyle, cursor: isDragging ? 'grabbing' : 'grab' }}
-            onMouseDown={startDrag}
-            onTouchStart={startDrag}
-          >
-            <div style={previewLabel}>INPUT PREVIEW</div>
-            <div style={previewValueBox}>
-              <span style={previewText}>{val || '...'}</span>
+  return (
+    <div style={finalOverlayStyle}>
+      <div style={{
+        animation: 'keyboardSlideIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+        pointerEvents: 'none',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+      }}>
+        <div
+          ref={keyboardRef}
+          onMouseDown={startDrag}
+          onTouchStart={startDrag}
+          style={{
+            ...keyboardContainerStyle,
+            transform: `translate(${pos.x}px, ${pos.y}px)`,
+            cursor: isDragging ? 'grabbing' : 'grab',
+            pointerEvents: 'auto'
+          }}
+        >
+          <div style={dragHandle}>
+            <div style={dragHandleBar} />
+            <button 
+              onMouseDown={(e) => { e.stopPropagation(); }}
+              onClick={onClose} 
+              style={closeBtnStyle}
+            >
+              <X size={22} />
+            </button>
+          </div>
+
+          {!hidePreview && (
+            <div style={previewBox}>
+              <span style={previewText}>{val || 'Search...'}</span>
               <span style={cursorStyle} />
             </div>
-          </div>
-        )}
+          )}
 
-        {/* — Key Grid — */}
-        <div style={keysWrapper}>
-          {rows.map((row, i) => (
-            <div key={i} style={rowStyle}>
-              {row.map(k => (
-                <Key
-                  key={k}
-                  label={k}
-                  onClick={() => handleKey(k)}
-                  isPressed={pressedKey === k}
-                  type={k === '⌫' ? 'functional' : 'standard'}
-                />
-              ))}
+          <div style={keysWrapper}>
+            {rows.map((row, i) => (
+              <div key={i} style={rowStyle}>
+                {row.map(k => (
+                  <Key
+                    key={k}
+                    label={k}
+                    onClick={() => handleKey(k)}
+                    isPressed={pressedKey === k}
+                    type={k === '⌫' ? 'functional' : 'standard'}
+                  />
+                ))}
+              </div>
+            ))}
+
+            <div style={rowStyle}>
+              <button
+                onMouseDown={(e) => e.stopPropagation()}
+                onClick={() => handleKey(layout === 'ABC' ? '123' : 'ABC')}
+                style={modeBtnStyle}
+              >
+                {layout === 'ABC' ? '123' : 'ABC'}
+              </button>
+              <button
+                onMouseDown={(e) => e.stopPropagation()}
+                onClick={() => handleKey('SPACE')}
+                style={spaceKeyStyle}
+              >
+                <Space size={28} />
+              </button>
+              <button
+                onMouseDown={(e) => e.stopPropagation()}
+                onClick={() => onSave(val)}
+                style={searchBtnStyle}
+              >
+                <span>SEARCH</span>
+                <CornerDownLeft size={22} />
+              </button>
             </div>
-          ))}
-
-          {/* — Bottom Row — */}
-          <div style={rowStyle}>
-            <button
-              onClick={() => handleKey(layout === 'ABC' ? '123' : 'ABC')}
-              style={functionalKeyStyle}
-            >
-              {layout === 'ABC' ? '123' : 'ABC'}
-            </button>
-            <button
-              onClick={() => handleKey('SPACE')}
-              style={spaceKeyStyle}
-            >
-              <Space size={24} />
-            </button>
-            <button
-              onClick={() => onSave(val)}
-              style={searchBtnStyle}
-            >
-              <span style={{ marginRight: 8 }}>SEARCH</span>
-              <CornerDownLeft size={20} />
-            </button>
           </div>
         </div>
-
-        {/* — Footer Simplified — */}
-        <div style={{ height: '8px' }} />
       </div>
-
       <style dangerouslySetInnerHTML={{ __html: animations }} />
     </div>
   )
 }
 
 const Key = ({ label, onClick, isPressed, type }) => {
-  const [active, setActive] = useState(false)
-
-  const handleStart = (e) => {
-    e.preventDefault()
-    setActive(true)
-    onClick()
-  }
-
-  const handleEnd = () => setActive(false)
-
   const isIcon = label === '⌫'
-  const isSpecial = type === 'functional'
-
   return (
-    <div style={{ position: 'relative', flex: isSpecial ? 1.5 : 1, minWidth: 0 }}>
-      {/* iOS Style Pop-up Preview */}
-      {active && !isIcon && (
-        <div style={keyPopupStyle}>{label}</div>
-      )}
-
-      <button
-        onMouseDown={handleStart}
-        onMouseUp={handleEnd}
-        onMouseLeave={handleEnd}
-        onTouchStart={handleStart}
-        onTouchEnd={handleEnd}
-        style={{
-          ...keyBaseStyle,
-          ...(isSpecial ? functionalKeyStyles : {}),
-          ...(active ? keyPressStyle : {}),
-          ...(isPressed ? keyFlashStyle : {}),
-        }}
-      >
-        {isIcon ? <Delete size={28} /> : label}
-      </button>
-    </div>
+    <button
+      onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); onClick(); }}
+      style={{
+        ...keyStyle,
+        ...(isPressed ? keyPressStyle : {}),
+        ...(type === 'functional' ? functionalKeyStyle : {}),
+      }}
+    >
+      {isIcon ? <Delete size={24} /> : label}
+    </button>
   )
 }
 
@@ -256,13 +236,11 @@ const Key = ({ label, onClick, isPressed, type }) => {
 const overlayStyle = {
   position: 'fixed',
   inset: 0,
-  zIndex: 20000,
+  zIndex: 9999,
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
-  pointerEvents: 'none',
-  background: 'rgba(0,0,0,0.1)',
-  animation: 'overlayFade 0.4s ease'
+  pointerEvents: 'none'
 }
 
 const inlineOverlayStyle = {
@@ -274,87 +252,43 @@ const inlineOverlayStyle = {
   pointerEvents: 'auto'
 }
 
-const inlineContainerStyle = {
-  width: '100%',
-  height: '100%',
-  background: 'rgba(15, 23, 42, 0.98)',
-  borderRadius: '24px',
-  border: '1px solid rgba(255, 255, 255, 0.1)',
-  padding: '24px',
-  display: 'flex',
-  flexDirection: 'column',
-  justifyContent: 'center',
-  gap: '16px',
-  boxShadow: 'none'
-}
-
 const keyboardContainerStyle = {
   pointerEvents: 'auto',
-  width: '90%',
-  maxWidth: '580px',
-  background: 'rgba(15, 23, 42, 0.95)',
-  backdropFilter: 'blur(30px) saturate(150%)',
-  borderRadius: '32px',
-  border: '1px solid rgba(255, 255, 255, 0.15)',
-  boxShadow: '0 50px 120px rgba(0,0,0,0.8), inset 0 0 40px rgba(255,255,255,0.02)',
-  padding: '20px',
+  width: '690px',
+  background: '#14161C',
+  borderRadius: '28px',
+  padding: '32px',
   display: 'flex',
   flexDirection: 'column',
-  gap: '12px'
-}
-
-const previewBarStyle = {
-  background: 'rgba(255, 255, 255, 0.04)',
-  borderRadius: '16px',
-  height: '60px',
-  display: 'flex',
-  alignItems: 'center',
-  padding: '0 20px',
-  position: 'relative',
-  border: '1px solid rgba(255,255,255,0.05)',
+  gap: '20px',
+  boxShadow: '0 40px 100px rgba(0,0,0,0.8), inset 0 0 0 1px rgba(255,255,255,0.08)',
+  border: 'none',
   userSelect: 'none'
 }
 
-const previewLabel = {
-  position: 'absolute',
-  top: '8px',
-  left: '30px',
-  fontSize: '10px',
-  fontWeight: '800',
-  color: 'rgba(255,255,255,0.3)',
-  letterSpacing: '1.5px',
-  textTransform: 'uppercase'
-}
-
-const previewValueBox = {
-  flex: 1,
+const dragHandle = {
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
-  gap: '4px'
+  position: 'relative',
+  padding: '4px 0 8px'
 }
 
-const previewText = {
-  fontSize: '20px',
-  fontWeight: '900',
-  color: '#fff',
-  letterSpacing: '1px',
-  textShadow: '0 0 20px rgba(255,255,255,0.2)'
-}
-
-const cursorStyle = {
-  width: '3px',
-  height: '32px',
-  background: 'var(--terminal-indigo, #4F46E5)',
-  borderRadius: '4px',
-  animation: 'blink 1.2s infinite ease'
+const dragHandleBar = {
+  width: '60px',
+  height: '5px',
+  background: 'rgba(255,255,255,0.2)',
+  borderRadius: '3px'
 }
 
 const closeBtnStyle = {
-  width: '44px',
-  height: '44px',
-  borderRadius: '16px',
-  background: 'rgba(255,255,255,0.06)',
+  position: 'absolute',
+  right: '0',
+  top: '0',
+  width: '36px',
+  height: '36px',
+  borderRadius: '50%',
+  background: 'rgba(255,255,255,0.08)',
   border: 'none',
   color: 'rgba(255,255,255,0.5)',
   display: 'flex',
@@ -363,141 +297,103 @@ const closeBtnStyle = {
   cursor: 'pointer'
 }
 
-const topCloseBtnStyle = {
-  position: 'absolute',
-  top: '12px',
-  right: '12px',
-  width: '44px',
-  height: '44px',
-  borderRadius: '14px',
-  background: 'rgba(255,255,255,0.08)',
-  border: '1px solid rgba(255,255,255,0.1)',
-  color: 'rgba(255,255,255,0.6)',
+const previewBox = {
+  background: 'rgba(0,0,0,0.2)',
+  borderRadius: '12px',
+  padding: '12px 16px',
   display: 'flex',
   alignItems: 'center',
-  justifyContent: 'center',
-  cursor: 'pointer',
-  zIndex: 100,
-  transition: 'all 0.2s'
+  gap: '8px',
+  border: '1px solid rgba(255,255,255,0.05)',
+  marginBottom: '4px'
+}
+
+const previewText = {
+  color: '#fff',
+  fontSize: '20px',
+  fontWeight: '600',
+  flex: 1
+}
+
+const cursorStyle = {
+  width: '2px',
+  height: '22px',
+  background: '#4f46e5',
+  animation: 'blink 1s step-end infinite'
 }
 
 const keysWrapper = {
   display: 'flex',
   flexDirection: 'column',
-  gap: '18px',
-  marginTop: '20px'
+  gap: '12px'
 }
 
 const rowStyle = {
   display: 'flex',
-  gap: '16px',
+  gap: '12px',
   justifyContent: 'center'
 }
 
-const keyBaseStyle = {
-  width: '64px',
-  height: '64px',
-  background: 'rgba(255, 255, 255, 0.1)',
-  border: '1px solid rgba(255, 255, 255, 0.08)',
-  borderRadius: '50%', // PERFECT CIRCLE
+const keyStyle = {
+  width: '58px',
+  height: '58px',
+  borderRadius: '50%',
+  background: 'rgba(255,255,255,0.1)',
+  border: '1px solid rgba(255,255,255,0.05)',
   color: '#fff',
-  fontSize: '24px',
-  fontWeight: '800',
-  cursor: 'pointer',
+  fontSize: '18px',
+  fontWeight: '700',
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
-  transition: 'all 0.12s cubic-bezier(0.4, 0, 0.2, 1)',
-  boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
-  userSelect: 'none',
-  touchAction: 'manipulation'
-}
-
-const functionalKeyStyles = {
-  background: 'rgba(255, 255, 255, 0.18)',
-  boxShadow: '0 6px 16px rgba(0,0,0,0.4)',
+  cursor: 'pointer',
+  transition: 'all 0.1s',
+  boxShadow: '0 4px 8px rgba(0,0,0,0.3)'
 }
 
 const keyPressStyle = {
   transform: 'scale(0.9)',
-  background: 'rgba(255, 255, 255, 0.25)',
-  boxShadow: 'inset 0 4px 10px rgba(0,0,0,0.5)',
-}
-
-const keyFlashStyle = {
-  background: 'rgba(79, 70, 229, 0.5)',
-  boxShadow: '0 0 20px rgba(79, 70, 229, 0.7)',
-}
-
-const keyPopupStyle = {
-  position: 'absolute',
-  bottom: '120%',
-  left: '50%',
-  transform: 'translateX(-50%)',
-  width: '70px',
-  height: '70px',
-  background: '#fff',
-  borderRadius: '50%', // Circle feedback
-  color: '#0F172A',
-  fontSize: '32px',
-  fontWeight: '900',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  boxShadow: '0 15px 30px rgba(0,0,0,0.5)',
-  zIndex: 10,
-  animation: 'popIn 0.1s ease-out'
+  background: 'rgba(255,255,255,0.2)',
+  boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.3)'
 }
 
 const functionalKeyStyle = {
-  ...keyBaseStyle,
+  background: 'rgba(255,255,255,0.12)',
+  color: 'rgba(255,255,255,0.8)'
+}
+
+const modeBtnStyle = {
+  ...keyStyle,
   width: '80px',
-  borderRadius: '40px',
-  background: 'rgba(255, 255, 255, 0.15)',
-  fontSize: '16px',
-  fontWeight: '900'
+  borderRadius: '20px',
+  fontSize: '15px'
 }
 
 const spaceKeyStyle = {
-  ...keyBaseStyle,
+  ...keyStyle,
   flex: 1,
-  maxWidth: '240px',
-  borderRadius: '40px',
-  background: 'rgba(255, 255, 255, 0.1)',
+  maxWidth: '300px',
+  borderRadius: '20px'
 }
 
 const searchBtnStyle = {
-  ...keyBaseStyle,
-  flex: 1.5,
-  borderRadius: '40px',
-  background: 'linear-gradient(135deg, #6366F1, #4F46E5)',
+  ...keyStyle,
+  flex: 1,
+  maxWidth: '180px',
+  borderRadius: '20px',
+  background: '#4f46e5',
   border: 'none',
   fontSize: '16px',
-  fontWeight: '900',
-  boxShadow: '0 8px 20px rgba(79, 70, 229, 0.3)',
-}
-
-const footerStyle = {
-  paddingTop: '16px',
-  textAlign: 'center',
-  fontSize: '10px',
-  fontWeight: '900',
-  color: 'rgba(255,255,255,0.2)',
-  letterSpacing: '4px',
-  textTransform: 'uppercase'
+  gap: '8px'
 }
 
 const animations = `
-  @keyframes overlayFade {
-    from { opacity: 0; }
-    to { opacity: 1; }
-  }
-  @keyframes popIn {
-    0% { transform: translateX(-50%) scale(0.6) translateY(20px); opacity: 0; }
-    100% { transform: translateX(-50%) scale(1.1) translateY(0); opacity: 1; }
-  }
   @keyframes blink {
-    0%, 100% { opacity: 1; }
+    from, to { opacity: 1; }
     50% { opacity: 0; }
+  }
+  @keyframes keyboardSlideIn {
+    from { opacity: 0; transform: translateY(30px) scale(0.95); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
   }
 `

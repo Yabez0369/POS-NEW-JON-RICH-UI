@@ -111,6 +111,7 @@ export const POSTerminal = ({ products, setProducts, orders, setOrders, returns 
 
   const [variantProduct, setVariantProduct] = useState(null)
   const [selectedVariant, setSelectedVariant] = useState({})
+  const [expandedParked, setExpandedParked] = useState(null)
 
   const barcodeBuffer = useRef('')
   const lastKeyTime = useRef(0)
@@ -687,7 +688,6 @@ export const POSTerminal = ({ products, setProducts, orders, setOrders, returns 
     }
 
     notify(`Order ${orderId} complete! 🎉`, 'success')
-    setShowReceipt(newOrder)
     setCompletedOrder(newOrder)
     setPosStep('success')
     setCart([]); setSelCust(null); setCashGiven(''); setCardNum(''); setCardExp(''); setCardCvv(''); setQrPaid(false); setAppliedCoupon(null); setCouponCode(''); setLoyaltyRedeem(false); setShowQrModal(false); setSplitCash(''); setSplitCard(''); setManualDiscountPct(0)
@@ -802,6 +802,7 @@ export const POSTerminal = ({ products, setProducts, orders, setOrders, returns 
         settings={settings} t={t}
         products={products}
         setShowReturnModal={setShowReturnModal}
+        showReceipt={showReceipt} setShowReceipt={setShowReceipt}
       />
 
       {variantProduct && (
@@ -975,29 +976,31 @@ export const POSTerminal = ({ products, setProducts, orders, setOrders, returns 
             ) : parked.map((pb, idx) => {
               const totalItems = pb.cart?.reduce((acc, curr) => acc + curr.qty, 0) || 0
               const totalPrice = pb.cart?.reduce((acc, curr) => acc + (curr.price * (1 - (curr.discount || 0) / 100) * curr.qty), 0) || 0
-              const previewEmojis = pb.cart?.slice(0, 5).map(i => i.emoji).join(' ')
+              const isExpanded = expandedParked === (pb.id || idx)
 
               return (
                 <div key={pb.id || idx} style={{
                   background: '#FFFFFF',
-                  border: `1px solid #E8EAF0`,
+                  border: `1px solid ${isExpanded ? '#6366F1' : '#E8EAF0'}`,
                   borderRadius: 24,
                   padding: '20px 24px',
                   display: 'flex',
                   flexDirection: 'column',
-                  gap: 18,
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.03)',
-                  transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                  gap: isExpanded ? 18 : 0,
+                  boxShadow: isExpanded ? '0 10px 25px rgba(99, 102, 241, 0.1)' : '0 4px 12px rgba(0,0,0,0.03)',
+                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                   position: 'relative',
-                  cursor: 'default'
-                }} className="recall-card">
+                  cursor: 'pointer'
+                }} className="recall-card" onClick={() => setExpandedParked(isExpanded ? null : (pb.id || idx))}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
                       <div style={{
                         width: 48, height: 48, borderRadius: 14,
-                        background: 'linear-gradient(135deg, #F0F4FF, #E0E7FF)',
+                        background: isExpanded ? 'linear-gradient(135deg, #6366F1, #4F46E5)' : 'linear-gradient(135deg, #F0F4FF, #E0E7FF)',
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        fontSize: 20
+                        fontSize: 20,
+                        color: isExpanded ? '#fff' : 'inherit',
+                        transition: 'all 0.3s ease'
                       }}>👤</div>
                       <div>
                         <div style={{ fontSize: 16, fontWeight: 900, color: '#111827' }}>
@@ -1008,85 +1011,106 @@ export const POSTerminal = ({ products, setProducts, orders, setOrders, returns 
                         </div>
                       </div>
                     </div>
-                    <div style={{ textAlign: 'right' }}>
-                      <div style={{ fontSize: 22, fontWeight: 900, color: '#111827', letterSpacing: '-0.5px' }}>
-                        {fmt(totalPrice, settings?.sym)}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
+                      <div style={{ textAlign: 'right' }}>
+                        <div style={{ fontSize: 22, fontWeight: 900, color: '#111827', letterSpacing: '-0.5px' }}>
+                          {fmt(totalPrice, settings?.sym)}
+                        </div>
+                        <div style={{ fontSize: 12, fontWeight: 800, color: '#6366F1', textTransform: 'uppercase', letterSpacing: '0.8px' }}>
+                          {totalItems} Items
+                        </div>
                       </div>
-                      <div style={{ fontSize: 12, fontWeight: 800, color: '#6366F1', textTransform: 'uppercase', letterSpacing: '0.8px' }}>
-                        {totalItems} Items
+                      <div style={{ 
+                        width: 32, height: 32, borderRadius: 10, background: isExpanded ? '#6366F115' : '#F3F4F6',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
+                        transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+                      }}>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={isExpanded ? "#6366F1" : "#9CA3AF"} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="6 9 12 15 18 9" />
+                        </svg>
                       </div>
                     </div>
                   </div>
 
-                  <div style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: 16,
-                    padding: '20px',
-                    background: '#F9FAFB',
-                    borderRadius: 20,
-                    border: '1px solid #F3F4F6'
-                  }}>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10, maxHeight: 120, overflowY: 'auto', paddingRight: 6 }} className="recall-item-list">
-                      {pb.cart?.map((item, iidx) => (
-                        <div key={iidx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 13 }}>
-                          <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-                            <span style={{ fontSize: 18 }}>{item.emoji}</span>
-                            <div>
-                              <div style={{ fontWeight: 700, color: '#374151' }}>{item.name}</div>
-                              <div style={{ fontWeight: 600, color: '#9CA3AF', fontSize: 11 }}>Qty: {item.qty}</div>
+                  {isExpanded && (
+                    <div 
+                      style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: 16,
+                        padding: '20px',
+                        background: '#F9FAFB',
+                        borderRadius: 20,
+                        border: '1px solid #F3F4F6',
+                        animation: 'slideDown 0.3s ease-out'
+                      }}
+                      onClick={e => e.stopPropagation()}
+                    >
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 10, maxHeight: 120, overflowY: 'auto', paddingRight: 6 }} className="recall-item-list">
+                        {pb.cart?.map((item, iidx) => (
+                          <div key={iidx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 13 }}>
+                            <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                              <span style={{ fontSize: 18 }}>{item.emoji}</span>
+                              <div>
+                                <div style={{ fontWeight: 700, color: '#374151' }}>{item.name}</div>
+                                <div style={{ fontWeight: 600, color: '#9CA3AF', fontSize: 11 }}>Qty: {item.qty}</div>
+                              </div>
+                            </div>
+                            <div style={{ fontWeight: 800, color: '#111827' }}>
+                              {fmt(item.price * (1 - (item.discount || 0) / 100) * item.qty, settings?.sym)}
                             </div>
                           </div>
-                          <div style={{ fontWeight: 800, color: '#111827' }}>
-                            {fmt(item.price * (1 - (item.discount || 0) / 100) * item.qty, settings?.sym)}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
+                        ))}
+                      </div>
 
-                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12, borderTop: '1px solid #E5E7EB', paddingTop: 16 }}>
-                      <button
-                        onClick={async (e) => {
-                          e.stopPropagation();
-                          if (isSupabaseConfigured() && pb.id) {
-                            try { await parkedBillsService.deleteParkedBill(pb.id) } catch (_) { }
-                          }
-                          setParked(p => p.filter(x => (x.id || x.ts) !== (pb.id || pb.ts)))
-                        }}
-                        style={{
-                          padding: '10px 18px',
-                          background: 'transparent',
-                          color: '#9CA3AF',
-                          border: '1px solid #E5E7EB',
-                          borderRadius: 12,
-                          fontSize: 13,
-                          fontWeight: 700,
-                          cursor: 'pointer',
-                          transition: 'all 0.2s'
-                        }}
-                        onMouseOver={(e) => { e.target.style.color = '#EF4444'; e.target.style.borderColor = '#FCA5A5' }}
-                        onMouseOut={(e) => { e.target.style.color = '#9CA3AF'; e.target.style.borderColor = '#E5E7EB' }}
-                      >Discard</button>
-                      <button
-                        onClick={() => recallBill(pb)}
-                        disabled={cart.length > 0}
-                        style={{
-                          padding: '12px 28px',
-                          background: cart.length > 0 ? '#F3F4F6' : 'linear-gradient(135deg, #4F46E5, #6366F1)',
-                          color: cart.length > 0 ? '#9CA3AF' : '#fff',
-                          border: 'none',
-                          borderRadius: 14,
-                          fontSize: 14,
-                          fontWeight: 900,
-                          cursor: cart.length > 0 ? 'not-allowed' : 'pointer',
-                          boxShadow: cart.length > 0 ? 'none' : '0 8px 16px rgba(79,70,229,0.25)',
-                          transition: 'all 0.2s cubic-bezier(1, 0, 0, 1)',
-                          opacity: cart.length > 0 ? 0.7 : 1
-                        }}
-                        className="recall-btn"
-                      >{cart.length > 0 ? 'Cart Busy' : 'Recall Sale'}</button>
+                      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12, borderTop: '1px solid #E5E7EB', paddingTop: 16 }}>
+                        <button
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            if (confirm("Are you sure you want to discard this parked sale?")) {
+                              if (isSupabaseConfigured() && pb.id) {
+                                try { await parkedBillsService.deleteParkedBill(pb.id) } catch (_) { }
+                              }
+                              setParked(p => p.filter(x => (x.id || x.ts) !== (pb.id || pb.ts)))
+                              setExpandedParked(null)
+                            }
+                          }}
+                          style={{
+                            padding: '10px 18px',
+                            background: '#FFF1F2',
+                            color: '#E11D48',
+                            border: '1px solid #FDA4AF',
+                            borderRadius: 12,
+                            fontSize: 13,
+                            fontWeight: 700,
+                            cursor: 'pointer',
+                            transition: 'all 0.2s'
+                          }}
+                          onMouseOver={(e) => { e.target.style.background = '#FFE4E6' }}
+                          onMouseOut={(e) => { e.target.style.background = '#FFF1F2' }}
+                        >Discard</button>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); recallBill(pb) }}
+                          disabled={cart.length > 0}
+                          style={{
+                            padding: '12px 28px',
+                            background: cart.length > 0 ? '#F3F4F6' : 'linear-gradient(135deg, #4F46E5, #6366F1)',
+                            color: cart.length > 0 ? '#9CA3AF' : '#fff',
+                            border: 'none',
+                            borderRadius: 14,
+                            fontSize: 14,
+                            fontWeight: 900,
+                            cursor: cart.length > 0 ? 'not-allowed' : 'pointer',
+                            boxShadow: cart.length > 0 ? 'none' : '0 8px 16px rgba(79,70,229,0.25)',
+                            transition: 'all 0.2s cubic-bezier(1, 0, 0, 1)',
+                            opacity: cart.length > 0 ? 0.7 : 1
+                          }}
+                          className="recall-btn"
+                        >{cart.length > 0 ? 'Cart Busy' : 'Recall Sale'}</button>
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </div>
               )
             })}

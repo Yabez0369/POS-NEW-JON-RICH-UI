@@ -139,11 +139,12 @@ export const CashManagement = ({ addAudit, settings, t: tProp }) => {
 
   const handleCloseShiftTile = () => {
     if (!canCloseShift) {
+      // Not yet counted — open the count cash modal
       setCountDraft(countedCash || '')
       setShowCountCash(true)
-      notify('Count cash before closing shift', 'error')
       return
     }
+    // Already counted — go to confirmation
     setShowCloseConfirm(true)
   }
 
@@ -195,7 +196,7 @@ export const CashManagement = ({ addAudit, settings, t: tProp }) => {
       ) : (!session || isOpening) ? (
         <div className="cm-gate">
           <div className="cm-gate-glow" />
-          <div className="cm-gate-content">
+          <div className="cm-gate-content" style={{ transform: activePad === 'float' ? 'translateX(-180px)' : 'none', transition: 'transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)' }}>
             <div className="cm-gate-icon-wrap">
               <div className="cm-gate-icon">
                 <svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -318,11 +319,17 @@ export const CashManagement = ({ addAudit, settings, t: tProp }) => {
             </div>
 
             <button
-              className={`cm-confirm-btn ${canCloseShift ? 'active' : 'disabled'}`}
+              className={`cm-confirm-btn active`}
               onClick={handleCloseShiftTile}
-              style={{ background: canCloseShift ? '#1e1b4b' : t.bg3, color: canCloseShift ? '#fff' : t.text3, borderColor: t.border }}
+              style={{
+                background: canCloseShift ? '#1e1b4b' : '#374151',
+                color: '#fff',
+                borderColor: t.border,
+                opacity: 1,
+                cursor: 'pointer'
+              }}
             >
-              {canCloseShift ? `Confirm Close Shift — ${fmt(countedNum, sym)}` : 'Count Cash to End Shift'}
+              {canCloseShift ? `Confirm Close Shift — ${fmt(countedNum, sym)}` : 'Count Cash & End Shift'}
             </button>
 
             <button className="cm-history-link" style={{ color: t.text3 }} onClick={() => setShowHistory(true)}>
@@ -344,6 +351,7 @@ export const CashManagement = ({ addAudit, settings, t: tProp }) => {
           subtitle="Remove cash from the till to the safe"
           onClose={() => { setShowDrop(false); setDropAmt('') }}
           width={420}
+          style={{ transform: activePad === 'drop' ? 'translateX(-180px)' : 'none', transition: 'transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)' }}
         >
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             <div className="cash-hint" style={{ background: t.bg3, color: t.text2 }}>
@@ -371,6 +379,7 @@ export const CashManagement = ({ addAudit, settings, t: tProp }) => {
           subtitle="Add cash into the till drawer"
           onClose={() => { setShowLift(false); setLiftAmt('') }}
           width={420}
+          style={{ transform: activePad === 'lift' ? 'translateX(-180px)' : 'none', transition: 'transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)' }}
         >
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             <Input t={t} label="Lift Amount" value={liftAmt} onChange={setLiftAmt} onClick={() => setActivePad('lift')} placeholder="0.00" readOnly />
@@ -394,6 +403,7 @@ export const CashManagement = ({ addAudit, settings, t: tProp }) => {
           subtitle="Enter the actual cash in your drawer"
           onClose={() => setShowCountCash(false)}
           width={420}
+          style={{ transform: activePad === 'count' ? 'translateX(-180px)' : 'none', transition: 'transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)' }}
         >
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             <div className="cash-hint" style={{ background: t.bg3, color: t.text2 }}>
@@ -549,6 +559,7 @@ export const CashManagement = ({ addAudit, settings, t: tProp }) => {
         </Modal>
       )}
 
+      {/* Floating NumPad */}
       {activePad && (
         <NumberPadModal
           title={activePad === 'float' ? 'Opening Float' : activePad === 'drop' ? 'Cash Drop' : activePad === 'lift' ? 'Cash Lift' : 'Actual Cash'}
@@ -561,8 +572,19 @@ export const CashManagement = ({ addAudit, settings, t: tProp }) => {
             if (activePad === 'count') setCountDraft(val)
             setActivePad(null)
           }}
+          onChange={(val) => {
+            if (activePad === 'float') setOpenFloat(val)
+            if (activePad === 'drop') setDropAmt(val)
+            if (activePad === 'lift') setLiftAmt(val)
+            if (activePad === 'count') setCountDraft(val)
+          }}
           isDecimal={true}
           currencySym={sym}
+          position="center"
+          size="sm"
+          hideOverlay={true}
+          hidePreview={true}
+          offsetX={200}
         />
       )}
     </div>
