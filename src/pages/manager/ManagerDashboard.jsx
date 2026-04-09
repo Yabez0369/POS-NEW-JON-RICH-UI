@@ -20,7 +20,8 @@ export const ManagerDashboard = ({ orders = [], products = [], users = [], count
   const storeOrders = Array.isArray(orders) ? orders : []
   const todayRevenue = storeOrders.reduce((s, o) => s + (o.total ?? 0), 0)
   const staffCount = (users || []).filter(u => u.role === 'cashier').length
-  const lowStock = (products || []).filter(p => (p.stock ?? 0) < 10).length
+  const lowStockItems = (products || []).filter(p => (p.stock ?? 0) < 10)
+  const lowStockCount = lowStockItems.length
 
   const topP = {}
   storeOrders.forEach(o => {
@@ -167,9 +168,12 @@ export const ManagerDashboard = ({ orders = [], products = [], users = [], count
                 </tbody>
               </table>
             </div>
-          </div>
+      </div>
+      <button className="action-btn" style={{ background: 'var(--amber-text)', color: '#000', border: 'none' }}>
+        Acknowledge All
+      </button>
 
-          {/* File / Data Preview Panel */}
+      {/* File / Data Preview Panel */}
           <div style={{ background: 'var(--theme-bg)', borderRadius: 24, padding: 24, boxShadow: '0 4px 20px rgba(0,0,0,0.03)', border: '1px solid var(--theme-border)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
               <div style={{ fontSize: 20, fontWeight: 700, color: 'var(--theme-text)' }}>Data Imports & Exports</div>
@@ -209,14 +213,20 @@ export const ManagerDashboard = ({ orders = [], products = [], users = [], count
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                 {topProducts.map(([name, qty], i) => (
-                  <div key={name} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                    <div style={{ width: 32, height: 32, borderRadius: '50%', background: i === 0 ? '#FEF3C7' : 'var(--theme-bg-alt)', color: i === 0 ? '#D97706' : 'var(--theme-text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 800 }}>#{i + 1}</div>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--theme-text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{name}</div>
+                    <div key={name} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                      <div style={{ width: 32, height: 32, borderRadius: '50%', background: i === 0 ? '#FEF3C7' : 'var(--theme-bg-alt)', color: i === 0 ? '#D97706' : 'var(--theme-text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 800 }}>#{i + 1}</div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--theme-text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{name}</div>
+                      </div>
+                      <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--theme-text)' }}>{qty} xs</div>
                     </div>
-                    <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--theme-text)' }}>{qty} xs</div>
-                  </div>
                 ))}
+                <button className="restock-btn">Restock Now</button>
+              </div>
+            )}
+            {lowStockCount === 0 && (
+              <div style={{ gridColumn: 'span 2', padding: '30px 0', textAlign: 'center', color: 'var(--accent-green)', background: 'rgba(34, 197, 94, 0.05)', borderRadius: 20 }}>
+                Inventory systems nominal (100%)
               </div>
             )}
           </div>
@@ -260,7 +270,7 @@ export const ManagerDashboard = ({ orders = [], products = [], users = [], count
                   </div>
                 </div>
               ))}
-              {lowStock === 0 && (
+              {lowStockCount === 0 && (
                 <div style={{ padding: '20px', textAlign: 'center', color: '#10B981', fontSize: 15, fontWeight: 500 }}>All stock levels are optimal.</div>
               )}
             </div>
@@ -286,9 +296,9 @@ export const ManagerDashboard = ({ orders = [], products = [], users = [], count
               })}
             </div>
           </div>
-
         </div>
       </div>
     </div>
   )
 }
+

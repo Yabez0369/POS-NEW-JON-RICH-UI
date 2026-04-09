@@ -1,0 +1,315 @@
+/* Manager Dashboard Redesign - Action-Oriented Command Hub (Light Theme) */
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+
+:root {
+  --bg-deep: #ffffff;
+  --card-bg: #ffffff;
+  --card-border: rgba(0, 0, 0, 0.08);
+  --amber-glow: rgba(251, 191, 36, 0.2);
+  --amber-text: #b45309;
+  --text-main: #0f172a;
+  --text-dim: #64748b;
+  --accent-blue: #0284c7;
+  --accent-green: #059669;
+  --accent-red: #dc2626;
+  --accent-purple: #7c3aed;
+}
+
+.manager-hub-container {
+  min-height: 100vh;
+  background: var(--bg-deep);
+  color: var(--text-main);
+  padding: 40px;
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  overflow-x: hidden;
+}
+
+/* Floating Amber Glow Bar */
+.urgent-task-bar {
+  position: sticky;
+  top: 20px;
+  z-index: 1000;
+  background: #fffbeb;
+  backdrop-filter: blur(20px);
+  border: 1.5px solid #fde68a;
+  border-radius: 24px;
+  padding: 14px 28px;
+  margin-bottom: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 12px 40px -10px rgba(251, 191, 36, 0.3);
+  animation: float 4s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+.urgent-task-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.urgent-badge {
+  background: #f59e0b;
+  color: #fff;
+  padding: 5px 12px;
+  border-radius: 99px;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.urgent-text {
+  font-size: 14px;
+  font-weight: 700;
+  color: #92400e;
+}
+
+/* Bento Grid */
+.bento-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  grid-auto-rows: minmax(180px, auto);
+  gap: 32px;
+}
+
+.bento-card {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 36px;
+  padding: 32px;
+  transition: all 0.4s cubic-bezier(0.2, 0, 0, 1);
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.03);
+}
+
+.bento-card:hover {
+  transform: translateY(-8px) scale(1.01);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
+  border-color: rgba(0, 0, 0, 0.12);
+}
+
+/* Card Coloring based on content/usage */
+.bento-card[style*="rgba(56, 189, 248"] {
+  background: linear-gradient(135deg, #f0f9ff, #e0f2fe) !important;
+  border: 1px solid #bae6fd !important;
+}
+
+/* Transaction Stream Card */
+.bento-card.span-2-rows {
+  background: #ffffff;
+  border-left: 6px solid var(--accent-blue);
+}
+
+/* Connectivity Card */
+.bento-card:nth-child(2) {
+  background: #f0fdf4;
+  border: 1px solid #dcfce7;
+}
+
+/* Staff Card */
+.bento-card:nth-child(3) {
+  background: #f5f3ff;
+  border: 1px solid #ede9fe;
+}
+
+/* Inventory Card */
+.bento-card:nth-child(5) {
+  background: #fff1f1;
+  border: 1px solid #fee2e2;
+}
+
+/* Peak/Movers Cards */
+.bento-card:nth-child(6), .bento-card:nth-child(7) {
+  background: #f8fafc;
+  border: 1px solid #f1f5f9;
+}
+
+/* Bento Spans */
+.span-2-cols { grid-column: span 2; }
+.span-3-cols { grid-column: span 3; }
+.span-4-cols { grid-column: span 4; }
+.span-2-rows { grid-row: span 2; }
+
+/* Transaction Stream */
+.stream-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 20px;
+}
+
+.stream-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px;
+  background: #f8fafc;
+  border-radius: 20px;
+  border: 1px solid transparent;
+  transition: all 0.2s;
+}
+
+.stream-row:hover {
+  background: #f1f5f9;
+  border-color: #e2e8f0;
+}
+
+.stream-info {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.status-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.stream-actions {
+  display: flex;
+  gap: 8px;
+  opacity: 0;
+  transform: translateX(10px);
+  transition: all 0.3s;
+}
+
+.stream-row:hover .stream-actions {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.action-btn {
+  padding: 8px 16px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  color: var(--text-main);
+  transition: all 0.2s;
+}
+
+.action-btn:hover {
+  background: var(--text-main);
+  color: #fff;
+  border-color: var(--text-main);
+}
+
+/* Inventory Action Cards */
+.inventory-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.inventory-card {
+  background: #ffffff;
+  border: 1px solid #fee2e2;
+  padding: 20px;
+  border-radius: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.05);
+}
+
+.restock-btn {
+  background: var(--accent-red);
+  color: white;
+  border: none;
+  padding: 12px;
+  border-radius: 14px;
+  font-weight: 800;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.restock-btn:hover {
+  transform: scale(1.02);
+  box-shadow: 0 8px 20px -5px rgba(239, 68, 68, 0.4);
+}
+
+/* Connectivity Pulse */
+.pulse-indicator {
+  position: relative;
+  width: 12px;
+  height: 12px;
+}
+
+.pulse-dot {
+  width: 12px;
+  height: 12px;
+  background: var(--accent-green);
+  border-radius: 50%;
+  position: absolute;
+}
+
+.pulse-ring {
+  width: 100%;
+  height: 100%;
+  background: var(--accent-green);
+  border-radius: 50%;
+  position: absolute;
+  animation: pulse-ring 2s infinite;
+}
+
+@keyframes pulse-ring {
+  0% { transform: scale(1); opacity: 0.6; }
+  100% { transform: scale(3); opacity: 0; }
+}
+
+/* Typography & Stats */
+.stat-title {
+  color: var(--text-dim);
+  font-size: 14px;
+  font-weight: 700;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.stat-value {
+  font-size: 36px;
+  font-weight: 900;
+  color: var(--text-main);
+  letter-spacing: -0.03em;
+}
+
+.stat-trend {
+  font-size: 13px;
+  padding: 5px 10px;
+  border-radius: 10px;
+  margin-top: 12px;
+  display: inline-block;
+  font-weight: 700;
+}
+
+.trend-up { 
+  background: #dcfce7; 
+  color: #166534; 
+}
+
+/* Custom Scrollbar for Bento */
+.bento-card::-webkit-scrollbar { width: 6px; }
+.bento-card::-webkit-scrollbar-thumb { background: rgba(0, 0, 0, 0.05); border-radius: 10px; }
+
+@media (max-width: 1200px) {
+  .bento-grid { grid-template-columns: repeat(2, 1fr); }
+  .span-3-cols, .span-4-cols { grid-column: span 2; }
+}
+
+@media (max-width: 768px) {
+  .bento-grid { grid-template-columns: 1fr; }
+  .span-2-cols, .span-3-cols, .span-4-cols { grid-column: span 1; }
+  .manager-hub-container { padding: 20px; }
+}
