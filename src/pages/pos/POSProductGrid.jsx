@@ -105,7 +105,7 @@ export function POSProductGrid({
         overflowY: 'auto',
         padding: '20px',
         display: 'grid',
-        gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
+        gridTemplateColumns: 'repeat(4, minmax(0, 1fr))',
         gap: 14,
         alignContent: 'start',
       }} className="pos-products-grid">
@@ -230,8 +230,11 @@ export function POSProductGrid({
       <style>{`
         @keyframes fadeIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
 
-        /* Match POSFlow grid: 3 per row (responsive fallback) */
-        @media (max-width: 1100px) {
+        /* Responsive grid adjustments */
+        @media (max-width: 1300px) {
+          .pos-products-grid { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; }
+        }
+        @media (max-width: 1000px) {
           .pos-products-grid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
         }
         @media (max-width: 640px) {

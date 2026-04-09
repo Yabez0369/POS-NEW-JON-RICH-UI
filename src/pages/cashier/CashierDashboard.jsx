@@ -9,7 +9,7 @@ import {
 import dayjs from 'dayjs'
 import './CashierDashboard.css'
 
-export function CashierDashboard() {
+export function CashierDashboard({ orders = [], settings }) {
   const { logout, currentUser } = useAuth()
   const navigate = useNavigate()
   const [now, setNow] = useState(dayjs())
@@ -55,7 +55,7 @@ export function CashierDashboard() {
             </div>
           </div>
 
-          <button className="logout-btn-icon" onClick={logout}>
+          <button className="logout-btn-icon" onClick={() => navigate('/app/cash')}>
             <LogOut size={24} strokeWidth={3} />
           </button>
         </div>
@@ -107,12 +107,12 @@ export function CashierDashboard() {
               <span className="premium-text-sub">Swaps & credits</span>
             </div>
 
-            <div className="premium-card card-mini" onClick={() => navigate('/app/orders')}>
+            <div className="premium-card card-mini" onClick={() => navigate('/app/history')}>
               <div className="icon-box-mini" style={{ background: '#ECFDF5', color: '#10B981' }}>
                 <HistoryIcon size={28} strokeWidth={3} />
               </div>
               <span className="premium-text-title">History</span>
-              <span className="premium-text-sub">Session logs</span>
+              <span className="premium-text-sub">Recent sales</span>
             </div>
 
             <div className="premium-card card-mini" onClick={() => navigate('/app/cash')}>

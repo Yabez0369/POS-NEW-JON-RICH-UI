@@ -56,13 +56,16 @@ export const UserManagement = ({ users = [], setUsers, venues = [], t }) => {
   }, [allVenues])
 
   const filteredUsers = useMemo(() => {
-    return users.filter(u => {
-      const matchSearch = (u.name || '').toLowerCase().includes(searchTerm.toLowerCase()) || 
-                          (u.email || '').toLowerCase().includes(searchTerm.toLowerCase())
-      const matchRole = filterRole === 'all' || u.role === filterRole
-      const matchSite = filterSite === 'all' || u.site_id === filterSite
-      return matchSearch && matchRole && matchSite
-    })
+    const rolePriority = { admin: 0, manager: 1, cashier: 2, staff: 3, customer: 4 }
+    return users
+      .filter(u => {
+        const matchSearch = (u.name || '').toLowerCase().includes(searchTerm.toLowerCase()) || 
+                            (u.email || '').toLowerCase().includes(searchTerm.toLowerCase())
+        const matchRole = filterRole === 'all' || u.role === filterRole
+        const matchSite = filterSite === 'all' || u.site_id === filterSite
+        return matchSearch && matchRole && matchSite
+      })
+      .sort((a, b) => (rolePriority[a.role] ?? 99) - (rolePriority[b.role] ?? 99))
   }, [users, searchTerm, filterRole, filterSite])
 
   const stats = useMemo(() => {
@@ -242,56 +245,93 @@ export const UserManagement = ({ users = [], setUsers, venues = [], t }) => {
     <div style={{ 
       display: 'flex', 
       flexDirection: 'column', 
-      gap: 32,
+      gap: 24,
       background: '#f8fafc',
       margin: '-24px',
       padding: '32px',
       minHeight: 'calc(100vh - 64px)',
-      animation: 'fadeIn 0.5s ease-out' 
+      fontFamily: 'system-ui, -apple-system, sans-serif'
     }}>
+      {/* Header Section */}
       <div style={{ 
         display: 'flex', 
         justifyContent: 'space-between', 
-        alignItems: 'center', 
-        flexWrap: 'wrap', 
-        gap: 16,
-        position: 'sticky',
-        top: -32,
-        zIndex: 50,
-        background: '#f8fafc',
-        padding: '16px 0',
-        margin: '-16px 0 0 0'
+        alignItems: 'flex-end',
+        marginBottom: 8
       }}>
         <div>
-          <h1 style={{ fontSize: 24, fontWeight: 900, color: '#0f172a', margin: 0, letterSpacing: '-0.03em', display: 'flex', alignItems: 'center', gap: 12 }}>
-            <Users size={24} color="#4f46e5" strokeWidth={2.5} /> User Management
-          </h1>
+          <div style={{ fontSize: 11, fontWeight: 900, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '1.2px', marginBottom: 4 }}>Access Control</div>
+          <h1 style={{ fontSize: 32, fontWeight: 900, color: '#0f172a', margin: 0, letterSpacing: '-0.04em' }}>User Management</h1>
         </div>
-        <div style={{ display: 'flex', gap: 12 }}>
-          <Btn t={t} onClick={() => setShowInvite(true)} style={{ 
-            borderRadius: 14, 
-            background: 'linear-gradient(135deg, #4f46e5, #4338ca)', 
-            color: '#fff', 
-            padding: '8px 20px', 
-            fontWeight: 900,
-            fontSize: 13,
-            display: 'flex',
-            alignItems: 'center',
-            gap: 10,
-            boxShadow: '0 8px 20px rgba(79, 70, 229, 0.25)',
-            border: 'none'
-          }}>
-            <UserPlus size={18} /> Add User
-          </Btn>
-        </div>
+        <Btn onClick={() => setShowInvite(true)} style={{ 
+          borderRadius: 12, 
+          background: '#4f46e5', 
+          color: '#fff', 
+          padding: '12px 24px', 
+          fontWeight: 800,
+          fontSize: 14,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 10,
+          boxShadow: '0 10px 20px rgba(79, 70, 229, 0.2)',
+          border: 'none',
+          cursor: 'pointer'
+        }}>
+          <UserPlus size={18} /> Add User
+        </Btn>
       </div>
 
+      {/* Stats Cards */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20 }}>
+        {[
+          { label: 'Total Users', value: stats.total, sub: '+2 this month', icon: <Users size={20} />, color: '#4f46e5', trend: true },
+          { label: 'Full access', value: stats.admin, sub: 'Admin level', icon: <Shield size={20} />, color: '#ef4444' },
+          { label: 'Online', value: stats.active, sub: `${stats.activePct}% online`, icon: <Activity size={20} />, color: '#22c55e' },
+          { label: 'Locations', value: allSitesList.length, sub: 'All functional sites', icon: <MapPin size={20} />, color: '#825cf6' }
+        ].map((stat, i) => (
+          <div key={i} style={{ 
+            background: '#fff', 
+            borderRadius: 20, 
+            padding: 24, 
+            boxShadow: '0 4px 12px rgba(0,0,0,0.03)',
+            border: '1px solid #f1f5f9',
+            position: 'relative',
+            overflow: 'hidden'
+          }}>
+            <div style={{ 
+              width: 40, height: 40, borderRadius: 12, 
+              background: `${stat.color}15`, color: stat.color,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              marginBottom: 16
+            }}>
+              {stat.icon}
+            </div>
+            <div style={{ fontSize: 24, fontWeight: 900, color: '#0f172a', marginBottom: 4 }}>{stat.value}</div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: '#64748b' }}>{stat.label}</div>
+            <div style={{ fontSize: 11, fontWeight: 700, color: '#94a3b8', marginTop: 8 }}>{stat.sub}</div>
+            {stat.trend && (
+              <div style={{ position: 'absolute', top: 24, right: 24, color: '#22c55e' }}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="m7 17 10-10M7 7h10v10"/></svg>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
 
-      {/* Search and Filters */}
-      <div style={{ background: '#fff', borderRadius: 24, padding: '20px 28px', boxShadow: '0 4px 20px rgba(0,0,0,0.05)', display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap' }}>
+      {/* Modern Filter Bar */}
+      <div style={{ 
+        background: '#fff', 
+        borderRadius: 24, 
+        padding: '12px', 
+        display: 'flex', 
+        gap: 12, 
+        alignItems: 'center',
+        boxShadow: '0 4px 12px rgba(0,0,0,0.02)',
+        border: '1px solid #f1f5f9'
+      }}>
         {/* Search */}
-        <div style={{ position: 'relative', flex: 1, minWidth: 220 }}>
-          <Search size={16} style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', pointerEvents: 'none' }} />
+        <div style={{ position: 'relative', flex: 1, minWidth: 200 }}>
+          <Search size={18} style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
           <input 
             type="text" 
             placeholder="Search by name or email..." 
@@ -299,179 +339,205 @@ export const UserManagement = ({ users = [], setUsers, venues = [], t }) => {
             onChange={(e) => setSearchTerm(e.target.value)}
             style={{ 
               width: '100%', 
-              padding: '11px 14px 11px 42px', 
-              borderRadius: 14, 
-              border: '1.5px solid #e2e8f0', 
+              padding: '14px 16px 14px 48px', 
+              borderRadius: 16, 
+              border: 'none', 
               background: '#f8fafc', 
               color: '#0f172a',
-              fontSize: 13,
+              fontSize: 14,
+              fontWeight: 600,
               outline: 'none',
-              fontWeight: 700,
-              transition: 'border-color 0.2s',
               boxSizing: 'border-box'
             }}
-            onFocus={e => e.target.style.borderColor = '#4f46e5'}
-            onBlur={e => e.target.style.borderColor = '#e2e8f0'}
           />
         </div>
 
-        {/* Role Dropdown */}
-        <div style={{ position: 'relative' }}>
-          <select
-            value={filterRole}
-            onChange={e => setFilterRole(e.target.value)}
-            style={{
-              padding: '11px 40px 11px 14px',
-              borderRadius: 14,
-              border: `1.5px solid ${filterRole !== 'all' ? '#4f46e5' : '#e2e8f0'}`,
-              background: filterRole !== 'all' ? '#eef2ff' : '#f8fafc',
-              color: filterRole !== 'all' ? '#4f46e5' : '#0f172a',
-              fontSize: 13,
-              fontWeight: 800,
-              outline: 'none',
-              cursor: 'pointer',
-              appearance: 'none',
-              backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2.5'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`,
-              backgroundRepeat: 'no-repeat',
-              backgroundPosition: 'right 12px center',
-              minWidth: 140
-            }}
-          >
-            <option value="all">All Roles</option>
-            <option value="admin">Admins</option>
-            <option value="manager">Managers</option>
-            <option value="cashier">Cashiers</option>
-            <option value="staff">Staff</option>
-          </select>
+        {/* Role Pills */}
+        <div style={{ display: 'flex', background: '#f8fafc', padding: 4, borderRadius: 14, gap: 4 }}>
+          {['all', 'admin', 'manager', 'cashier', 'staff'].map(role => (
+            <button
+              key={role}
+              onClick={() => setFilterRole(role)}
+              style={{
+                padding: '10px 18px',
+                borderRadius: 11,
+                border: 'none',
+                background: filterRole === role ? '#fff' : 'transparent',
+                color: filterRole === role ? '#4f46e5' : '#64748b',
+                fontSize: 13,
+                fontWeight: 800,
+                cursor: 'pointer',
+                boxShadow: filterRole === role ? '0 4px 12px rgba(0,0,0,0.06)' : 'none',
+                transition: 'all 0.2s',
+                textTransform: 'capitalize'
+              }}
+            >
+              {role === 'all' ? 'All' : role}
+            </button>
+          ))}
         </div>
 
         {/* Site Dropdown */}
-        <div style={{ position: 'relative' }}>
-          <select
-            value={filterSite}
-            onChange={e => setFilterSite(e.target.value)}
-            style={{
-              padding: '11px 40px 11px 14px',
-              borderRadius: 14,
-              border: `1.5px solid ${filterSite !== 'all' ? '#22c55e' : '#e2e8f0'}`,
-              background: filterSite !== 'all' ? '#f0fdf4' : '#f8fafc',
-              color: filterSite !== 'all' ? '#16a34a' : '#0f172a',
-              fontSize: 13,
-              fontWeight: 800,
-              outline: 'none',
-              cursor: 'pointer',
-              appearance: 'none',
-              backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2.5'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`,
-              backgroundRepeat: 'no-repeat',
-              backgroundPosition: 'right 12px center',
-              minWidth: 160
-            }}
-          >
-            <option value="all">All Sites</option>
-            {allVenues.map(v =>
-              (v.sites || []).map(s => (
-                <option key={s.id} value={s.id}>{s.name} — {v.name}</option>
-              ))
-            )}
-          </select>
+        <select
+          value={filterSite}
+          onChange={e => setFilterSite(e.target.value)}
+          style={{
+            padding: '14px 20px',
+            borderRadius: 16,
+            border: 'none',
+            background: '#f8fafc',
+            color: '#0f172a',
+            fontSize: 14,
+            fontWeight: 800,
+            outline: 'none',
+            cursor: 'pointer',
+            minWidth: 140
+          }}
+        >
+          <option value="all">All Sites</option>
+          {allVenues.map(v =>
+            (v.sites || []).map(s => (
+              <option key={s.id} value={s.id}>{s.name}</option>
+            ))
+          )}
+        </select>
+      </div>
+
+      {/* Directory Listing Header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 4px 0' }}>
+        <div style={{ fontSize: 11, fontWeight: 900, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '1.2px' }}>
+          Directory Listing ({filteredUsers.length})
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: '#94a3b8', fontWeight: 700 }}>
+          <Filter size={14} /> Sorted by role
         </div>
       </div>
 
-      {/* Directory Listing Count */}
-      <div style={{ fontSize: 11, fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: -16 }}>
-        Directory Listing ({filteredUsers.length})
-      </div>
-
-      {/* User Cards List */}
+      {/* User List Containers */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         {filteredUsers.length === 0 && (
-          <div style={{ background: '#fff', borderRadius: 20, padding: 60, textAlign: 'center', boxShadow: '0 4px 20px rgba(0,0,0,0.04)' }}>
-            <Users size={40} strokeWidth={1} style={{ marginBottom: 12, opacity: 0.3, color: '#94a3b8' }} />
-            <div style={{ fontSize: 15, fontWeight: 700, color: '#64748b' }}>No users found</div>
+          <div style={{ background: '#fff', borderRadius: 24, padding: 80, textAlign: 'center', border: '1px solid #f1f5f9' }}>
+            <Users size={48} color="#cbd5e1" style={{ marginBottom: 16 }} />
+            <div style={{ fontSize: 18, fontWeight: 800, color: '#64748b' }}>No specialists found</div>
+            <div style={{ fontSize: 14, color: '#94a3b8', marginTop: 4 }}>Try adjusting your search or filters</div>
           </div>
         )}
+        
         {filteredUsers.map((u, idx) => {
           const initials = u.name?.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() || 'U'
-          const roleColor = { admin: '#ef4444', manager: '#f59e0b', cashier: '#22c55e', staff: '#3b82f6', customer: '#8b5cf6' }[u.role] || '#64748b'
+          const roleColor = { admin: '#f43f5e', manager: '#f59e0b', cashier: '#10b981', staff: '#6366f1', customer: '#8b5cf6' }[u.role] || '#64748b'
           const avatarSrc = (u.avatar?.length > 4 && (u.avatar?.startsWith('http') || u.avatar?.startsWith('data:'))) ? u.avatar : null
+          const site = allSitesList.find(s => s.id === u.site_id)
+          
           return (
             <div
               key={u.id}
               onClick={() => setDetailUser(u)}
               style={{
-                background: u.active ? '#fff' : '#f8fafc',
+                background: '#fff',
                 borderRadius: 20,
-                padding: '18px 24px',
+                padding: '16px 24px',
                 display: 'flex',
                 alignItems: 'center',
-                gap: 16,
-                boxShadow: '0 2px 12px rgba(0,0,0,0.05)',
-                border: '1px solid',
-                borderColor: u.active ? '#f1f5f9' : '#e2e8f0',
+                gap: 20,
+                boxShadow: '0 2px 8px rgba(0,0,0,0.02)',
+                border: '1px solid #f1f5f9',
                 cursor: 'pointer',
-                transition: 'all 0.2s ease',
-                opacity: u.active ? 1 : 0.7,
-                animation: `slideInUp 0.3s ease-out ${idx * 0.04}s both`
+                transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                animation: `slideInUp 0.4s ease-out ${idx * 0.05}s both`
               }}
-              onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 8px 30px rgba(79,70,229,0.12)'; e.currentTarget.style.borderColor = '#c7d2fe'; e.currentTarget.style.transform = 'translateY(-1px)' }}
-              onMouseLeave={e => { e.currentTarget.style.boxShadow = '0 2px 12px rgba(0,0,0,0.05)'; e.currentTarget.style.borderColor = u.active ? '#f1f5f9' : '#e2e8f0'; e.currentTarget.style.transform = 'translateY(0)' }}
+              onMouseEnter={e => {
+                e.currentTarget.style.transform = 'translateY(-2px)'
+                e.currentTarget.style.boxShadow = '0 12px 24px rgba(0,0,0,0.06)'
+                e.currentTarget.style.borderColor = '#e2e8f0'
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.transform = 'translateY(0)'
+                e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.02)'
+                e.currentTarget.style.borderColor = '#f1f5f9'
+              }}
             >
-              {/* Avatar */}
-              <div style={{ position: 'relative', flexShrink: 0 }}>
+              {/* Avatar with status */}
+              <div style={{ position: 'relative' }}>
                 <div style={{
-                  width: 52, height: 52, borderRadius: 16, overflow: 'hidden',
-                  background: `${roleColor}15`, border: `2px solid ${roleColor}30`,
+                  width: 52, height: 52, borderRadius: 14, overflow: 'hidden',
+                  background: `${roleColor}15`, color: roleColor,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 18, fontWeight: 900, color: roleColor
+                  fontSize: 18, fontWeight: 900, border: `2px solid ${roleColor}20`
                 }}>
-                  {avatarSrc
-                    ? <img src={avatarSrc} alt={u.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                    : initials
-                  }
+                  {avatarSrc ? <img src={avatarSrc} alt={u.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : initials}
                 </div>
-                {/* Online dot */}
                 <div style={{
-                  position: 'absolute', bottom: 2, right: 2,
-                  width: 12, height: 12, borderRadius: '50%',
-                  background: u.active ? '#22c55e' : '#cbd5e1',
-                  border: '2px solid #fff',
-                  boxShadow: u.active ? '0 0 6px rgba(34,197,94,0.5)' : 'none'
+                  position: 'absolute', bottom: -2, right: -2,
+                  width: 14, height: 14, borderRadius: '50%',
+                  background: u.active ? '#10b981' : '#cbd5e1',
+                  border: '3px solid #fff',
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
                 }} />
               </div>
 
-              {/* Name & Email */}
+              {/* User Identity & Info */}
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 15, fontWeight: 800, color: '#0f172a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{u.name}</div>
-                <div style={{ fontSize: 12, color: '#94a3b8', fontWeight: 600, marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{u.email}</div>
-              </div>
-
-              {/* Role badge + Site + Status */}
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4, flexShrink: 0 }}>
-                <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                  <div style={{ fontSize: 16, fontWeight: 800, color: '#0f172a' }}>{u.name}</div>
                   <div style={{
                     padding: '3px 8px', borderRadius: 6,
-                    background: `${roleColor}15`, color: roleColor,
-                    fontSize: 10, fontWeight: 900, textTransform: 'uppercase', letterSpacing: 0.5
+                    background: `${roleColor}10`, color: roleColor,
+                    fontSize: 10, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.4px'
                   }}>
-                    {u.role || 'user'}
+                    {u.role || 'Member'}
                   </div>
                 </div>
-                {(() => {
-                  const site = allSitesList.find(s => s.id === u.site_id)
-                  return site ? (
-                    <div style={{ fontSize: 10, fontWeight: 700, color: '#64748b', display: 'flex', alignItems: 'center', gap: 4 }}>
-                      <MapPin size={10} color="#94a3b8" /> {site.name}
-                    </div>
-                  ) : null
-                })()}
-                <div style={{ fontSize: 10, fontWeight: 700, color: u.active ? '#22c55e' : '#94a3b8' }}>
-                  {u.active ? 'Active' : 'Inactive'}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: '#64748b', fontWeight: 600 }}>
+                    <Mail size={14} color="#94a3b8" /> {u.email}
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: '#64748b', fontWeight: 600 }}>
+                    <MapPin size={14} color="#94a3b8" /> {site ? site.name : 'All Sites'}
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: '#64748b', fontWeight: 600 }}>
+                    <Activity size={14} color="#94a3b8" /> 2 min ago
+                  </div>
                 </div>
               </div>
 
-              {/* Chevron */}
-              <div style={{ color: '#cbd5e1', flexShrink: 0 }}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+              {/* Actions & Status Badge */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
+                <div style={{
+                  padding: '6px 12px', borderRadius: 10,
+                  background: u.active ? '#ecfdf5' : '#f1f5f9',
+                  color: u.active ? '#059669' : '#64748b',
+                  fontSize: 12, fontWeight: 800,
+                  display: 'flex', alignItems: 'center', gap: 6
+                }}>
+                  <div style={{ width: 6, height: 6, borderRadius: '50%', background: 'currentColor' }} />
+                  {u.active ? 'Active' : 'Inactive'}
+                </div>
+
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button style={{ 
+                    padding: 10, borderRadius: 12, border: 'none', background: '#f8fafc', color: '#64748b', cursor: 'pointer',
+                    transition: 'all 0.2s'
+                  }} onMouseEnter={e => e.currentTarget.style.background = '#f1f5f9'}>
+                    <Activity size={18} />
+                  </button>
+                  <button onClick={(e) => { e.stopPropagation(); setSelectedUser(u); avatarInputRef.current?.click(); }} style={{ 
+                    padding: 10, borderRadius: 12, border: 'none', background: '#f8fafc', color: '#64748b', cursor: 'pointer',
+                    transition: 'all 0.2s'
+                  }} onMouseEnter={e => e.currentTarget.style.background = '#f1f5f9'}>
+                    <Shield size={18} />
+                  </button>
+                  <button onClick={(e) => { e.stopPropagation(); handleDeleteUser(u); }} style={{ 
+                    padding: 10, borderRadius: 12, border: 'none', background: '#fef2f2', color: '#ef4444', cursor: 'pointer',
+                    transition: 'all 0.2s'
+                  }} onMouseEnter={e => e.currentTarget.style.background = '#fee2e2'}>
+                    <Trash2 size={18} />
+                  </button>
+                </div>
+
+                <div style={{ color: '#cbd5e1' }}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+                </div>
               </div>
             </div>
           )

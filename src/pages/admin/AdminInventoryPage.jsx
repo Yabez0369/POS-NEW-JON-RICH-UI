@@ -1,17 +1,18 @@
 import { useState, useMemo, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Card, Table, Badge, Btn, Select, Modal, Input } from '@/components/ui'
+import { Modal, Input, Btn } from '@/components/ui'
 import { fmt } from '@/lib/utils'
-import { Package, Search, AlertCircle, CheckCircle, ArrowRight, TrendingDown, LayoutGrid, List, Edit2, Camera, X, Trash2 } from 'lucide-react'
-import { BarcodeScanner, ImgWithFallback } from '@/components/shared'
+import { 
+  Search, AlertTriangle, Eye, Trash2, Package, Layers, 
+  ArrowUpRight, Sparkles, Filter, MoreHorizontal, Edit3 
+} from 'lucide-react'
+import { ImgWithFallback } from '@/components/shared'
 import { PRODUCT_IMAGES } from '@/lib/seed-data'
 
 export const AdminInventoryPage = ({ products = [], settings, t }) => {
   const navigate = useNavigate()
   const [searchTerm, setSearchTerm] = useState('')
-  const [filterCategory, setFilterCategory] = useState('all')
-  const [viewMode, setViewMode] = useState('list') // list, grid
-  const [showScanner, setShowScanner] = useState(false)
+  const [filterCategory, setFilterCategory] = useState('All')
   const [showProductModal, setShowProductModal] = useState(false)
   const [editingProduct, setEditingProduct] = useState(null)
 
@@ -22,308 +23,416 @@ export const AdminInventoryPage = ({ products = [], settings, t }) => {
 
   const handleDeleteProduct = (product) => {
     if (window.confirm(`Are you sure you want to delete ${product.name}?`)) {
-      // In a real app, this would call an API/Supabase
       console.log('Deleting product:', product.id)
     }
   }
-  
-  // Hardware/USB Scanner Support
-  const barcodeBuffer = useRef('')
-  const lastKeyTime = useRef(0)
-
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return
-      
-      const now = Date.now()
-      if (now - lastKeyTime.current > 80) barcodeBuffer.current = ''
-      lastKeyTime.current = now
-
-      if (e.key === 'Enter' && barcodeBuffer.current.length > 2) {
-        setSearchTerm(barcodeBuffer.current)
-        barcodeBuffer.current = ''
-        return
-      }
-      if (e.key.length === 1) barcodeBuffer.current += e.key
-    }
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [])
 
   const categories = useMemo(() => {
-    const cats = new Set(products.map(p => p.category))
-    return ['all', ...Array.from(cats)]
+    const cats = new Set((products || []).map(p => p.category).filter(Boolean))
+    return ['All', ...Array.from(cats)]
   }, [products])
 
   const filteredProducts = useMemo(() => {
-    return products.filter(p => {
-      const matchSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    return (products || []).filter(p => {
+      const matchSearch = (p.name || '').toLowerCase().includes(searchTerm.toLowerCase()) || 
                           (p.sku || '').toLowerCase().includes(searchTerm.toLowerCase())
-      const matchCat = filterCategory === 'all' || p.category === filterCategory
+      const matchCat = filterCategory === 'All' || p.category === filterCategory
       return matchSearch && matchCat
     })
   }, [products, searchTerm, filterCategory])
 
   const stockStats = useMemo(() => {
-    const low = products.filter(p => (p.stock || 0) < 10).length
-    const out = products.filter(p => (p.stock || 0) === 0).length
-    const total = products.length
-    return { low, out, total }
+    const low = (products || []).filter(p => (p.stock || 0) < 10 && (p.stock || 0) > 0).length
+    const out = (products || []).filter(p => (p.stock || 0) <= 0).length
+    const totalStock = (products || []).reduce((acc, p) => acc + (p.stock || 0), 0)
+    const total = (products || []).length
+    return { low, out, totalStock, total }
   }, [products])
 
-  const getStockColor = (stock) => {
-    if (stock <= 0) return t.red
-    if (stock < 10) return t.yellow
-    return t.green
-  }
-
-  const getStockLabel = (stock) => {
-    if (stock <= 0) return 'OUT OF STOCK'
-    if (stock < 10) return 'LOW STOCK'
-    return 'HEALTHY'
-  }
-
   return (
-    <div style={{ 
-      display: 'flex', 
-      flexDirection: 'column', 
-      gap: 32,
-      background: '#f8fafc',
-      margin: '-24px',
-      padding: '32px',
-      minHeight: 'calc(100vh - 64px)',
-      animation: 'fadeIn 0.5s ease-out' 
-    }}>
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'space-between', 
-        alignItems: 'center', 
-        flexWrap: 'wrap', 
-        gap: 16,
-        position: 'sticky',
-        top: -32,
-        zIndex: 50,
-        background: '#f8fafc',
-        padding: '16px 0',
-        margin: '-16px 0 0 0'
-      }}>
-        <div>
-          <h1 style={{ fontSize: 24, fontWeight: 900, color: '#0f172a', margin: 0, letterSpacing: '-0.03em', display: 'flex', alignItems: 'center', gap: 12 }}>
-            <Package size={24} color="#4f46e5" strokeWidth={2.5} /> Inventory Hub
-          </h1>
+    <div className="admin-inventory-root">
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap');
+
+        .admin-inventory-root {
+          --primary: #6366F1;
+          --primary-dark: #4F46E5;
+          --bg-main: #F4F7FE;
+          --text-deep: #0F172A;
+          --text-muted: #64748B;
+          --glass-bg: rgba(255, 255, 255, 0.7);
+          --glass-border: rgba(226, 232, 240, 0.8);
+          
+          background: var(--bg-main);
+          min-height: calc(100vh - 64px);
+          margin: -24px;
+          padding: 32px 40px;
+          font-family: 'Outfit', sans-serif;
+          color: var(--text-deep);
+        }
+
+        /* Header Section */
+        .page-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-end;
+          margin-bottom: 40px;
+        }
+        .header-title-box h1 {
+          font-size: 36px;
+          font-weight: 900;
+          letter-spacing: -0.04em;
+          margin: 0;
+          color: var(--text-deep);
+        }
+        .header-breadcrumb {
+          font-size: 11px;
+          font-weight: 800;
+          color: var(--text-muted);
+          text-transform: uppercase;
+          letter-spacing: 2px;
+          margin-bottom: 8px;
+        }
+
+        /* KPI Bento Grid */
+        .kpi-grid {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 24px;
+          margin-bottom: 40px;
+        }
+        .kpi-card {
+          border-radius: 32px;
+          padding: 32px;
+          position: relative;
+          overflow: hidden;
+          display: flex;
+          flex-direction: column;
+          justify-content: space-between;
+          min-height: 180px;
+          transition: transform 0.3s;
+          box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.05);
+        }
+        .kpi-card:hover { transform: translateY(-4px); }
+
+        .kpi-card.primary { background: linear-gradient(135deg, #1E1B4B 0%, #312E81 50%, #4338CA 100%); color: white; }
+        .kpi-card.warning { background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%); color: white; }
+        .kpi-card.success { background: linear-gradient(135deg, #10B981 0%, #059669 100%); color: white; }
+
+        .kpi-label { font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; opacity: 0.8; margin-bottom: 6px; }
+        .kpi-value { font-size: 52px; font-weight: 900; letter-spacing: -0.04em; line-height: 1; }
+        .kpi-footer { display: flex; align-items: center; gap: 8px; margin-top: 16px; font-size: 14px; font-weight: 700; }
+        .kpi-icon-overlay { position: absolute; top: -10px; right: -10px; opacity: 0.1; }
+
+        /* Toolbar */
+        .inventory-toolbar {
+          background: white;
+          border-radius: 24px;
+          padding: 16px 24px;
+          display: flex;
+          align-items: center;
+          gap: 16px;
+          margin-bottom: 32px;
+          border: 1px solid var(--glass-border);
+          box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.05);
+        }
+        .search-box {
+          position: relative;
+          flex: 1;
+        }
+        .search-box input {
+          width: 100%;
+          background: #F8FAFC;
+          border: 1px solid #E2E8F0;
+          border-radius: 16px;
+          padding: 14px 16px 14px 48px;
+          font-size: 14px;
+          font-weight: 600;
+          outline: none;
+          transition: 0.2s;
+        }
+        .search-box input:focus { border-color: var(--primary); background: white; box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1); }
+        .search-icon { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: var(--text-muted); }
+
+        .filter-group { display: flex; gap: 8px; background: #F1F5F9; padding: 6px; border-radius: 16px; overflow-x: auto; }
+        .filter-btn {
+          border: none;
+          padding: 8px 16px;
+          border-radius: 12px;
+          font-size: 13px;
+          font-weight: 700;
+          cursor: pointer;
+          transition: all 0.2s;
+          white-space: nowrap;
+          background: transparent;
+          color: var(--text-muted);
+        }
+        .filter-btn.active { background: white; color: var(--text-deep); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); }
+
+        .add-product-btn {
+          background: var(--primary);
+          color: white;
+          border: none;
+          padding: 14px 24px;
+          border-radius: 16px;
+          font-size: 14px;
+          font-weight: 800;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          transition: all 0.2s;
+          box-shadow: 0 10px 20px -5px rgba(99, 102, 241, 0.3);
+        }
+        .add-product-btn:hover { transform: translateY(-2px); background: var(--primary-dark); }
+
+        /* Product List */
+        .inventory-list {
+          display: grid;
+          grid-template-columns: 1fr;
+          gap: 16px;
+        }
+        .product-ticket {
+          background: white;
+          border-radius: 24px;
+          padding: 20px 32px;
+          display: flex;
+          align-items: center;
+          gap: 32px;
+          border: 1px solid var(--glass-border);
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          position: relative;
+        }
+        .product-ticket:hover {
+          transform: scale(1.005);
+          border-color: #C7D2FE;
+          box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.08);
+        }
+        
+        .product-img {
+          width: 80px; height: 80px;
+          border-radius: 20px;
+          background: #F8FAFC;
+          padding: 12px;
+          flex-shrink: 0;
+          display: flex; align-items: center; justify-content: center;
+          border: 1px solid #F1F5F9;
+        }
+        .product-img img { width: 100%; height: 100%; object-fit: contain; }
+
+        .product-info { flex: 1; }
+        .product-name { font-size: 18px; font-weight: 800; margin: 0 0 4px 0; color: var(--text-deep); }
+        .product-meta { display: flex; align-items: center; gap: 12px; }
+        .product-sku { font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700; color: var(--text-muted); background: #F1F5F9; padding: 2px 8px; border-radius: 6px; }
+        
+        .product-category-pill {
+          padding: 4px 12px; border-radius: 99px; font-size: 11px; font-weight: 800; background: #EEF2FF; color: var(--primary);
+          display: inline-flex; align-items: center; gap: 6px;
+        }
+
+        .product-stats {
+          display: flex;
+          align-items: center;
+          gap: 40px;
+          margin: 0 40px;
+        }
+        .stat-col { display: flex; flex-direction: column; align-items: center; min-width: 80px; }
+        .stat-label { font-size: 10px; font-weight: 800; letter-spacing: 1px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px; }
+        .stat-value { font-size: 18px; font-weight: 900; color: var(--text-deep); }
+        .stat-value.price { color: var(--primary); }
+        
+        .stock-indicator {
+          display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 800;
+          padding: 6px 16px; border-radius: 12px;
+        }
+        .stock-indicator.high { background: #DCFCE7; color: #166534; }
+        .stock-indicator.low { background: #FEF3C7; color: #92400E; }
+        .stock-indicator.out { background: #FEE2E2; color: #991B1B; }
+
+        .action-hub {
+          display: flex;
+          gap: 12px;
+        }
+        .action-circular-btn {
+          width: 44px; height: 44px; border-radius: 14px; border: 1px solid #E2E8F0;
+          display: flex; align-items: center; justify-content: center; background: white;
+          color: var(--text-muted); cursor: pointer; transition: 0.2s;
+        }
+        .action-circular-btn:hover { border-color: var(--primary); color: var(--primary); background: #EEF2FF; }
+        .action-circular-btn.delete:hover { border-color: #EF4444; color: #EF4444; background: #FEF2F2; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade { animation: fadeIn 0.5s ease-out forwards; }
+      `}</style>
+
+      {/* Header */}
+      <div className="page-header animate-fade">
+        <div className="header-title-box">
+          <div className="header-breadcrumb">Catalog Management</div>
+          <h1>System Inventory Hub</h1>
         </div>
-        <div style={{ display: 'flex', gap: 12 }}>
-          <Btn t={t} variant="outline" style={{ borderRadius: 12, padding: '8px 16px', fontSize: 13, fontWeight: 800, display: 'flex', gap: 8, alignItems: 'center', background: '#fff', border: '1px solid #e2e8f0', color: '#475569' }} onClick={() => setShowScanner(true)}>
-             <Camera size={16} /> Scan
-          </Btn>
-          <Btn t={t} style={{ borderRadius: 12, padding: '8px 20px', fontSize: 13, fontWeight: 900, background: 'linear-gradient(135deg, #4f46e5, #4338ca)', color: '#fff', boxShadow: '0 8px 20px rgba(79, 70, 229, 0.25)', border: 'none' }} onClick={() => handleEditProduct(null)}>
-            + New Product
-          </Btn>
-        </div>
+        <button className="add-product-btn" onClick={() => handleEditProduct(null)}>
+          <Plus size={18} strokeWidth={3} /> Add New Asset
+        </button>
       </div>
 
-      {/* Stock Health Summary */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24 }}>
-        <div style={{ background: '#fff', borderRadius: 24, padding: '24px 32px', boxShadow: '0 12px 40px rgba(0,0,0,0.06)', display: 'flex', alignItems: 'center', gap: 20, position: 'relative', overflow: 'hidden' }}>
-          <div style={{ position: 'absolute', top: 0, left: 0, width: 6, height: '100%', background: '#ef4444' }} />
-          <div style={{ width: 56, height: 56, borderRadius: 16, background: '#fef2f2', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ef4444' }}>
-            <AlertCircle size={28} />
-          </div>
+      {/* KPI Section */}
+      <div className="kpi-grid">
+        <div className="kpi-card primary animate-fade" style={{ animationDelay: '0.1s' }}>
+          <Package size={80} className="kpi-icon-overlay" />
           <div>
-            <div style={{ fontSize: 32, fontWeight: 900, color: '#0f172a', letterSpacing: '-0.02em' }}>{stockStats.out}</div>
-            <div style={{ fontSize: 12, color: '#64748b', fontWeight: 800, textTransform: 'uppercase', letterSpacing: 1 }}>OUT OF STOCK</div>
+            <div className="kpi-label">Active Listing</div>
+            <div className="kpi-value">{stockStats.total}</div>
+          </div>
+          <div className="kpi-footer">
+            <Sparkles size={16} /> Fully Cataloged Nodes
           </div>
         </div>
-        <div style={{ background: '#fff', borderRadius: 24, padding: '24px 32px', boxShadow: '0 12px 40px rgba(0,0,0,0.06)', display: 'flex', alignItems: 'center', gap: 20, position: 'relative', overflow: 'hidden' }}>
-          <div style={{ position: 'absolute', top: 0, left: 0, width: 6, height: '100%', background: '#f59e0b' }} />
-          <div style={{ width: 56, height: 56, borderRadius: 16, background: '#fffbeb', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#f59e0b' }}>
-            <TrendingDown size={28} />
-          </div>
+        
+        <div className="kpi-card success animate-fade" style={{ animationDelay: '0.2s' }}>
+          <Layers size={80} className="kpi-icon-overlay" />
           <div>
-            <div style={{ fontSize: 32, fontWeight: 900, color: '#0f172a', letterSpacing: '-0.02em' }}>{stockStats.low}</div>
-            <div style={{ fontSize: 12, color: '#64748b', fontWeight: 800, textTransform: 'uppercase', letterSpacing: 1 }}>LOW STOCK RISK</div>
+            <div className="kpi-label">Aggregated Stock</div>
+            <div className="kpi-value">{stockStats.totalStock.toLocaleString()}</div>
+          </div>
+          <div className="kpi-footer">
+            <ArrowUpRight size={16} /> Real-time Warehouse Sync
           </div>
         </div>
-        <div style={{ background: '#fff', borderRadius: 24, padding: '24px 32px', boxShadow: '0 12px 40px rgba(0,0,0,0.06)', display: 'flex', alignItems: 'center', gap: 20, position: 'relative', overflow: 'hidden' }}>
-          <div style={{ position: 'absolute', top: 0, left: 0, width: 6, height: '100%', background: '#22c55e' }} />
-          <div style={{ width: 56, height: 56, borderRadius: 16, background: '#f0fdf4', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#22c55e' }}>
-            <CheckCircle size={28} />
-          </div>
+
+        <div className="kpi-card warning animate-fade" style={{ animationDelay: '0.3s' }}>
+          <AlertTriangle size={80} className="kpi-icon-overlay" />
           <div>
-            <div style={{ fontSize: 32, fontWeight: 900, color: '#0f172a', letterSpacing: '-0.02em' }}>{stockStats.total - stockStats.low - stockStats.out}</div>
-            <div style={{ fontSize: 12, color: '#64748b', fontWeight: 800, textTransform: 'uppercase', letterSpacing: 1 }}>HEALTHY STOCK</div>
+            <div className="kpi-label">Risk Inventory</div>
+            <div className="kpi-value">{stockStats.low + stockStats.out}</div>
+          </div>
+          <div className="kpi-footer">
+            {stockStats.out} Depleted · {stockStats.low} Critical
           </div>
         </div>
       </div>
 
       {/* Toolbar */}
-      <div style={{ background: '#fff', borderRadius: 24, padding: '24px 32px', boxShadow: '0 12px 40px rgba(0,0,0,0.06)', display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap' }}>
-        <div style={{ position: 'relative', flex: 1, minWidth: 280 }}>
-          <Search size={18} style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
+      <div className="inventory-toolbar animate-fade" style={{ animationDelay: '0.4s' }}>
+        <div className="search-box">
+          <Search size={18} className="search-icon" strokeWidth={2.5} />
           <input 
             type="text" 
-            placeholder="Search Products or SKU..." 
+            placeholder="Search by name, SKU or brand..." 
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            style={{ 
-              width: '100%', 
-              padding: '14px 16px 14px 48px', 
-              borderRadius: 16, 
-              border: '1px solid #e2e8f0', 
-              background: '#f8fafc', 
-              color: '#0f172a',
-              fontSize: 14,
-              fontWeight: 600,
-              outline: 'none',
-              transition: 'all 0.2s'
-            }}
           />
         </div>
-        
-        <Select 
-          t={t} 
-          label="" 
-          value={filterCategory} 
-          onChange={setFilterCategory} 
-          options={categories.map(c => ({ label: c === 'all' ? 'All Categories' : c, value: c }))} 
-          style={{ width: 180, height: 48 }}
-        />
 
-        <div style={{ display: 'flex', background: '#f1f5f9', padding: 6, borderRadius: 14, gap: 6 }}>
-           <Btn t={t} variant="ghost" onClick={() => setViewMode('list')} style={{ width: 40, height: 40, padding: 0, borderRadius: 10, background: viewMode === 'list' ? '#fff' : 'transparent', color: viewMode === 'list' ? '#4f46e5' : '#64748b', boxShadow: viewMode === 'list' ? '0 4px 10px rgba(0,0,0,0.08)' : 'none' }}>
-             <List size={20} />
-           </Btn>
-           <Btn t={t} variant="ghost" onClick={() => setViewMode('grid')} style={{ width: 40, height: 40, padding: 0, borderRadius: 10, background: viewMode === 'grid' ? '#fff' : 'transparent', color: viewMode === 'grid' ? '#4f46e5' : '#64748b', boxShadow: viewMode === 'grid' ? '0 4px 10px rgba(0,0,0,0.08)' : 'none' }}>
-             <LayoutGrid size={20} />
-           </Btn>
+        <div className="filter-group">
+          {categories.map(cat => (
+            <button 
+              key={cat}
+              className={`filter-btn ${filterCategory === cat ? 'active' : ''}`}
+              onClick={() => setFilterCategory(cat)}
+            >
+              {cat}
+            </button>
+          ))}
         </div>
       </div>
 
-      {/* Products List/Grid */}
-      {viewMode === 'list' ? (
-        <div style={{ background: '#fff', borderRadius: 24, boxShadow: '0 12px 40px rgba(0,0,0,0.06)', overflow: 'hidden' }}>
-          <Table 
-            t={t}
-            cols={['Product', 'SKU', 'Category', 'Price', 'Stock Level', 'Status', 'Action']}
-            rows={filteredProducts.map(p => [
-              <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-                <div style={{ width: 48, height: 48, borderRadius: 12, overflow: 'hidden', background: '#f8fafc', flexShrink: 0, border: '1px solid #e2e8f0' }}>
-                  <ImgWithFallback src={p.image || PRODUCT_IMAGES[p.name]} alt={p.name} emoji={p.emoji} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                </div>
-                <span style={{ fontWeight: 800, fontSize: 14, color: '#0f172a' }}>{p.name}</span>
-              </div>,
-              <span style={{ fontSize: 13, color: '#64748b', fontWeight: 700 }}>{p.sku}</span>,
-              <Badge t={t} text={p.category?.toUpperCase()} color="blue" style={{ borderRadius: 8, fontWeight: 800, fontSize: 11 }} />,
-              <span style={{ fontWeight: 900, color: '#0f172a', fontSize: 15 }}>{fmt(p.price, settings?.sym || '£')}</span>,
-              <div style={{ width: 140 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 6, fontWeight: 700, color: '#475569' }}>
-                  <span>{p.stock} units</span>
-                </div>
-                <div style={{ height: 8, background: '#f1f5f9', borderRadius: 4, overflow: 'hidden' }}>
-                  <div style={{ height: '100%', width: `${Math.min((p.stock / 200) * 100, 100)}%`, background: getStockColor(p.stock), borderRadius: 4 }} />
-                </div>
-              </div>,
-              <Badge t={t} text={getStockLabel(p.stock)} color={p.stock <= 0 ? 'red' : p.stock < 10 ? 'yellow' : 'green'} style={{ fontWeight: 900, borderRadius: 8 }} />,
-              <div style={{ display: 'flex', gap: 6 }}>
-                <Btn t={t} variant="ghost" style={{ width: 36, height: 36, padding: 0, color: '#4f46e5', background: '#eef2ff', borderRadius: 8 }} onClick={() => handleEditProduct(p)}>
-                  <Edit2 size={16} />
-                </Btn>
-                <Btn t={t} variant="ghost" style={{ width: 36, height: 36, padding: 0, color: '#ef4444', background: '#fef2f2', borderRadius: 8 }} onClick={() => handleDeleteProduct(p)}>
-                  <Trash2 size={16} />
-                </Btn>
+      {/* Product List */}
+      <div className="inventory-list">
+        {filteredProducts.map((p, idx) => {
+          const isLow = (p.stock || 0) < 10 && (p.stock || 0) > 0;
+          const isOut = (p.stock || 0) <= 0;
+          
+          return (
+            <div key={p.id} className="product-ticket animate-fade" style={{ animationDelay: `${0.5 + idx * 0.05}s` }}>
+              <div className="product-img">
+                <ImgWithFallback src={p.image || PRODUCT_IMAGES[p.name]} alt={p.name} emoji={p.emoji || '📦'} />
               </div>
-            ])}
-          />
-        </div>
-      ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 24 }}>
-          {filteredProducts.map(p => (
-            <div key={p.id} style={{ background: '#fff', borderRadius: 28, boxShadow: '0 12px 40px rgba(0,0,0,0.06)', display: 'flex', flexDirection: 'column', gap: 0, position: 'relative', overflow: 'hidden' }}>
-              <div style={{ height: 180, width: '100%', background: '#f8fafc', position: 'relative' }}>
-                <ImgWithFallback src={p.image || PRODUCT_IMAGES[p.name]} alt={p.name} emoji={p.emoji} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                <div style={{ position: 'absolute', top: 12, right: 12 }}>
-                  <Badge t={t} text={getStockLabel(p.stock)} color={p.stock <= 0 ? 'red' : p.stock < 10 ? 'yellow' : 'green'} style={{ fontWeight: 900, borderRadius: 10, boxShadow: '0 4px 10px rgba(0,0,0,0.1)' }} />
+
+              <div className="product-info">
+                <h3 className="product-name">{p.name}</h3>
+                <div className="product-meta">
+                  <span className="product-sku">{p.sku || 'NO-SKU'}</span>
+                  <span className="product-category-pill">{p.category || 'General'}</span>
                 </div>
               </div>
-              <div style={{ padding: 24 }}>
-                <div style={{ marginBottom: 16 }}>
-                  <div style={{ fontWeight: 900, fontSize: 16, color: '#0f172a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', letterSpacing: '-0.01em' }}>{p.name}</div>
-                  <div style={{ fontSize: 13, color: '#94a3b8', fontWeight: 600, marginTop: 2 }}>{p.category}</div>
+
+              <div className="product-stats">
+                <div className="stat-col">
+                  <span className="stat-label">Market Value</span>
+                  <span className="stat-value price">{fmt(p.price, settings?.sym)}</span>
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
-                  <div>
-                    <div style={{ fontSize: 11, color: '#94a3b8', fontWeight: 800, textTransform: 'uppercase', letterSpacing: 0.5 }}>STOCK LEVEL</div>
-                    <div style={{ fontSize: 20, fontWeight: 900, color: getStockColor(p.stock), marginTop: 2 }}>{p.stock} <span style={{ fontSize: 13, fontWeight: 700, color: '#94a3b8' }}>units</span></div>
-                  </div>
-                  <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontSize: 20, fontWeight: 900, color: '#0f172a' }}>{fmt(p.price, settings?.sym || '£')}</div>
-                    <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
-                      <Btn t={t} variant="ghost" style={{ width: 32, height: 32, padding: 0, color: '#4f46e5', background: '#eef2ff', borderRadius: 8 }} onClick={() => handleEditProduct(p)}>
-                        <Edit2 size={14} />
-                      </Btn>
-                      <Btn t={t} variant="ghost" style={{ width: 32, height: 32, padding: 0, color: '#ef4444', background: '#fef2f2', borderRadius: 8 }} onClick={() => handleDeleteProduct(p)}>
-                        <Trash2 size={14} />
-                      </Btn>
-                    </div>
+                <div className="stat-col">
+                  <span className="stat-label">Stock Unit</span>
+                  <div className={`stock-indicator ${isOut ? 'out' : isLow ? 'low' : 'high'}`}>
+                    {isOut ? 'Depleted' : isLow ? 'Low Stock' : 'Optimized'}
+                    <span style={{ marginLeft: 4 }}>({p.stock || 0})</span>
                   </div>
                 </div>
+              </div>
+
+              <div className="action-hub">
+                <button className="action-circular-btn" title="View Intelligence">
+                  <Eye size={18} strokeWidth={2.5} />
+                </button>
+                <button className="action-circular-btn" onClick={() => handleEditProduct(p)} title="Modify Node">
+                  <Edit3 size={18} strokeWidth={2.5} />
+                </button>
+                <button className="action-circular-btn delete" onClick={() => handleDeleteProduct(p)} title="Purge Record">
+                  <Trash2 size={18} strokeWidth={2.5} />
+                </button>
               </div>
             </div>
-          ))}
-        </div>
-      )}
-      {/* Barcode Scanner Modal */}
-      {showScanner && (
-        <Modal t={t} title="Hardware/Camera Scanner" onClose={() => setShowScanner(false)}>
-           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-              <p style={{ fontSize: 13, color: t.text3, margin: 0 }}>Position a product barcode in the frame or use your USB handheld scanner.</p>
-              <BarcodeScanner 
-                t={t} 
-                active={showScanner} 
-                onDetected={(code) => {
-                  setSearchTerm(code)
-                  setShowScanner(false)
-                }} 
-              />
-              <Btn t={t} variant="ghost" style={{ width: '100%', color: t.red }} onClick={() => setShowScanner(false)}>
-                 <X size={16} /> Cancel Scanning
-              </Btn>
-           </div>
-        </Modal>
-      )}
+          )
+        })}
 
-      {/* Product Add/Edit Modal */}
+        {filteredProducts.length === 0 && (
+          <div style={{ padding: '80px 0', textAlign: 'center', color: 'var(--text-muted)' }}>
+            <div className="animate-fade">
+              <Package size={48} style={{ opacity: 0.2, marginBottom: 16 }} />
+              <p style={{ fontSize: 18, fontWeight: 700 }}>No matching assets discovered.</p>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Modal Redesign Integration */}
       {showProductModal && (
-        <Modal t={t} title={editingProduct ? "Edit Product" : "Add New Product"} onClose={() => setShowProductModal(false)}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-            <Input t={t} label="Product Name" defaultValue={editingProduct?.name || ''} placeholder="e.g. Premium Scarf" />
+        <Modal t={t} title={editingProduct ? "Revise Asset Parameters" : "Initialize New Asset"} onClose={() => setShowProductModal(false)}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 20, padding: '10px 0' }}>
+            <Input t={t} label="Asset Identity" defaultValue={editingProduct?.name || ''} placeholder="e.g. Quantum X1 Scarf" />
             
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-              <Input t={t} label="SKU" defaultValue={editingProduct?.sku || ''} placeholder="e.g. SC-002" />
-              <Input t={t} label="Category" defaultValue={editingProduct?.category || ''} placeholder="e.g. Apparel" />
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+              <Input t={t} label="Reference SKU" defaultValue={editingProduct?.sku || ''} placeholder="SKU-XXXX" />
+              <Input t={t} label="Classification" defaultValue={editingProduct?.category || ''} placeholder="e.g. Apparel" />
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-              <Input t={t} type="number" label="Price" defaultValue={editingProduct?.price || ''} placeholder="0.00" />
-              <Input t={t} type="number" label="Stock Level" defaultValue={editingProduct?.stock || 0} placeholder="0" />
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+              <Input t={t} type="number" label="Unit Valuation" defaultValue={editingProduct?.price || ''} placeholder="0.00" />
+              <Input t={t} type="number" label="Current Availability" defaultValue={editingProduct?.stock || 0} placeholder="0" />
             </div>
 
-            <div style={{ display: 'flex', gap: 12, marginTop: 8 }}>
-              <Btn t={t} variant="outline" style={{ flex: 1 }} onClick={() => setShowProductModal(false)}>Cancel</Btn>
+            <div style={{ display: 'flex', gap: 16, marginTop: 12 }}>
+              <Btn t={t} variant="outline" style={{ flex: 1, borderRadius: 16, height: 50, fontWeight: 700 }} onClick={() => setShowProductModal(false)}>Abort</Btn>
               <Btn 
                 t={t} 
-                style={{ flex: 1, background: t.accent, color: '#fff' }} 
-                onClick={() => {
-                  // Note: Form values are not bound to state for this demo.
-                  setShowProductModal(false)
-                }}
+                style={{ flex: 1, background: 'var(--primary)', color: '#fff', borderRadius: 16, height: 50, fontWeight: 800, border: 'none' }} 
+                onClick={() => setShowProductModal(false)}
               >
-                {editingProduct ? "Save Changes" : "Create Product"}
+                {editingProduct ? "Update Record" : "Commit Asset"}
               </Btn>
             </div>
           </div>
         </Modal>
       )}
+
     </div>
   )
 }
+
+const Plus = ({ size = 24, ...props }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+    <line x1="12" y1="5" x2="12" y2="19"></line>
+    <line x1="5" y1="12" x2="19" y2="12"></line>
+  </svg>
+)

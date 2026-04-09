@@ -31,12 +31,9 @@ export async function createOrderWithItems({ siteId, counterId, cashierId, custo
   const isMock = (id) => {
     if (!id) return true;
     const s = String(id).toLowerCase();
-    // Match common mock prefixes (0000, 1111, aaaa, BBBB, etc.) or temp IDs
-    return s.startsWith('0000') || s.startsWith('1111') || s.startsWith('2222') ||
-      s.startsWith('c0000') || s.startsWith('b0000') || s.startsWith('a0000') ||
-      s.startsWith('aaaa') || s.startsWith('bbbb') || s.startsWith('cccc') ||
-      s.startsWith('dddd') || s.startsWith('eeee') || s.startsWith('ffff') ||
-      s.startsWith('temp-');
+    // Only block strings that are clearly NOT UUIDs or are our specific local-only mock prefixes.
+    // We allow b000..., c000... etc because they are valid UUIDs used in our seed data.
+    return s.startsWith('temp-') || (!s.includes('-') && s.length < 30);
   };
 
   const orderPayload = {

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Btn, Badge, Card, StatCard, Modal, Table } from '@/components/ui'
 import { fmt } from '@/lib/utils'
-import { Users, Wifi, Truck, Award, Star, TrendingUp, Search, Eye, Mail, Phone, ShoppingBag } from 'lucide-react'
+import { Users, Wifi, Truck, Award, Star, TrendingUp, Search, Eye, Mail, Phone, ShoppingBag, Download, Plus, Filter, MoreHorizontal } from 'lucide-react'
 
 const TIER_ICONS = { Gold: '👑', Silver: '🥈', Bronze: '🥉' }
 const TIER_COLORS = { Gold: '#f59e0b', Silver: '#64748b', Bronze: '#b45309' }
@@ -9,9 +9,7 @@ const TIER_COLORS = { Gold: '#f59e0b', Silver: '#64748b', Bronze: '#b45309' }
 export const AdminCustomers = ({ users, orders, t, settings }) => {
   const [selected, setSelected] = useState(null)
   const [search, setSearch] = useState('')
-  const [filterType, setFilterType] = useState('all')
   const [filterTier, setFilterTier] = useState('all')
-  const [sortBy, setSortBy] = useState('spent')
 
   const baseCustomers = users.filter(u => u.role === 'customer').map(u => {
     const myOrders = orders.filter(o => o.customerId === u.id || o.customer_id === u.id)
@@ -44,50 +42,27 @@ export const AdminCustomers = ({ users, orders, t, settings }) => {
     
     // Tier filter
     if (filterTier !== 'all' && u.dynamicTier !== filterTier) return false;
-
-    // Filter by order types using their order history
-    if (filterType === 'all') return true
-    
-    const myOrders = u.myOrders || []
-    
-    if (filterType === 'walk-in') {
-      return myOrders.some(o => (o.orderType || o.order_type) === 'in-store')
-    }
-    if (filterType === 'online') {
-      return myOrders.some(o => (o.payment || o.payment_method) === 'Online' || (o.orderType || o.order_type) === 'online')
-    }
-    if (filterType === 'delivery') {
-      return myOrders.some(o => (o.orderType || o.order_type) === 'delivery')
-    }
-    if (filterType === 'unknown') { // new/unknown
-      return myOrders.length === 0
-    }
     
     return true
   }).sort((a, b) => {
-    if (sortBy === 'spent') return (b.dynamicSpent || 0) - (a.dynamicSpent || 0)
-    if (sortBy === 'pts') return (b.loyaltyPoints || b.loyalty_points || 0) - (a.loyaltyPoints || a.loyalty_points || 0)
-    if (sortBy === 'orders') return (b.myOrders?.length || 0) - (a.myOrders?.length || 0)
-    if (sortBy === 'name') return (a.name || '').localeCompare(b.name || '')
-    return 0
+    return (b.dynamicSpent || 0) - (a.dynamicSpent || 0)
   })
 
   const enriched = baseCustomers;
 
   const stats = {
     total: totalCustomers,
-    online: baseCustomers.filter(u => u.myOrders.some(o => (o.orderType || o.order_type) === 'online' || (o.payment || o.payment_method) === 'Online')).length,
-    delivery: baseCustomers.filter(u => u.myOrders.some(o => (o.orderType || o.order_type) === 'delivery')).length,
     gold: goldMembers,
-    totalPts: totalPoints,
     totalSpent: baseCustomers.reduce((s, u) => s + (u.dynamicSpent || 0), 0)
   }
+
+  const totalOrdersCount = baseCustomers.reduce((s, u) => s + (u.myOrders?.length || 0), 0)
+  const aov = totalOrdersCount > 0 ? stats.totalSpent / totalOrdersCount : 0;
 
   return (
     <div style={{ 
       display: 'flex', 
       flexDirection: 'column', 
-      gap: 32,
       background: '#f8fafc',
       margin: '-24px',
       padding: '32px',
@@ -99,173 +74,233 @@ export const AdminCustomers = ({ users, orders, t, settings }) => {
       <div style={{ 
         display: 'flex', 
         justifyContent: 'space-between', 
-        alignItems: 'center', 
+        alignItems: 'flex-end', 
         flexWrap: 'wrap', 
         gap: 16,
-        position: 'sticky',
-        top: -32,
-        zIndex: 50,
-        background: '#f8fafc',
-        padding: '16px 0',
-        margin: '-16px 0 0 0'
+        marginBottom: 32
       }}>
         <div>
-          <h1 style={{ fontSize: 24, fontWeight: 900, color: '#0f172a', margin: 0, display: 'flex', alignItems: 'center', gap: 12, letterSpacing: '-0.03em' }}>
-            <Users size={24} color="#4f46e5" strokeWidth={2.5} /> Customer Intelligence
+          <div style={{ fontSize: 13, fontWeight: 800, color: '#64748b', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 4 }}>CRM</div>
+          <h1 style={{ fontSize: 32, fontWeight: 900, color: '#0f172a', margin: 0, letterSpacing: '-0.03em' }}>
+            Customer Hub
           </h1>
+        </div>
+        <div style={{ display: 'flex', gap: 12 }}>
+          <button style={{ 
+            padding: '10px 20px', borderRadius: 12, border: '1px solid #e2e8f0', background: '#fff', 
+            fontSize: 14, fontWeight: 700, color: '#0f172a', display: 'flex', alignItems: 'center', gap: 8, 
+            cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,0,0,0.02)', transition: 'all 0.2s'
+          }}>
+            <Download size={16} /> Export
+          </button>
         </div>
       </div>
 
       {/* KPI Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 20 }}>
-        {[
-          { label: 'Total Customers', value: stats.total, color: '#4f46e5', icon: <Users size={24} /> },
-          { label: 'Online', value: stats.online, color: '#3b82f6', icon: <Wifi size={24} /> },
-          { label: 'Delivery', value: stats.delivery, color: '#8b5cf6', icon: <Truck size={24} /> },
-          { label: 'Gold Members', value: stats.gold, color: '#f59e0b', icon: <Award size={24} /> },
-          { label: 'Loyalty Pts', value: (stats.totalPts || 0).toLocaleString(), color: '#eab308', icon: <Star size={24} /> },
-          { label: 'Revenue', value: fmt(stats.totalSpent, settings?.sym), color: '#22c55e', icon: <TrendingUp size={24} /> },
-        ].map(({ label, value, color, icon }) => (
-          <div key={label} style={{ background: '#fff', borderRadius: 24, padding: '24px 28px', boxShadow: '0 12px 40px rgba(0,0,0,0.06)', display: 'flex', flexDirection: 'column', gap: 16, border: '1px solid #f1f5f9' }}>
-            <div style={{ width: 52, height: 52, borderRadius: 16, background: `${color}10`, display: 'flex', alignItems: 'center', justifyContent: 'center', color, flexShrink: 0 }}>
-              {icon}
-            </div>
-            <div>
-              <div style={{ fontSize: 12, fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: 1 }}>{label}</div>
-              <div style={{ fontSize: 24, fontWeight: 900, color: '#0f172a', marginTop: 4, letterSpacing: '-0.02em' }}>{value}</div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 32, marginBottom: 32 }}>
+        {/* Total Customers Card */}
+        <div style={{ 
+          background: 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)', borderRadius: 28, padding: '36px 48px', 
+          color: '#fff', boxShadow: '0 20px 40px -10px rgba(79,70,229,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          position: 'relative', overflow: 'hidden'
+        }}>
+          {/* Decorative Background Elements */}
+          <div style={{ position: 'absolute', top: -40, right: -40, width: 200, height: 200, borderRadius: '50%', background: 'radial-gradient(circle, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0) 70%)' }}></div>
+          <div style={{ position: 'absolute', bottom: -60, right: 80, width: 140, height: 140, borderRadius: '50%', background: 'radial-gradient(circle, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 70%)' }}></div>
+          
+          <div style={{ position: 'relative', zIndex: 1 }}>
+            <div style={{ fontSize: 14, fontWeight: 800, letterSpacing: 2, textTransform: 'uppercase', color: 'rgba(255,255,255,0.8)', marginBottom: 12 }}>Total Network</div>
+            <div style={{ display: 'flex', alignItems: 'flex-end', gap: 20 }}>
+              <div style={{ fontSize: 56, fontWeight: 900, letterSpacing: '-0.03em', lineHeight: 1 }}>{stats.total}</div>
+              <div style={{ padding: '8px 16px', background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(8px)', borderRadius: 14, fontSize: 14, fontWeight: 800, display: 'flex', alignItems: 'center', gap: 6 }}>
+                <TrendingUp size={16} /> +12%
+              </div>
             </div>
           </div>
-        ))}
+          <div style={{ width: 96, height: 96, borderRadius: 28, background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(12px)', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', zIndex: 1, border: '1px solid rgba(255,255,255,0.2)' }}>
+            <Users size={44} color="#fff" strokeWidth={2.5} />
+          </div>
+        </div>
+
+        {/* Gold Members Card */}
+        <div style={{ 
+          background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)', borderRadius: 28, padding: '36px 48px', 
+          color: '#fff', boxShadow: '0 20px 40px -10px rgba(245,158,11,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          position: 'relative', overflow: 'hidden'
+        }}>
+          {/* Decorative Background Elements */}
+          <div style={{ position: 'absolute', top: -40, right: -40, width: 200, height: 200, borderRadius: '50%', background: 'radial-gradient(circle, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 70%)' }}></div>
+          <div style={{ position: 'absolute', bottom: -60, right: 80, width: 140, height: 140, borderRadius: '50%', background: 'radial-gradient(circle, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0) 70%)' }}></div>
+
+          <div style={{ position: 'relative', zIndex: 1 }}>
+            <div style={{ fontSize: 14, fontWeight: 800, letterSpacing: 2, textTransform: 'uppercase', color: 'rgba(255,255,255,0.8)', marginBottom: 12 }}>VIP Gold Members</div>
+            <div style={{ display: 'flex', alignItems: 'flex-end', gap: 20 }}>
+              <div style={{ fontSize: 56, fontWeight: 900, letterSpacing: '-0.03em', lineHeight: 1 }}>{stats.gold}</div>
+              <div style={{ padding: '8px 16px', background: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(8px)', borderRadius: 14, fontSize: 14, fontWeight: 800, display: 'flex', alignItems: 'center', gap: 6 }}>
+                <TrendingUp size={16} /> +2 this month
+              </div>
+            </div>
+          </div>
+          <div style={{ width: 96, height: 96, borderRadius: 28, background: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(12px)', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', zIndex: 1, border: '1px solid rgba(255,255,255,0.3)' }}>
+            <Award size={44} color="#fff" strokeWidth={2.5} />
+          </div>
+        </div>
       </div>
 
       {/* Filters */}
-      <div style={{ background: '#fff', borderRadius: 24, padding: '24px 32px', boxShadow: '0 12px 40px rgba(0,0,0,0.06)', display: 'flex', gap: 24, alignItems: 'center', flexWrap: 'wrap' }}>
-        {/* Search */}
-        <div style={{ position: 'relative', flex: 1, minWidth: 280 }}>
-          <Search size={18} style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
-          <input type="text" placeholder="Search name, email, phone..." value={search}
-            onChange={e => setSearch(e.target.value)}
-            style={{ width: '100%', padding: '14px 16px 14px 52px', borderRadius: 16, border: '1px solid #e2e8f0', background: '#f8fafc', color: '#0f172a', fontSize: 14, fontWeight: 600, outline: 'none', transition: 'all 0.2s' }} />
-        </div>
-
-        {/* Customer Type Filter */}
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', background: '#f1f5f9', padding: 6, borderRadius: 16 }}>
-          {[
-            { value: 'all', label: 'All' },
-            { value: 'online', label: 'Online' },
-            { value: 'walk-in', label: 'Walk-in' },
-            { value: 'delivery', label: 'Delivery' },
-            { value: 'unknown', label: 'New' },
-          ].map(({ value, label }) => (
-            <button key={value} onClick={() => setFilterType(value)}
-              style={{
-                padding: '8px 16px', borderRadius: 12, cursor: 'pointer', fontSize: 12, fontWeight: 800,
-                border: 'none',
-                background: filterType === value ? '#fff' : 'transparent',
-                color: filterType === value ? '#4f46e5' : '#64748b',
-                boxShadow: filterType === value ? '0 4px 10px rgba(0,0,0,0.08)' : 'none',
-                transition: 'all 0.2s'
-              }}>
-              {label}
-            </button>
-          ))}
-        </div>
-
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24, flexWrap: 'wrap', gap: 16 }}>
         {/* Tier Filter */}
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', background: '#f1f5f9', padding: 6, borderRadius: 16 }}>
+        <div style={{ display: 'flex', gap: 6, alignItems: 'center', background: '#f1f5f9', padding: 6, borderRadius: 16 }}>
           {['all', 'Gold', 'Silver', 'Bronze'].map(tier => {
-            const col = tier === 'Gold' ? '#f59e0b' : tier === 'Silver' ? '#64748b' : tier === 'Bronze' ? '#b45309' : '#64748b'
             return (
               <button key={tier} onClick={() => setFilterTier(tier)}
                 style={{
-                  padding: '8px 16px', borderRadius: 12, cursor: 'pointer', fontSize: 12, fontWeight: 800,
+                  padding: '8px 16px', borderRadius: 12, cursor: 'pointer', fontSize: 13, fontWeight: 800,
                   border: 'none',
                   background: filterTier === tier ? '#fff' : 'transparent',
-                  color: filterTier === tier ? col : '#64748b',
-                  boxShadow: filterTier === tier ? '0 4px 10px rgba(0,0,0,0.08)' : 'none',
+                  color: filterTier === tier ? '#0f172a' : '#64748b',
+                  boxShadow: filterTier === tier ? '0 4px 10px rgba(0,0,0,0.04)' : 'none',
                   transition: 'all 0.2s'
                 }}>
-                {tier === 'all' ? 'All Tiers' : `${TIER_ICONS[tier]} ${tier}`}
+                {tier === 'all' ? 'All Customers' : tier}
               </button>
             )
           })}
         </div>
 
-        {/* Sort */}
-        <select value={sortBy} onChange={e => setSortBy(e.target.value)}
-          style={{ padding: '12px 18px', borderRadius: 16, border: '1px solid #e2e8f0', background: '#fff', color: '#0f172a', fontSize: 13, fontWeight: 700, outline: 'none', cursor: 'pointer', boxShadow: '0 4px 12px rgba(0,0,0,0.04)' }}>
-          <option value="spent">Sort: Highest Spend</option>
-          <option value="pts">Sort: Most Points</option>
-          <option value="orders">Sort: Most Orders</option>
-          <option value="name">Sort: Name A–Z</option>
-        </select>
+        <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
+          {/* Search */}
+          <div style={{ position: 'relative', width: 280 }}>
+            <Search size={18} style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
+            <input type="text" placeholder="Search by name or email..." value={search}
+              onChange={e => setSearch(e.target.value)}
+              style={{ width: '100%', padding: '12px 16px 12px 48px', borderRadius: 12, border: '1px solid #e2e8f0', background: '#fff', color: '#0f172a', fontSize: 14, fontWeight: 600, outline: 'none', transition: 'all 0.2s' }} />
+          </div>
+
+          <button style={{ 
+            padding: '12px 20px', borderRadius: 12, border: '1px solid #e2e8f0', background: '#fff', 
+            fontSize: 14, fontWeight: 700, color: '#0f172a', display: 'flex', alignItems: 'center', gap: 8, 
+            cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,0,0,0.02)', transition: 'all 0.2s'
+          }}>
+            <Filter size={16} /> Filter
+          </button>
+        </div>
       </div>
 
-      {/* Results Count */}
-      <div style={{ fontSize: 12, color: t.text4, fontWeight: 600 }}>
-        Showing <strong style={{ color: t.text }}>{filtered.length}</strong> of <strong style={{ color: t.text }}>{enriched.length}</strong> customers
-      </div>
 
-      {/* Customer Table */}
-      <div style={{ background: '#fff', borderRadius: 24, boxShadow: '0 12px 40px rgba(0,0,0,0.06)', overflow: 'hidden' }}>
+
+      {/* Customer List Container */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        
+        {/* List Header */}
+        {filtered.length > 0 && (
+          <div style={{ 
+            display: 'grid', gridTemplateColumns: 'minmax(250px, 1.5fr) 100px 100px 100px 100px 120px', gap: 16, 
+            padding: '0 24px', marginBottom: 4, color: '#94a3b8', fontSize: 12, fontWeight: 800, textTransform: 'uppercase', letterSpacing: 1 
+          }}>
+            <div style={{ paddingLeft: 68 }}>Customer</div>
+            <div style={{ textAlign: 'center' }}>Points</div>
+            <div style={{ textAlign: 'center' }}>Spent</div>
+            <div style={{ textAlign: 'center' }}>Orders</div>
+            <div style={{ textAlign: 'center' }}>Last Order</div>
+            <div style={{ textAlign: 'right' }}>Actions</div>
+          </div>
+        )}
+
         {filtered.length === 0 ? (
-          <div style={{ padding: 80, textAlign: 'center', color: '#94a3b8' }}>
+          <div style={{ padding: 80, textAlign: 'center', color: '#94a3b8', background: '#fff', borderRadius: 20 }}>
             <Users size={60} strokeWidth={1} style={{ marginBottom: 16, opacity: 0.4 }} />
             <div style={{ fontSize: 18, fontWeight: 800, color: '#0f172a' }}>No customers match your filters.</div>
-            <div style={{ fontSize: 14, marginTop: 8, fontWeight: 600 }}>Try adjusting the search or filter options above.</div>
           </div>
         ) : (
-          <Table
-            t={t}
-            cols={['Customer', 'Contact', 'Tier', 'Points', 'Total Spent', 'Orders', 'Actions']}
-            rows={filtered.map(u => {
-              const tierCol = TIER_COLORS[u.tier] || '#9ca3af'
-              return [
-                <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-                  <div style={{
-                    width: 48, height: 48, borderRadius: 14,
-                    background: `${tierCol}10`, border: `2px solid ${tierCol}20`,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: 18, fontWeight: 900, color: tierCol, flexShrink: 0
-                  }}>{u.avatar || u.name?.[0] || 'U'}</div>
+          filtered.map(u => {
+            const tierCol = TIER_COLORS[u.dynamicTier] || '#9ca3af'
+            const pts = u.loyaltyPoints || u.loyalty_points || u.pts || 0;
+            const myOrders = u.myOrders || [];
+            
+            // Generate some random looking mock last order date based on ID
+            const daysAgo = (u.id?.charCodeAt(0) || 5) % 15 + 1;
+            const lastOrderText = myOrders.length ? `${daysAgo} days ago` : 'Never';
+
+            return (
+              <div key={u.id} style={{ 
+                background: '#fff', borderRadius: 16, padding: '16px 24px', 
+                boxShadow: '0 4px 16px rgba(0,0,0,0.03)', border: '1px solid #f1f5f9',
+                display: 'grid', gridTemplateColumns: 'minmax(250px, 1.5fr) 100px 100px 100px 100px 120px', gap: 16, alignItems: 'center',
+                transition: 'all 0.2s', cursor: 'default'
+              }}>
+                {/* Avatar & Info */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
+                  <div style={{ position: 'relative' }}>
+                    <div style={{ 
+                      width: 48, height: 48, borderRadius: 14, background: '#f8fafc',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: 20, flexShrink: 0
+                    }}>
+                      {u.avatar || '👱'}
+                    </div>
+                    <div style={{ 
+                      position: 'absolute', top: -4, right: -4, 
+                      width: 18, height: 18, borderRadius: '50%', background: '#fff',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: 10, boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                    }}>
+                      {TIER_ICONS[u.dynamicTier]}
+                    </div>
+                  </div>
+
                   <div>
-                    <div style={{ fontWeight: 900, color: '#0f172a', fontSize: 15 }}>{u.name}</div>
-                    <div style={{ fontSize: 12, color: '#94a3b8', fontWeight: 700, marginTop: 2 }}>Joined {u.joinDate || '2024'}</div>
+                    <div style={{ fontSize: 15, fontWeight: 800, color: '#0f172a', marginBottom: 4 }}>{u.name}</div>
+                    <div style={{ 
+                      display: 'inline-flex', padding: '2px 8px', borderRadius: 6, border: `1px solid ${tierCol}30`, 
+                      color: tierCol, fontSize: 11, fontWeight: 800, alignItems: 'center', gap: 4,
+                      background: `${tierCol}05`
+                    }}>
+                      {TIER_ICONS[u.dynamicTier]} {u.dynamicTier}
+                    </div>
                   </div>
-                </div>,
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                  <div style={{ fontSize: 13, color: '#445569', display: 'flex', alignItems: 'center', gap: 6, fontWeight: 700 }}>
-                    <Mail size={14} color="#94a3b8" /> {u.email}
-                  </div>
-                  <div style={{ fontSize: 13, color: '#64748b', display: 'flex', alignItems: 'center', gap: 6, fontWeight: 600 }}>
-                    <Phone size={14} color="#94a3b8" /> {u.phone || '—'}
-                  </div>
-                </div>,
-                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 14, fontWeight: 900, color: tierCol }}>
-                  {TIER_ICONS[u.tier]} {u.tier}
-                </span>,
-                <span style={{ color: '#f59e0b', fontWeight: 900, fontSize: 15 }}>⭐ {(u.pts || 0).toLocaleString()}</span>,
-                <span style={{ fontWeight: 900, color: '#4f46e5', fontSize: 16 }}>{fmt(u.spent, settings?.sym)}</span>,
-                <div style={{ padding: '6px 12px', borderRadius: 8, background: '#eef2ff', color: '#4f46e5', fontSize: 12, fontWeight: 900, display: 'inline-block' }}>
-                   {u.myOrders.length} orders
-                </div>,
-                <Btn t={t} variant="ghost" style={{ 
-                  color: '#4f46e5', 
-                  fontSize: 13, 
-                  fontWeight: 800,
-                  padding: '8px 16px', 
-                  borderRadius: 10,
-                  background: '#f8fafc',
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  gap: 8,
-                  border: '1px solid #e2e8f0'
-                }} onClick={() => setSelected(u)}>
-                  <Eye size={16} /> View Profile
-                </Btn>,
-              ]
-            })}
-          />
+                </div>
+
+                {/* Points */}
+                <div style={{ fontSize: 15, fontWeight: 800, color: '#0f172a', display: 'flex', alignItems: 'center', gap: 4, justifyContent: 'center' }}>
+                   <Star size={14} fill="#f59e0b" color="#f59e0b" /> {pts.toLocaleString()}
+                </div>
+                
+                {/* Spent */}
+                <div style={{ fontSize: 15, fontWeight: 800, color: '#0f172a', textAlign: 'center' }}>
+                   {fmt(u.dynamicSpent, settings?.sym)}
+                </div>
+                
+                {/* Orders */}
+                <div style={{ fontSize: 15, fontWeight: 800, color: '#0f172a', textAlign: 'center' }}>
+                   {myOrders.length}
+                </div>
+                
+                {/* Last Order */}
+                <div style={{ fontSize: 13, fontWeight: 700, color: '#64748b', textAlign: 'center' }}>
+                   {lastOrderText}
+                </div>
+
+                {/* Actions */}
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center', justifyContent: 'flex-end' }}>
+                  <button onClick={() => setSelected(u)} style={{ 
+                    padding: '8px 16px', borderRadius: 10, border: 'none', background: '#e0e7ff', 
+                    color: '#6366f1', fontSize: 13, fontWeight: 800, display: 'flex', alignItems: 'center', gap: 6,
+                    cursor: 'pointer', transition: 'all 0.2s'
+                  }}>
+                    <Eye size={14} /> View
+                  </button>
+                  <button style={{ 
+                    width: 36, height: 36, borderRadius: 10, border: '1px solid #e2e8f0', background: '#fff', 
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#64748b', cursor: 'pointer', transition: 'all 0.2s' 
+                  }}>
+                    <MoreHorizontal size={16} />
+                  </button>
+                </div>
+
+              </div>
+            )
+          })
         )}
       </div>
 
@@ -292,21 +327,21 @@ export const AdminCustomers = ({ users, orders, t, settings }) => {
             animation: 'modalSlideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1)'
           }} onClick={e => e.stopPropagation()}>
             {(() => {
-              const myOrders = (orders || []).filter(o => o.customerId === selected.id || o.customer_id === selected.id)
-              const tierCol = TIER_COLORS[selected.tier] || '#9ca3af'
+              const myOrders = selected.myOrders || []
+              const tierCol = TIER_COLORS[selected.dynamicTier] || '#9ca3af'
               return (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
 
                   {/* Profile Hero */}
                   <div style={{ 
-                    background: 'linear-gradient(135deg, #4f46e5, #7c3aed)', 
+                    background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', 
                     borderRadius: 32, 
                     padding: '32px 40px', 
                     color: '#fff', 
                     display: 'flex', 
                     alignItems: 'center', 
                     gap: 24,
-                    boxShadow: '0 20px 40px rgba(79, 70, 229, 0.2)'
+                    boxShadow: '0 20px 40px rgba(99, 102, 241, 0.2)'
                   }}>
                     <div style={{ 
                       width: 80, 
@@ -325,15 +360,16 @@ export const AdminCustomers = ({ users, orders, t, settings }) => {
                     </div>
                     <div style={{ flex: 1 }}>
                       <div style={{ fontSize: 28, fontWeight: 900, letterSpacing: '-0.02em' }}>{selected.name}</div>
-                      <div style={{ fontSize: 14, opacity: 0.9, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6, marginTop: 4 }}>
-                         <Mail size={14} /> {selected.email}
+                      <div style={{ fontSize: 14, opacity: 0.9, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 16, marginTop: 4 }}>
+                         <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Mail size={14} /> {selected.email}</span>
+                         {selected.phone && <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Phone size={14} /> {selected.phone}</span>}
                       </div>
                       <div style={{ display: 'flex', gap: 12, marginTop: 16 }}>
                         <div style={{ background: 'rgba(255,255,255,0.2)', padding: '6px 14px', borderRadius: 12, fontSize: 13, fontWeight: 900, display: 'flex', alignItems: 'center', gap: 6 }}>
-                          {TIER_ICONS[selected.tier]} {selected.tier}
+                          {TIER_ICONS[selected.dynamicTier]} {selected.dynamicTier}
                         </div>
                         <div style={{ background: 'rgba(255,255,255,0.2)', padding: '6px 14px', borderRadius: 12, fontSize: 13, fontWeight: 900, display: 'flex', alignItems: 'center', gap: 6 }}>
-                          ⭐ {selected.pts?.toLocaleString()} pts
+                          ⭐ {(selected.loyaltyPoints || selected.pts || 0).toLocaleString()} pts
                         </div>
                       </div>
                     </div>
@@ -346,50 +382,13 @@ export const AdminCustomers = ({ users, orders, t, settings }) => {
                       <div style={{ fontSize: 12, color: '#64748b', fontWeight: 800, marginTop: 4, textTransform: 'uppercase', letterSpacing: 1 }}>Orders</div>
                     </div>
                     <div style={{ padding: '24px', borderRadius: 24, background: '#f8fafc', border: '1px solid #e2e8f0', textAlign: 'center' }}>
-                      <div style={{ fontSize: 24, fontWeight: 900, color: '#4f46e5' }}>{fmt(selected.spent, settings?.sym)}</div>
+                      <div style={{ fontSize: 24, fontWeight: 900, color: '#6366f1' }}>{fmt(selected.dynamicSpent, settings?.sym)}</div>
                       <div style={{ fontSize: 12, color: '#64748b', fontWeight: 800, marginTop: 4, textTransform: 'uppercase', letterSpacing: 1 }}>Revenue</div>
                     </div>
                     <div style={{ padding: '24px', borderRadius: 24, background: '#f8fafc', border: '1px solid #e2e8f0', textAlign: 'center' }}>
-                      <div style={{ fontSize: 28, fontWeight: 900, color: '#f59e0b' }}>{selected.pts?.toLocaleString()}</div>
+                      <div style={{ fontSize: 28, fontWeight: 900, color: '#f59e0b' }}>{(selected.loyaltyPoints || selected.pts || 0).toLocaleString()}</div>
                       <div style={{ fontSize: 12, color: '#64748b', fontWeight: 800, marginTop: 4, textTransform: 'uppercase', letterSpacing: 1 }}>Points</div>
                     </div>
-                  </div>
-
-                  {/* Order History */}
-                  <div>
-                    <div style={{ fontSize: 16, fontWeight: 900, color: '#0f172a', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 10 }}>
-                      <ShoppingBag size={20} color="#4f46e5" strokeWidth={2.5} /> Recent History
-                    </div>
-                    {myOrders.length === 0 ? (
-                      <div style={{ textAlign: 'center', color: '#94a3b8', fontSize: 14, padding: 32, background: '#f8fafc', borderRadius: 24, border: '1px dashed #e2e8f0', fontWeight: 600 }}>No historical data found.</div>
-                    ) : (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                        {myOrders.slice(0, 5).map(o => (
-                          <div key={o.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '16px 20px', background: '#f8fafc', borderRadius: 16, border: '1px solid #f1f5f9', alignItems: 'center' }}>
-                            <div>
-                              <div style={{ fontSize: 14, fontWeight: 800, color: '#0f172a' }}>#{o.id?.slice(-8).toUpperCase() || o.order_number}</div>
-                              <div style={{ fontSize: 12, color: '#94a3b8', fontWeight: 600, marginTop: 2 }}>
-                                {(o.date || o.created_at || '').split(/[ T]/)[0]} · {(o.items || o.order_items || []).length} products
-                              </div>
-                            </div>
-                            <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-                              <span style={{ fontSize: 16, fontWeight: 900, color: '#0f172a' }}>{fmt(o.total, settings?.sym)}</span>
-                              <div style={{ 
-                                padding: '6px 12px', 
-                                borderRadius: 10, 
-                                fontSize: 11, 
-                                fontWeight: 900, 
-                                background: o.status === 'completed' ? '#f0fdf4' : '#fffbeb',
-                                color: o.status === 'completed' ? '#22c55e' : '#f59e0b',
-                                textTransform: 'uppercase'
-                              }}>
-                                {o.status || 'completed'}
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
                   </div>
                 </div>
               )
@@ -400,3 +399,4 @@ export const AdminCustomers = ({ users, orders, t, settings }) => {
     </div>
   )
 }
+

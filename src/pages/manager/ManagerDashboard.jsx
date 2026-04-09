@@ -20,7 +20,8 @@ export const ManagerDashboard = ({ orders = [], products = [], users = [], count
   const storeOrders = Array.isArray(orders) ? orders : []
   const todayRevenue = storeOrders.reduce((s, o) => s + (o.total ?? 0), 0)
   const staffCount = (users || []).filter(u => u.role === 'cashier').length
-  const lowStock = (products || []).filter(p => (p.stock ?? 0) < 10).length
+  const lowStockItems = (products || []).filter(p => (p.stock ?? 0) < 10)
+  const lowStockCount = lowStockItems.length
 
   const topP = {}
   storeOrders.forEach(o => {
@@ -208,22 +209,26 @@ export const ManagerDashboard = ({ orders = [], products = [], users = [], count
               <div style={{ color: 'var(--theme-text-muted)', fontSize: 15, textAlign: 'center', padding: '20px 0' }}>Data aggregating...</div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                 {topProducts.map(([name, qty], i) => {
-                   const p = (products || []).find(x => x.name === name)
-                   return (
-                     <div key={name} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                       <div style={{ width: 32, height: 32, borderRadius: '50%', background: i === 0 ? '#FEF3C7' : 'var(--theme-bg-alt)', color: i === 0 ? '#D97706' : 'var(--theme-text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 800, flexShrink: 0 }}>#{i + 1}</div>
-                       <div style={{ width: 40, height: 40, borderRadius: 10, background: 'var(--theme-bg-alt)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0, overflow: 'hidden', border: '1px solid var(--theme-border)' }}>
-                         {p?.image ? <img src={p.image} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : (p?.emoji || '📦')}
-                       </div>
-                       <div style={{ flex: 1, minWidth: 0 }}>
-                         <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--theme-text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{name}</div>
-                       </div>
-                       <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--theme-primary)', background: 'var(--theme-bg-alt)', padding: '4px 8px', borderRadius: 8 }}>{qty} xs</div>
-                     </div>
-                   )
-                 })}
-
+                {topProducts.map(([name, qty], i) => {
+                  const p = (products || []).find(x => x.name === name)
+                  return (
+                    <div key={name} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                      <div style={{ width: 32, height: 32, borderRadius: '50%', background: i === 0 ? '#FEF3C7' : 'var(--theme-bg-alt)', color: i === 0 ? '#D97706' : 'var(--theme-text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 800, flexShrink: 0 }}>#{i + 1}</div>
+                      <div style={{ width: 40, height: 40, borderRadius: 10, background: 'var(--theme-bg-alt)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0, overflow: 'hidden', border: '1px solid var(--theme-border)' }}>
+                        {p?.image ? <img src={p.image} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : (p?.emoji || '📦')}
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--theme-text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{name}</div>
+                      </div>
+                      <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--theme-primary)', background: 'var(--theme-bg-alt)', padding: '4px 8px', borderRadius: 8 }}>{qty} xs</div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+            {lowStockCount === 0 && (
+              <div style={{ padding: '20px 0', textAlign: 'center', color: 'var(--theme-success)', fontSize: 14, marginTop: 16 }}>
+                Inventory systems nominal (100%)
               </div>
             )}
           </div>
@@ -267,7 +272,7 @@ export const ManagerDashboard = ({ orders = [], products = [], users = [], count
                   </div>
                 </div>
               ))}
-              {lowStock === 0 && (
+              {lowStockCount === 0 && (
                 <div style={{ padding: '20px', textAlign: 'center', color: '#10B981', fontSize: 15, fontWeight: 500 }}>All stock levels are optimal.</div>
               )}
             </div>
@@ -293,7 +298,6 @@ export const ManagerDashboard = ({ orders = [], products = [], users = [], count
               })}
             </div>
           </div>
-
         </div>
       </div>
     </div>

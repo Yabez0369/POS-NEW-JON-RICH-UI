@@ -19,13 +19,18 @@ export function POSCustomerModal({
   const [showFullKeyboard, setShowFullKeyboard] = useState(false)
   const [keyboardTarget, setKeyboardTarget] = useState(null) // 'phone', 'name', 'otp'
 
-  // Auto-trigger Numpad when modal opens at phone step
+
+  // Lock body scroll when open
   useEffect(() => {
-    if (isOpen && step === 'phone' && !phone) {
-      setKeyboardTarget('phone')
-      setShowNumpad(true)
+    if (isOpen) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = 'auto'
     }
-  }, [isOpen, step])
+    return () => { document.body.style.overflow = 'auto' }
+  }, [isOpen])
+
+  // Auto-trigger Numpad when modal opens at phone step
 
   // Auto-search as typing phone number
   useEffect(() => {
@@ -89,7 +94,13 @@ export function POSCustomerModal({
         totalSpent: 0
       }
 
-      setUsers(prev => [...prev, newUser])
+      setUsers(prev => {
+        const exists = prev.find(u => u.phone === phone)
+        if (exists) {
+          return prev.map(u => u.phone === phone ? { ...u, name: newName, avatar: newName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) } : u)
+        }
+        return [...prev, newUser]
+      })
       setSelCust(newUser)
       addAudit(user, 'Customer Registered', 'POS', `New customer ${newName} registered via POS`)
       setLoading(false)
@@ -113,23 +124,101 @@ export function POSCustomerModal({
     setLoading(false)
   }
 
+
   if (!isOpen) return null
 
   return (
-    <Modal
-      t={t}
-      title={step === 'success' ? 'Registration Complete' : 'Customer Search'}
-      onClose={() => { onClose(); reset() }}
-      width={460}
-    >
+    <div style={{
+      position: 'fixed',
+      inset: 0,
+      zIndex: 10000,
+      background: 'rgba(0,0,0,0.6)',
+      backdropFilter: 'blur(10px)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: showFullKeyboard ? 'flex-start' : 'center',
+      padding: '40px'
+    }}>
+      {/* UNIT WRAPPER — Equal height side-by-side container */}
       <div style={{
         display: 'flex',
-        flexDirection: 'column',
-        gap: 20,
-        padding: '10px 0',
-        minHeight: 280,
-        justifyContent: 'center'
+        alignItems: 'stretch',
+        gap: '24px',
+        maxWidth: '100%',
+        animation: 'fadeIn 0.5s ease'
       }}>
+        {/* NUMBER PAD — Independently draggable tool */}
+        {showNumpad && (
+          <div style={{ 
+            flex: '0 0 300px', 
+            height: 500,
+            zIndex: 100,
+            position: 'relative'
+          }}>
+            <NumberPadModal
+              title={keyboardTarget === 'phone' ? 'Customer Phone' : 'Verification OTP'}
+              subtitle={keyboardTarget === 'phone' ? 'Enter number to search profile' : 'Enter the 6-digit code received'}
+              initialValue={keyboardTarget === 'phone' ? phone : otp}
+              onClose={() => setShowNumpad(false)}
+              t={t}
+              isInline={true}
+              size="sm"
+              hideOverlay={true}
+              hidePreview={true}
+              fullHeight={true} 
+              showCurrency={false}
+              isDecimal={false}
+              onSave={(v) => {
+                if (keyboardTarget === 'phone') {
+                  setPhone(v)
+                  if (v.length >= 5) setShowNumpad(false)
+                } else {
+                  setOtp(v)
+                  if (v.length === 6) setShowNumpad(false)
+                }
+              }}
+              onChange={(v) => {
+                if (keyboardTarget === 'phone') setPhone(v)
+                else setOtp(v)
+              }}
+            />
+          </div>
+        )}
+
+        {/* SEARCH FORM — Fixed anchor */}
+        <div style={{ 
+          flex: '0 0 460px',
+          background: t.bg2,
+          borderRadius: 28,
+          height: 500,
+          display: 'flex',
+          flexDirection: 'column',
+          boxShadow: '0 40px 100px rgba(0,0,0,0.4)',
+          border: `1px solid ${t.border}`,
+          overflow: 'hidden',
+          animation: 'fadeInRight 0.4s ease-out'
+        }}>
+          {/* Header */}
+          <div style={{ padding: '24px 30px', borderBottom: `1px solid ${t.border}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div>
+              <div style={{ fontSize: 18, fontWeight: 900, color: t.text }}>
+                {step === 'success' ? 'Registration Complete' : 'Customer Search'}
+              </div>
+            </div>
+            <button 
+              onClick={() => { onClose(); reset(); }}
+              style={{ background: t.bg3, border: `1px solid ${t.border}`, borderRadius: 12, width: 36, height: 36, cursor: 'pointer', color: t.text3 }}
+            >✕</button>
+          </div>
+
+          <div style={{ padding: '24px 30px', flex: 1, overflow: 'hidden' }}>
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 20,
+              minHeight: 280,
+              justifyContent: 'center'
+            }}>
 
         {/* STEP: PHONE ENTRY */}
         {step === 'phone' && (
@@ -230,9 +319,9 @@ export function POSCustomerModal({
               </div>
             </div>
 
-            <div style={{ display: 'flex', gap: 10 }}>
-              <Btn t={t} variant="ghost" flex={1} style={{ borderRadius: 12 }} onClick={() => setStep('phone')}>Not the one?</Btn>
-              <Btn t={t} variant="primary" size="lg" flex={2} style={{ borderRadius: 12, fontWeight: 900 }} onClick={attachFound}>✓ Attach to Bill</Btn>
+            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16, marginTop: 'auto' }}>
+              <Btn t={t} variant="ghost" flex={1} size="lg" style={{ borderRadius: 16, fontWeight: 700 }} onClick={() => { setNewName(foundCust.name); setStep('register'); }}>Not the one?</Btn>
+              <Btn t={t} variant="primary" flex={1} size="lg" style={{ borderRadius: 16, fontWeight: 900 }} onClick={attachFound}>✓ Attach to Bill</Btn>
             </div>
           </div>
         )}
@@ -256,7 +345,17 @@ export function POSCustomerModal({
             <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
               <div>
                 <div style={{ fontSize: 11, fontWeight: 800, color: t.text3, textTransform: 'uppercase', marginBottom: 6, marginLeft: 4 }}>Phone Number</div>
-                <div style={{ background: t.bg2, padding: '12px 16px', borderRadius: 12, border: `1px solid ${t.border}`, fontSize: 18, fontWeight: 800, color: t.text3 }}>{phone}</div>
+                <Input
+                  t={t}
+                  value={phone}
+                  onChange={setPhone}
+                  onFocus={() => { setKeyboardTarget('phone'); setShowNumpad(true); }}
+                  onClick={() => { setKeyboardTarget('phone'); setShowNumpad(true); }}
+                  readOnly={showNumpad}
+                  placeholder="566778899*"
+                  type="tel"
+                  style={{ fontSize: 18, fontWeight: 800, padding: '12px 16px', borderRadius: 12 }}
+                />
               </div>
 
               <Input
@@ -272,16 +371,17 @@ export function POSCustomerModal({
                 style={{ fontSize: 16, padding: '14px', borderRadius: 12 }}
               />
 
-              <div style={{ display: 'flex', gap: 10, marginTop: 10 }}>
-                <Btn t={t} variant="ghost" onClick={() => setStep('phone')} style={{ flex: 1, borderRadius: 12 }}>← Back</Btn>
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16, marginTop: 16 }}>
+                <Btn t={t} variant="ghost" size="lg" flex={1} onClick={() => setStep('phone')} style={{ borderRadius: 16, fontWeight: 700 }}>← Back</Btn>
                 <Btn
                   t={t}
                   variant="primary"
                   size="lg"
+                  flex={1}
                   onClick={sendOtp}
                   loading={loading}
                   disabled={!newName || newName.length < 3}
-                  style={{ flex: 2, borderRadius: 12 }}
+                  style={{ borderRadius: 16, fontWeight: 900 }}
                 >
                   Verify & Save →
                 </Btn>
@@ -331,17 +431,17 @@ export function POSCustomerModal({
               </div>
             </div>
 
-            <div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
-              <Btn t={t} variant="ghost" flex={1} style={{ borderRadius: 12 }} onClick={() => setStep('register')}>Back</Btn>
+            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16, marginTop: 16 }}>
+              <Btn t={t} variant="ghost" flex={1} size="lg" style={{ borderRadius: 16, fontWeight: 700 }} onClick={() => setStep('register')}>Back</Btn>
               <Btn
                 t={t}
                 variant="primary"
                 size="lg"
-                flex={2}
+                flex={1}
                 onClick={verifyAndSave}
                 loading={loading}
                 disabled={otp.length !== 6}
-                style={{ borderRadius: 12 }}
+                style={{ borderRadius: 16, fontWeight: 900 }}
               >
                 ✓ Verify & Register
               </Btn>
@@ -374,42 +474,16 @@ export function POSCustomerModal({
             </Btn>
           </div>
         )}
-
       </div>
-
-      {showNumpad && (
-        <NumberPadModal
-          title={keyboardTarget === 'phone' ? 'Customer Phone' : 'Verification OTP'}
-          subtitle={keyboardTarget === 'phone' ? 'Enter number to search profile' : 'Enter the 6-digit code received'}
-          initialValue={keyboardTarget === 'phone' ? phone : otp}
-          onClose={() => setShowNumpad(false)}
-          t={t}
-          position="left"
-          showCurrency={false}
-          isDecimal={false}
-          onSave={(v) => {
-            if (keyboardTarget === 'phone') {
-              setPhone(v)
-              if (v.length >= 5) {
-                // handleSearch is local but we can close numpad
-                setShowNumpad(false)
-              }
-            } else {
-              setOtp(v)
-              if (v.length === 6) setShowNumpad(false)
-            }
-          }}
-          onChange={(v) => {
-            if (keyboardTarget === 'phone') setPhone(v)
-            else setOtp(v)
-          }}
-        />
-      )}
+    </div>
+  </div>
+</div>
 
       {showFullKeyboard && (
         <FullKeyboard
           initialValue={newName}
           t={t}
+          position="right"
           onClose={() => setShowFullKeyboard(false)}
           onSave={(v) => {
             setNewName(v)
@@ -428,7 +502,15 @@ export function POSCustomerModal({
           70% { transform: scale(0.9); }
           100% { transform: scale(1); opacity: 1; }
         }
+        @keyframes fadeInLeft {
+          from { opacity: 0; transform: translateX(-30px); }
+          to { opacity: 1; transform: translateX(0); }
+        }
+        @keyframes fadeInRight {
+          from { opacity: 0; transform: translateX(30px); }
+          to { opacity: 1; transform: translateX(0); }
+        }
       `}</style>
-    </Modal>
+    </div>
   )
 }
