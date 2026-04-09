@@ -9,7 +9,7 @@ const managerNav = [
   { key: 'reports', l: 'Analytics', i: 'BarChart2' },
   { type: 'group', l: 'Catalog' },
   { key: 'products', l: 'Products', i: 'Tag' },
-  { key: 'categories', l: 'Categories', i: 'Folder' },
+
   { key: 'order-history', l: 'Order History', i: 'ListOrders' },
   { type: 'group', l: 'Stocks' },
   { key: 'inventory', l: 'Stock Receiving', i: 'Box' },

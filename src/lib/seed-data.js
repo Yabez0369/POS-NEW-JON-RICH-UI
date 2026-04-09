@@ -17,6 +17,12 @@ export const PRODUCT_IMAGES = {
   "Club Scarf":"https://images.pexels.com/photos/1884574/pexels-photo-1884574.jpeg?auto=compress&cs=tinysrgb&w=300",
   "Water Bottle":"https://images.pexels.com/photos/1183266/pexels-photo-1183266.jpeg?auto=compress&cs=tinysrgb&w=300",
   "Team Mug":"https://images.pexels.com/photos/227908/pexels-photo-227908.jpeg?auto=compress&cs=tinysrgb&w=300",
+  "Club Mug":"https://images.pexels.com/photos/227908/pexels-photo-227908.jpeg?auto=compress&cs=tinysrgb&w=300",
   "Football Boots":"https://images.pexels.com/photos/1474132/pexels-photo-1474132.jpeg?auto=compress&cs=tinysrgb&w=300",
-  "Logo Tee":"https://images.pexels.com/photos/1311523/pexels-photo-1311523.jpeg?auto=compress&cs=tinysrgb&w=300"
+  "Logo Tee":"https://images.pexels.com/photos/1311523/pexels-photo-1311523.jpeg?auto=compress&cs=tinysrgb&w=300",
+  "Mini Football":"https://images.pexels.com/photos/47730/the-ball-stadion-football-the-pitch-47730.jpeg?auto=compress&cs=tinysrgb&w=300",
+  "t_shirt":"https://images.pexels.com/photos/1311523/pexels-photo-1311523.jpeg?auto=compress&cs=tinysrgb&w=300",
+  "Flight Jersey":"https://images.pexels.com/photos/1661338/pexels-photo-1661338.jpeg?auto=compress&cs=tinysrgb&w=300",
+  "Away Jersey 24/25":"https://images.pexels.com/photos/3621104/pexels-photo-3621104.jpeg?auto=compress&cs=tinysrgb&w=300"
+
 };

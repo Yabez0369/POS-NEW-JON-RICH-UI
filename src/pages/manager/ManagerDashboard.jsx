@@ -105,7 +105,7 @@ export const ManagerDashboard = ({ orders = [], products = [], users = [], count
         <StatCard t={t} title="Total Revenue" value={fmt(todayRevenue, settings?.sym)} color="var(--theme-success)" icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>} trend={12} />
         <StatCard t={t} title="Active Sales" value={storeOrders.length} color="var(--theme-primary)" icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path><line x1="3" y1="6" x2="21" y2="6"></line><path d="M16 10a4 4 0 0 1-8 0"></path></svg>} trend={5} />
         <StatCard t={t} title="Active Staff" value={staffCount} color="var(--theme-primary)" icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>} />
-        <StatCard t={t} title="Storage Usage" value="1.2 GB" color="var(--theme-primary)" icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><ellipse cx="12" cy="5" rx="9" ry="3"></ellipse><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path></svg>} />
+
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 2fr) minmax(0, 1fr)', gap: 24 }}>
@@ -208,15 +208,22 @@ export const ManagerDashboard = ({ orders = [], products = [], users = [], count
               <div style={{ color: 'var(--theme-text-muted)', fontSize: 15, textAlign: 'center', padding: '20px 0' }}>Data aggregating...</div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                {topProducts.map(([name, qty], i) => (
-                  <div key={name} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                    <div style={{ width: 32, height: 32, borderRadius: '50%', background: i === 0 ? '#FEF3C7' : 'var(--theme-bg-alt)', color: i === 0 ? '#D97706' : 'var(--theme-text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 800 }}>#{i + 1}</div>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--theme-text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{name}</div>
-                    </div>
-                    <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--theme-text)' }}>{qty} xs</div>
-                  </div>
-                ))}
+                 {topProducts.map(([name, qty], i) => {
+                   const p = (products || []).find(x => x.name === name)
+                   return (
+                     <div key={name} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                       <div style={{ width: 32, height: 32, borderRadius: '50%', background: i === 0 ? '#FEF3C7' : 'var(--theme-bg-alt)', color: i === 0 ? '#D97706' : 'var(--theme-text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 800, flexShrink: 0 }}>#{i + 1}</div>
+                       <div style={{ width: 40, height: 40, borderRadius: 10, background: 'var(--theme-bg-alt)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0, overflow: 'hidden', border: '1px solid var(--theme-border)' }}>
+                         {p?.image ? <img src={p.image} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : (p?.emoji || '📦')}
+                       </div>
+                       <div style={{ flex: 1, minWidth: 0 }}>
+                         <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--theme-text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{name}</div>
+                       </div>
+                       <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--theme-primary)', background: 'var(--theme-bg-alt)', padding: '4px 8px', borderRadius: 8 }}>{qty} xs</div>
+                     </div>
+                   )
+                 })}
+
               </div>
             )}
           </div>
