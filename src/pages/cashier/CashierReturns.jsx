@@ -9,10 +9,10 @@ import { fmt } from '@/lib/utils'
 import dayjs from 'dayjs'
 import { returnsService, ordersService } from '@/services'
 import { isSupabaseConfigured } from '@/lib/supabase'
-import { 
-  Search, ArrowLeft, X, Check, Package, RotateCcw, 
-  ArrowLeftRight, CreditCard, Ticket, CheckCircle2, 
-  Printer, History, UserSearch, ChevronRight, Minus, Plus 
+import {
+  Search, ArrowLeft, X, Check, Package, RotateCcw,
+  ArrowLeftRight, CreditCard, Ticket, CheckCircle2,
+  Printer, History, UserSearch, ChevronRight, Minus, Plus
 } from 'lucide-react'
 import { FullKeyboard } from '@/components/ui/FullKeyboard'
 import './CashierReturns.css'
@@ -240,7 +240,7 @@ export const CashierReturns = ({
           if (((origPayment === 'Cash' || origPayment === 'Split') || refundMethod === 'store_credit') && refundAmount > 0) {
             // If store credit, we typically add to customer wallet, but here we just record it 
             if (refundMethod === 'store_credit') {
-               // Logic to add to wallet could go here if service exists
+              // Logic to add to wallet could go here if service exists
             } else if (refundMethod === 'original') {
               useCashStore.getState().addMovement('refund', refundAmount, `Refund: ${ret.return_number || ret.id}`, user)
             }
@@ -278,7 +278,7 @@ export const CashierReturns = ({
 
   return (
     <div className={`returns-terminal-root ${darkMode ? 'dark' : ''}`}>
-      
+
       <header className="returns-header">
         <div className="header-left">
           <button className="icon-btn exit-btn" onClick={handleExit}><X size={24} /></button>
@@ -302,9 +302,9 @@ export const CashierReturns = ({
         <div className="header-right" />
       </header>
 
-      <main className="returns-main">
+      <main className={`returns-main ${isSuccess ? 'success-mode' : ''}`}>
         <div className="canvas-container">
-          
+
           {currentStep === 1 && !isSuccess && (
             <div className="step-view lookup-view">
               <div className="hero-section">
@@ -313,13 +313,13 @@ export const CashierReturns = ({
                   <Search size={64} className="hero-icon" />
                 </div>
                 <h2>Find the Transaction</h2>
-                <p>Scan the receipt barcode or type the order number below.</p>
+                <p>Enter the order number below.</p>
               </div>
 
               <div className="scan-input-container">
                 <input
                   className="hardware-input"
-                  placeholder="SCAN ORDER NUMBER"
+                  placeholder="ORDER NUMBER"
                   value={orderSearch}
                   onFocus={() => setShowFullKeyboard(true)}
                   onClick={() => setShowFullKeyboard(true)}
@@ -332,10 +332,10 @@ export const CashierReturns = ({
                 </button>
               </div>
 
-              <div className="quick-action-pills">
+              {/* <div className="quick-action-pills">
                 <button className="pill-btn"><History size={18} /> Recent Orders</button>
                 <button className="pill-btn"><UserSearch size={18} /> Find Customer</button>
-              </div>
+              </div> */}
             </div>
           )}
 
@@ -343,7 +343,7 @@ export const CashierReturns = ({
             <div className="step-view items-view">
               <div className="section-intro">
                 <div className="order-chip">Order #{selectedOrder.order_number || selectedOrder.id}</div>
-                <h2>Select items for return</h2>
+                <h2>Select item for return</h2>
                 <p>Choose products and adjust quantities if necessary.</p>
               </div>
 
@@ -364,9 +364,13 @@ export const CashierReturns = ({
                           {selQty > 0 && <Check size={14} strokeWidth={4} />}
                         </div>
                       </div>
-                      
+
                       <div className="item-visual">
-                        {item.image_url ? <img src={item.image_url} alt="" /> : <Package size={32} />}
+                        {(() => {
+                          const product = products?.find(p => p.id === (item.product_id || item.productId))
+                          const img = item.image_url || product?.image_url || product?.image || item.image
+                          return img ? <img src={img} alt="" /> : <Package size={32} />
+                        })()}
                       </div>
 
                       <div className="item-details">
@@ -382,8 +386,8 @@ export const CashierReturns = ({
                           <button onClick={() => setItemQty(idx, selQty + 1)}><Plus size={18} /></button>
                         </div>
                       )}
-                      
-                      {selQty === 0 && returnable && <div className="qty-badge-max">{maxQty} available</div>}
+
+                      {selQty === 0 && returnable && <div className="qty-badge-max">Quantity {maxQty}</div>}
                     </div>
                   )
                 })}
@@ -413,14 +417,16 @@ export const CashierReturns = ({
                   ))}
                 </div>
 
-                <div className="comment-box-wrap">
-                  <label>Optional Comments</label>
-                  <textarea 
-                    placeholder="Provide additional context for this return..."
-                    value={returnComment}
-                    onChange={(e) => setReturnComment(e.target.value)}
-                  />
-                </div>
+                {reasonCode === 'other' && (
+                  <div className="comment-box-wrap">
+                    <label>Other Reason / Comments</label>
+                    <textarea
+                      placeholder="Please specify the reason for this return..."
+                      value={returnComment}
+                      onChange={(e) => setReturnComment(e.target.value)}
+                    />
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -433,11 +439,11 @@ export const CashierReturns = ({
               </div>
 
               <div className="type-selection-cards">
-                <button 
+                <button
                   className={`type-hero-card ${processMode === 'refund' ? 'active' : ''}`}
                   onClick={() => { setProcessMode('refund'); setRefundMethod('original'); }}
                 >
-                  <div className="type-icon-box original"><CreditCard size={40} /></div>
+                  <div className="type-icon-box original"><RotateCcw size={40} /></div>
                   <div className="type-info">
                     <h3>Refund</h3>
                     <p>Return funds to the customer</p>
@@ -450,7 +456,7 @@ export const CashierReturns = ({
                   )}
                 </button>
 
-                <button 
+                <button
                   className={`type-hero-card ${processMode === 'exchange' ? 'active' : ''}`}
                   onClick={() => { setProcessMode('exchange'); setRefundMethod('exchange'); }}
                 >
@@ -458,17 +464,6 @@ export const CashierReturns = ({
                   <div className="type-info">
                     <h3>Exchange</h3>
                     <p>Replace with other products from stock</p>
-                  </div>
-                </button>
-
-                <button 
-                  className={`type-hero-card ${processMode === 'store_credit_only' ? 'active' : ''}`}
-                  onClick={() => { setProcessMode('store_credit_only'); setRefundMethod('store_credit'); }}
-                >
-                  <div className="type-icon-box credit"><Ticket size={40} /></div>
-                  <div className="type-info">
-                    <h3>Store Credit Only</h3>
-                    <p>Issue full credit to customer wallet</p>
                   </div>
                 </button>
               </div>
@@ -479,8 +474,8 @@ export const CashierReturns = ({
                     <h3>Select Replacement Items</h3>
                     <div className="browser-search-wrap">
                       <Search size={18} />
-                      <input 
-                        placeholder="Search product name or SKU..." 
+                      <input
+                        placeholder="Search product name or SKU..."
                         value={replacmentSearch}
                         onChange={(e) => setReplacmentSearch(e.target.value)}
                       />
@@ -497,7 +492,9 @@ export const CashierReturns = ({
                             setReplacementItems(prev => [...prev, { ...p, qty: 1 }])
                           }
                         }}>
-                          <div className="item-img">{p.emoji || '📦'}</div>
+                          <div className="item-img">
+                            {p.image_url || p.image ? <img src={p.image_url || p.image} alt="" /> : (p.emoji || '📦')}
+                          </div>
                           <div className="item-meta">
                             <span className="name">{p.name}</span>
                             <span className="price">{fmt(p.price, settings?.sym)}</span>
@@ -604,7 +601,7 @@ export const CashierReturns = ({
                 <h2>Refund Processed</h2>
                 <div className="success-amount">{fmt(refundAmount, settings?.sym)}</div>
                 <p>Transaction completed and recorded successfully.</p>
-                
+
                 <div className="success-actions">
                   <button className="primary-cta" onClick={resetFlow}><Plus size={20} /> New Return</button>
                   <div className="secondary-row">
@@ -629,14 +626,14 @@ export const CashierReturns = ({
             <button className="footer-back-btn" onClick={() => setCurrentStep(currentStep - 1)}>
               <ArrowLeft size={20} /> Back
             </button>
-            <button 
+            <button
               className="footer-primary-btn"
               disabled={
-                processing || 
+                processing ||
                 (currentStep === 2 && selectedItems.length === 0) ||
                 (currentStep === 3 && !reasonCode) ||
                 (currentStep === 4 && (!processMode || (processMode === 'exchange' && replacementItems.length === 0))) ||
-                hasNonReturnable || 
+                hasNonReturnable ||
                 !withinWindow
               }
               onClick={() => {
@@ -690,6 +687,8 @@ export const CashierReturns = ({
         <FullKeyboard
           initialValue={orderSearch}
           t={t}
+          position="right"
+          hidePreview={true}
           onClose={() => setShowFullKeyboard(false)}
           onSave={(val) => {
             setOrderSearch(val)

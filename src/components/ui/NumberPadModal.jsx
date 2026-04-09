@@ -16,55 +16,63 @@ export const NumberPadModal = ({
   isDecimal = true,
   saveLabel = 'DONE',
   currencySym = '£',
-  showCurrency = true
+  showCurrency = true,
+  position = 'center', // 'center' | 'left' | 'right'
+  size = 'md', // 'sm' | 'md'
+  hideOverlay = false,
+  hidePreview = false,
+  fullHeight = false,
+  isInline = false,
+  offsetX = 0,
+  offsetY = 0
 }) => {
   const [val, setVal] = useState(String(initialValue))
   const [isFirstKey, setIsFirstKey] = useState(true)
   const [pressedKey, setPressedKey] = useState(null)
-  
+
   // Drag State
-  const [pos, setPos] = useState({ x: 0, y: 0 })
+  const [pos, setPos] = useState({ x: offsetX, y: offsetY })
   const [isDragging, setIsDragging] = useState(false)
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
-  
+
   const numpadRef = useRef(null)
 
   // Handle Physical Keyboard & Dragging
   useEffect(() => {
     const h = (e) => {
       if (e.key === "Escape") onClose()
-      if (e.key === "Enter") onSave(val)
+      if (e.key === "Enter") handleKey('DONE')
       if (/[0-9]/.test(e.key)) handleKey(e.key)
       if (e.key === "." || e.key === ",") handleKey(".")
       if (e.key === "Backspace") handleKey('⌫')
-      if (e.key === "Delete" || e.key.toLowerCase() === "c") handleKey('C')
+      if (e.key === "Delete") handleKey('C')
     }
 
     const handleMouseMove = (e) => {
       if (!isDragging) return
-      const dx = e.clientX - dragStart.x
-      const dy = e.clientY - dragStart.y
-      setPos({ x: pos.x + dx, y: pos.y + dy })
-      setDragStart({ x: e.clientX, y: e.clientY })
+      const clientX = e.type === 'touchmove' ? e.touches[0].clientX : e.clientX
+      const clientY = e.type === 'touchmove' ? e.touches[0].clientY : e.clientY
+      
+      setPos(prev => ({
+        x: prev.x + (clientX - dragStart.x),
+        y: prev.y + (clientY - dragStart.y)
+      }))
+      setDragStart({ x: clientX, y: clientY })
     }
 
-    const handleMouseUp = () => {
-      setIsDragging(false)
-    }
-
-    const handleClickOutside = (e) => {
-      if (numpadRef.current && !numpadRef.current.contains(e.target) && !isDragging) onClose()
-    }
+    const handleMouseUp = () => setIsDragging(false)
 
     window.addEventListener("keydown", h)
     if (isDragging) {
       window.addEventListener("mousemove", handleMouseMove)
       window.addEventListener("mouseup", handleMouseUp)
-      window.addEventListener("touchmove", (e) => {
-        const touch = e.touches[0]
-        handleMouseMove({ clientX: touch.clientX, clientY: touch.clientY })
-      }, { passive: false })
+      window.addEventListener("touchmove", handleMouseMove, { passive: false })
       window.addEventListener("touchend", handleMouseUp)
+    }
+
+    const handleClickOutside = (e) => {
+      if (isInline) return
+      if (numpadRef.current && !numpadRef.current.contains(e.target) && !isDragging) onClose()
     }
     document.addEventListener("mousedown", handleClickOutside, true)
 
@@ -76,7 +84,17 @@ export const NumberPadModal = ({
       window.removeEventListener("touchend", handleMouseUp)
       document.removeEventListener("mousedown", handleClickOutside, true)
     }
-  }, [onClose, onSave, val, isDragging, dragStart, pos])
+  }, [onClose, onSave, val, isDragging, dragStart, isInline])
+
+  // Scroll Lock
+  useEffect(() => {
+    if (!isInline) {
+      document.body.style.overflow = 'hidden'
+    }
+    return () => {
+      if (!isInline) document.body.style.overflow = 'auto'
+    }
+  }, [isInline])
 
   const startDrag = (e) => {
     const clientX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX
@@ -86,110 +104,178 @@ export const NumberPadModal = ({
   }
 
   const handleKey = (key) => {
-    let newVal = val
-    
     // Pulse feedback
     setPressedKey(key)
     setTimeout(() => setPressedKey(null), 150)
 
-    if (key === '⌫') {
-      newVal = val.slice(0, -1)
-      setIsFirstKey(false)
-    } else if (key === 'C') {
-      newVal = ''
-      setIsFirstKey(false)
-    } else if (key === '.') {
-      if (isDecimal) {
-        if (isFirstKey || !val) newVal = '0.'
-        else if (!val.includes('.')) newVal = val + '.'
-      }
-      setIsFirstKey(false)
-    } else if (key === 'DONE') {
-       onSave(val); return
-    } else {
-      if (isFirstKey) newVal = key
-      else newVal = val + key
-      setIsFirstKey(false)
+    if (key === 'DONE' || key === 'Enter') {
+      onSave(val); return
     }
 
-    setVal(newVal)
-    if (onChange) onChange(newVal)
+    setVal(prev => {
+      let newVal = prev
+      if (key === '⌫' || key === 'Backspace') {
+        newVal = prev.slice(0, -1)
+        setIsFirstKey(false)
+      } else if (key === 'C' || key === 'Delete') {
+        newVal = ''
+        setIsFirstKey(false)
+      } else if (key === '.') {
+        if (isDecimal) {
+          if (isFirstKey || !prev) newVal = '0.'
+          else if (!prev.includes('.')) newVal = prev + '.'
+        }
+        setIsFirstKey(false)
+      } else {
+        // Numeric keys
+        if (isFirstKey) newVal = key
+        else newVal = prev + key
+        setIsFirstKey(false)
+      }
+      
+      if (onChange) onChange(newVal)
+      return newVal
+    })
 
     // Haptic Feedback
     if (window.navigator.vibrate) window.navigator.vibrate(40)
   }
 
-  return (
-    <div style={overlayStyle}>
-      <div
-        ref={numpadRef}
-        style={{
-          ...keyboardContainerStyle,
-          transform: `translate(${pos.x}px, ${pos.y}px)`,
-          transition: isDragging ? 'none' : 'transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.5s ease'
-        }}
-        onClick={e => e.stopPropagation()}
-      >
-        {/* — Input Preview Bar — */}
-        <div 
-          style={{ ...previewBarStyle, cursor: isDragging ? 'grabbing' : 'grab' }}
+  const isSm = size === 'sm'
+
+  const customOverlayStyle = {
+    ...overlayStyle,
+    justifyContent: position === 'left' ? 'flex-start' : position === 'right' ? 'flex-end' : 'center',
+    paddingLeft: position === 'left' ? '40px' : '0',
+    paddingRight: position === 'right' ? '40px' : '0',
+    background: hideOverlay ? 'transparent' : overlayStyle.background,
+    backdropFilter: hideOverlay ? 'none' : overlayStyle.backdropFilter,
+    pointerEvents: hideOverlay ? 'none' : 'auto' // Important: overlay shouldn't block clicks if invisible
+  }
+
+  const customContainerStyle = {
+    ...keyboardContainerStyle,
+    pointerEvents: 'auto',
+    maxWidth: isInline ? '100%' : (isSm ? '310px' : '380px'),
+    width: isInline ? '100%' : '94%',
+    padding: isSm ? '18px 22px' : '32px',
+    gap: isSm ? '16px' : '24px',
+    borderRadius: isSm ? '24px' : '32px',
+    transform: `translate(${pos.x}px, ${pos.y}px)`,
+    transition: isDragging ? 'none' : 'transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.5s ease',
+    paddingTop: hidePreview ? (isSm ? '4px' : '8px') : undefined,
+    border: isSm ? '1px solid rgba(255, 255, 255, 0.15)' : keyboardContainerStyle.border,
+    height: fullHeight ? '100%' : 'auto',
+    justifyContent: (fullHeight && !isInline) ? 'center' : 'flex-start',
+    margin: isInline ? 0 : undefined,
+    position: isInline ? 'relative' : 'fixed', // Override fixed if inline
+    cursor: isDragging ? 'grabbing' : 'grab'
+  }
+
+  const content = (
+    <div
+      ref={numpadRef}
+      style={customContainerStyle}
+      onClick={e => e.stopPropagation()}
+      onMouseDown={startDrag}
+      onTouchStart={startDrag}
+    >
+
+      {/* — Input Preview Bar — */}
+      {!hidePreview && (
+        <div
+          style={{ 
+            ...previewBarStyle, 
+            height: isSm ? '60px' : '74px',
+            borderRadius: isSm ? '16px' : '20px',
+            padding: isSm ? '0 16px' : '0 24px',
+            cursor: isDragging ? 'grabbing' : 'grab' 
+          }}
           onMouseDown={startDrag}
           onTouchStart={startDrag}
         >
-          <div style={previewLabel}>{title.toUpperCase()}</div>
+          <div style={{ ...previewLabel, top: isSm ? '4px' : '6px', left: isSm ? '16px' : '24px', fontSize: isSm ? '9px' : '10px' }}>{title.toUpperCase()}</div>
+          
+          {/* Drag Handle Indicator */}
+          <div style={{ position: 'absolute', bottom: '6px', left: '50%', transform: 'translateX(-50%)', display: 'flex', gap: '3px', opacity: 0.3 }}>
+            <div style={{ width: '3px', height: '3px', borderRadius: '50%', background: '#fff' }} />
+            <div style={{ width: '3px', height: '3px', borderRadius: '50%', background: '#fff' }} />
+            <div style={{ width: '3px', height: '3px', borderRadius: '50%', background: '#fff' }} />
+          </div>
+
           <div style={previewValueBox}>
-            {showCurrency && <span style={currencyPrefix}>{currencySym}</span>}
-            <span style={previewText}>{val || (showCurrency ? '0.00' : '')}</span>
-            <span style={cursorStyle} />
+            {showCurrency && <span style={{ ...currencyPrefix, fontSize: isSm ? '16px' : '18px' }}>{currencySym}</span>}
+            <span style={{ ...previewText, fontSize: isSm ? '24px' : '30px' }}>{val || (showCurrency ? '0.00' : '')}</span>
+            <span style={{ ...cursorStyle, height: isSm ? '22px' : '28px' }} />
           </div>
-          <button onClick={onClose} style={closeBtnStyle}><X size={18} /></button>
+          <button onClick={onClose} style={{ ...closeBtnStyle, width: isSm ? '36px' : '40px', height: isSm ? '36px' : '40px', borderRadius: isSm ? '12px' : '14px' }}><X size={isSm ? 16 : 18} /></button>
+        </div>
+      )}
+
+      {/* — Tactical Key Grid — */}
+      <div style={{ ...keysWrapper, gap: isSm ? '24px' : '32px' }}>
+        <div style={{ ...rowStyle, gap: isSm ? '18px' : '24px' }}>
+          {['1', '2', '3'].map(k => <PadButton key={k} label={k} onClick={() => handleKey(k)} isPressed={pressedKey === k} isSm={isSm} />)}
+        </div>
+        <div style={{ ...rowStyle, gap: isSm ? '18px' : '24px' }}>
+          {['4', '5', '6'].map(k => <PadButton key={k} label={k} onClick={() => handleKey(k)} isPressed={pressedKey === k} isSm={isSm} />)}
+        </div>
+        <div style={{ ...rowStyle, gap: isSm ? '18px' : '24px' }}>
+          {['7', '8', '9'].map(k => <PadButton key={k} label={k} onClick={() => handleKey(k)} isPressed={pressedKey === k} isSm={isSm} />)}
+        </div>
+        <div style={{ ...rowStyle, gap: isSm ? '18px' : '24px' }}>
+          <PadButton label="C" onClick={() => handleKey('C')} isPressed={pressedKey === 'C'} type="functional" isSm={isSm} />
+          <PadButton label="0" onClick={() => handleKey('0')} isPressed={pressedKey === '0'} isSm={isSm} />
+          <PadButton label="⌫" onClick={() => handleKey('⌫')} isPressed={pressedKey === '⌫'} type="functional" isSm={isSm} />
         </div>
 
-        {/* — Tactical Key Grid — */}
-        <div style={keysWrapper}>
-          <div style={rowStyle}>
-            {['1', '2', '3'].map(k => <PadButton key={k} label={k} onClick={() => handleKey(k)} isPressed={pressedKey === k} />)}
-          </div>
-          <div style={rowStyle}>
-            {['4', '5', '6'].map(k => <PadButton key={k} label={k} onClick={() => handleKey(k)} isPressed={pressedKey === k} />)}
-          </div>
-          <div style={rowStyle}>
-            {['7', '8', '9'].map(k => <PadButton key={k} label={k} onClick={() => handleKey(k)} isPressed={pressedKey === k} />)}
-          </div>
-          <div style={rowStyle}>
-            <PadButton label="C" onClick={() => handleKey('C')} isPressed={pressedKey === 'C'} type="functional" />
-            <PadButton label="0" onClick={() => handleKey('0')} isPressed={pressedKey === '0'} />
-            <PadButton label="⌫" onClick={() => handleKey('⌫')} isPressed={pressedKey === '⌫'} type="functional" />
-          </div>
-
-          {/* — Bottom Row — */}
-          <div style={rowStyle}>
-            {isDecimal && (
-              <button
-                onClick={() => handleKey('.')}
-                style={dotButtonStyle}
-              >.</button>
-            )}
+        {/* — Bottom Row (DONE Button) — */}
+        <div style={{ ...rowStyle, gap: isSm ? '18px' : '24px', marginTop: 'auto', paddingBottom: '4px' }}>
+          {isDecimal && (
             <button
-              onClick={() => onSave(val)}
-              style={saveBtnStyle}
-            >
-              <span style={{ marginRight: 8 }}>{saveLabel.toUpperCase()}</span>
-              <CornerDownLeft size={20} />
-            </button>
-          </div>
+              onClick={() => handleKey('.')}
+              style={{ ...dotButtonStyle, width: isSm ? '60px' : '68px', height: isSm ? '60px' : '68px', fontSize: isSm ? '20px' : '22px' }}
+            >.</button>
+          )}
+          <button
+            onClick={() => onSave(val)}
+            style={{ 
+              ...saveBtnStyle, 
+              width: isDecimal ? (isSm ? '120px' : '160px') : '100%',
+              height: isSm ? '60px' : '68px',
+              borderRadius: isSm ? '30px' : '34px',
+              fontSize: isSm ? '13px' : '16px'
+            }}
+          >
+            <span style={{ marginRight: 6 }}>{saveLabel.toUpperCase()}</span>
+            <CornerDownLeft size={isSm ? 16 : 20} />
+          </button>
         </div>
-
-        {/* — Footer Simplified — */}
-        <div style={{ height: '8px' }} />
       </div>
 
+      {/* — Footer Simplified — */}
+      <div style={{ height: '4px' }} />
+    </div>
+  )
+
+  if (isInline) {
+    return (
+      <>
+        {content}
+        <style dangerouslySetInnerHTML={{ __html: animations }} />
+      </>
+    )
+  }
+
+  return (
+    <div style={customOverlayStyle}>
+      {content}
       <style dangerouslySetInnerHTML={{ __html: animations }} />
     </div>
   )
 }
 
-const PadButton = ({ label, onClick, isPressed, type }) => {
+const PadButton = ({ label, onClick, isPressed, type, isSm }) => {
   const [active, setActive] = useState(false)
 
   const handleStart = (e) => {
@@ -217,12 +303,15 @@ const PadButton = ({ label, onClick, isPressed, type }) => {
         onTouchEnd={handleEnd}
         style={{
           ...keyBaseStyle,
+          width: isSm ? '60px' : '68px',
+          height: isSm ? '60px' : '68px',
+          fontSize: isSm ? '18px' : '22px',
           ...(isSpecial ? functionalKeyStyles : {}),
           ...(active ? keyPressStyle : {}),
           ...(isPressed ? keyFlashStyle : {}),
         }}
       >
-        {isIcon ? <Delete size={28} /> : label}
+        {isIcon ? <Delete size={isSm ? 24 : 28} /> : label}
       </button>
     </div>
   )
@@ -235,11 +324,13 @@ const overlayStyle = {
   inset: 0,
   zIndex: 10000,
   display: 'flex',
-  alignItems: 'flex-end',
+  alignItems: 'center', // Center vertically by default
   justifyContent: 'center',
-  paddingBottom: '2vh',
+  paddingTop: '4vh',
+  paddingBottom: '4vh',
   pointerEvents: 'none',
-  background: 'rgba(0,0,0,0.1)',
+  background: 'rgba(15, 23, 42, 0.4)', // Darker overlay for better focus
+  backdropFilter: 'blur(4px)',
   animation: 'overlayFade 0.4s ease'
 }
 
@@ -346,8 +437,9 @@ const topCloseBtnStyle = {
 const keysWrapper = {
   display: 'flex',
   flexDirection: 'column',
-  gap: '18px',
-  marginTop: '10px'
+  gap: '12px',
+  marginTop: '4px',
+  flex: 1
 }
 
 const rowStyle = {
@@ -415,7 +507,7 @@ const dotButtonStyle = {
   ...keyBaseStyle,
   width: '74px',
   borderRadius: '50%',
-  background: 'rgba(255, 255, 255, 0.15)',
+  background: 'rgba(255, 255, 255, 0.12)',
   fontSize: '24px'
 }
 

@@ -116,7 +116,7 @@ export function POSCartPanel({
             flexShrink: 0,
           }}>
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-              <path d="M5 3V2.5C5 1.67 5.67 1 6.5 1h3C10.33 1 11 1.67 11 2.5V3M2 4h12M3.5 4l.7 9.2c.08.99.9 1.8 1.9 1.8h3.8c1 0 1.82-.81 1.9-1.8L12.5 4" stroke="#EF4444" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M5 3V2.5C5 1.67 5.67 1 6.5 1h3C10.33 1 11 1.67 11 2.5V3M2 4h12M3.5 4l.7 9.2c.08.99.9 1.8 1.9 1.8h3.8c1 0 1.82-.81 1.9-1.8L12.5 4" stroke="#EF4444" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </div>
 
@@ -144,7 +144,7 @@ export function POSCartPanel({
             display: 'flex', alignItems: 'center', gap: 4,
           }}>
             <svg width="10" height="10" viewBox="0 0 12 12" fill="none">
-              <path d="M2.5 6.5L5 9L9.5 3.5" stroke="#059669" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M2.5 6.5L5 9L9.5 3.5" stroke="#059669" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
             Done
           </div>
@@ -260,7 +260,7 @@ export function POSCartPanel({
           )
         )}
       </div>
-  
+
 
       {/* ─── CART ITEMS ─── */}
       <div style={{ flex: 1, overflowY: 'auto', padding: '8px 10px', WebkitOverflowScrolling: 'touch' }}>
@@ -582,8 +582,8 @@ function CartItem({
       cursor: 'pointer',
       userSelect: 'none',
     }}
-    onDoubleClick={handleDoubleClick}
-    onTouchEnd={handleTouchEnd}
+      onDoubleClick={handleDoubleClick}
+      onTouchEnd={handleTouchEnd}
     >
       <div style={{ width: 48, height: 48, borderRadius: 12, overflow: 'hidden', flexShrink: 0, background: '#F8FAFF', border: '1px solid #E8E9EF' }}>
         <ImgWithFallback src={item.image_url || item.image} alt={item.name} emoji={item.emoji} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
