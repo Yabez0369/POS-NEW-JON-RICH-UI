@@ -2,7 +2,11 @@ import { useState } from 'react'
 import { Btn, Input, Badge, Card, Modal, Select } from '@/components/ui'
 import { notify } from '@/components/shared'
 import { fmt } from '@/lib/utils'
-import { Ticket, Scissors, Plus, Check, BarChart, TrendingUp, Zap, Copy, X, Trash2 } from 'lucide-react'
+import { 
+  Ticket, Scissors, Plus, Check, BarChart, TrendingUp, Zap, 
+  Copy, X, Trash2, Tag, Calendar, Layout, Search, 
+  Activity, Sparkles, AlertCircle 
+} from 'lucide-react'
 
 export const CouponManagement = ({ coupons, setCoupons, addAudit, currentUser, t, settings }) => {
   const [showAdd, setShowAdd] = useState(false)
@@ -52,7 +56,7 @@ export const CouponManagement = ({ coupons, setCoupons, addAudit, currentUser, t
   }
   
   const handleDelete = (id, code) => {
-    if (window.confirm('Are you sure you want to delete this coupon?')) {
+    if (window.confirm('Erase this voucher blueprint?')) {
       setCoupons(prev => prev.filter(c => c.id !== id))
       addAudit({ action: 'delete', module: 'coupons', details: `Deleted code ${code}` })
       notify('Coupon deleted', 'success')
@@ -71,381 +75,283 @@ export const CouponManagement = ({ coupons, setCoupons, addAudit, currentUser, t
     })
   }
 
-  const generateBatch = () => {
-    notify('Batch generation coming soon', 'info')
-  }
-
   return (
-    <div style={{ 
-      display: 'flex', 
-      flexDirection: 'column', 
-      gap: 32,
-      background: '#f8fafc',
-      margin: '-24px',
-      padding: '32px',
-      minHeight: 'calc(100vh - 64px)',
-      animation: 'fadeIn 0.5s ease-out' 
-    }}>
+    <div className="voucher-hub-root">
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap');
+
+        .voucher-hub-root {
+          --primary: #6366F1;
+          --bg-main: #F4F7FE;
+          --text-deep: #0F172A;
+          --text-muted: #64748B;
+          --glass-bg: rgba(255, 255, 255, 0.7);
+          --glass-border: rgba(226, 232, 240, 0.8);
+          
+          background: var(--bg-main);
+          min-height: calc(100vh - 64px);
+          margin: -24px;
+          padding: 32px 40px;
+          font-family: 'Outfit', sans-serif;
+          color: var(--text-deep);
+        }
+
+        .hub-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-end;
+          margin-bottom: 40px;
+        }
+        .header-title-box h1 {
+          font-size: 36px;
+          font-weight: 900;
+          letter-spacing: -0.04em;
+          margin: 0;
+          color: var(--text-deep);
+        }
+        .header-breadcrumb {
+          font-size: 11px;
+          font-weight: 800;
+          color: var(--text-muted);
+          text-transform: uppercase;
+          letter-spacing: 2px;
+          margin-bottom: 8px;
+        }
+
+        .action-btns { display: flex; gap: 12px; }
+        .premium-btn {
+          border: none; padding: 12px 24px; border-radius: 16px; font-size: 14px; font-weight: 800; cursor: pointer;
+          display: flex; align-items: center; gap: 10px; transition: all 0.2s;
+        }
+        .premium-btn.primary { background: var(--primary); color: white; box-shadow: 0 10px 20px -5px rgba(99, 102, 241, 0.3); }
+        .premium-btn.outline { background: white; border: 1px solid #E2E8F0; color: var(--text-deep); }
+        .premium-btn:hover { transform: translateY(-2px); }
+
+        /* KPI Grid */
+        .stats-grid {
+          display: grid;
+          grid-template-columns: repeat(4, 1fr);
+          gap: 24px;
+          margin-bottom: 40px;
+        }
+        .stat-card {
+          background: white;
+          border-radius: 32px;
+          padding: 32px;
+          border: 1px solid var(--glass-border);
+          box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.05);
+          position: relative;
+          overflow: hidden;
+        }
+        .stat-card.accent { background: linear-gradient(135deg, #1E1B4B 0%, #4338CA 100%); color: white; }
+        .sc-label { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; opacity: 0.6; margin-bottom: 8px; }
+        .sc-value { font-size: 36px; font-weight: 900; letter-spacing: -0.03em; }
+
+        /* Filter Hub */
+        .filter-hub {
+            display: flex; gap: 12px; margin-bottom: 32px;
+            background: white; padding: 10px; border-radius: 20px; border: 1px solid var(--glass-border);
+            width: fit-content;
+        }
+        .filter-chip {
+            padding: 10px 24px; border-radius: 14px; border: none; background: transparent;
+            color: var(--text-muted); font-weight: 800; font-size: 13px; cursor: pointer; transition: 0.2s;
+        }
+        .filter-chip.active { background: var(--primary); color: white; box-shadow: 0 8px 16px -4px rgba(99, 102, 241, 0.3); }
+
+        /* Ticket Grid */
+        .ticket-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+          gap: 24px;
+        }
+        .voucher-ticket {
+          background: white;
+          border-radius: 32px;
+          padding: 32px;
+          border: 1px solid var(--glass-border);
+          box-shadow: 0 12px 40px -15px rgba(0, 0, 0, 0.05);
+          display: flex;
+          flex-direction: column;
+          gap: 24px;
+          position: relative;
+          transition: 0.3s;
+        }
+        .voucher-ticket:hover { transform: translateY(-8px); border-color: var(--primary); }
+        .voucher-ticket.disabled { opacity: 0.6; }
+
+        .ticket-cutout {
+            position: absolute; width: 32px; height: 32px; background: var(--bg-main); border-radius: 50%;
+            top: 50%; transform: translateY(-50%);
+        }
+        .cutout-left { left: -16px; box-shadow: inset -4px 0 8px rgba(0,0,0,0.03); border-right: 1px solid var(--glass-border); }
+        .cutout-right { right: -16px; box-shadow: inset 4px 0 8px rgba(0,0,0,0.03); border-left: 1px solid var(--glass-border); }
+
+        .ticket-header { display: flex; justify-content: space-between; align-items: flex-start; }
+        .code-box { display: flex; align-items: center; gap: 12px; }
+        .code-text { font-family: 'Outfit', sans-serif; font-weight: 950; font-size: 26px; letter-spacing: 2px; color: var(--text-deep); }
+        
+        .discount-badge { 
+            font-size: 32px; font-weight: 900; color: var(--primary); letter-spacing: -0.04em;
+            background: linear-gradient(135deg, #6366F1, #4F46E5);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .usage-analytics { background: #F8FAFC; padding: 20px; border-radius: 20px; }
+        .usage-bar-bg { height: 8px; width: 100%; background: #E2E8F0; border-radius: 4px; overflow: hidden; margin: 12px 0; }
+        .usage-bar-fill { height: 100%; border-radius: 4px; transition: 1s cubic-bezier(0.1, 1, 0.3, 1); }
+
+        .ticket-actions { display: flex; gap: 12px; }
+        .icon-btn { 
+            height: 48px; border: none; border-radius: 14px; background: #F4F7FE; color: var(--text-muted);
+            display: flex; align-items: center; justify-content: center; transition: 0.2s; cursor: pointer;
+        }
+        .icon-btn.primary { background: #EEF2FF; color: var(--primary); flex: 1; font-weight: 800; font-size: 13px; }
+        .icon-btn.critical { background: #FEE2E2; color: #EF4444; width: 48px; }
+        .icon-btn:hover { transform: scale(1.05); }
+
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-hub { animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+      `}</style>
 
       {/* Header */}
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'space-between', 
-        alignItems: 'center', 
-        flexWrap: 'wrap', 
-        gap: 16,
-        position: 'sticky',
-        top: -32,
-        zIndex: 50,
-        background: '#f8fafc',
-        padding: '16px 0',
-        margin: '-16px 0 0 0'
-      }}>
-        <div>
-          <h1 style={{ fontSize: 24, fontWeight: 900, color: '#0f172a', margin: 0, display: 'flex', alignItems: 'center', gap: 12, letterSpacing: '-0.03em' }}>
-            <Ticket size={24} color="#4f46e5" strokeWidth={2.5} /> Coupon Codes
-          </h1>
+      <div className="hub-header animate-hub">
+        <div className="header-title-box">
+          <div className="header-breadcrumb">Marketing Arsenal</div>
+          <h1>Voucher Intelligence</h1>
         </div>
-        <div style={{ display: 'flex', gap: 12 }}>
-          <Btn t={t} variant="outline" style={{ 
-            borderRadius: 14, 
-            padding: '8px 16px', 
-            fontSize: 13,
-            fontWeight: 800,
-            color: '#64748b',
-            display: 'flex', 
-            alignItems: 'center', 
-            gap: 10,
-            background: '#fff',
-            border: '1px solid #e2e8f0',
-            boxShadow: '0 4px 12px rgba(0,0,0,0.04)'
-          }} onClick={generateBatch}>
-            <Scissors size={16} /> Batch
-          </Btn>
-          <Btn t={t} onClick={() => setShowAdd(true)} style={{ 
-            borderRadius: 14, 
-            background: 'linear-gradient(135deg, #4f46e5, #4338ca)', 
-            color: '#fff', 
-            padding: '8px 20px', 
-            fontWeight: 900, 
-            fontSize: 13,
-            display: 'flex', 
-            alignItems: 'center', 
-            gap: 10,
-            boxShadow: '0 8px 20px rgba(79, 70, 229, 0.25)',
-            border: 'none'
-          }}>
-            <Plus size={18} /> New Coupon
-          </Btn>
+        <div className="action-btns">
+            <button className="premium-btn outline"><Scissors size={18} /> Batch Generator</button>
+            <button className="premium-btn primary" onClick={() => setShowAdd(true)}><Plus size={18} strokeWidth={2.5} /> New Campaign</button>
         </div>
       </div>
 
-      {/* KPI Row */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 24 }}>
-        {[
-          { label: 'Total Coupons', value: stats.total, color: '#4f46e5', icon: <Ticket size={24} /> },
-          { label: 'Active Codes', value: stats.active, color: '#22c55e', icon: <Check size={24} /> },
-          { label: 'Redemption Rate', value: `${stats.redemptionRate}%`, color: '#3b82f6', icon: <BarChart size={24} /> },
-          { label: 'Top Performer', value: stats.topCode, color: '#f59e0b', icon: <TrendingUp size={24} />, small: true },
-        ].map(({ label, value, color, icon, small }) => (
-          <div key={label} style={{ background: '#fff', borderRadius: 24, padding: '24px 32px', boxShadow: '0 12px 40px rgba(0,0,0,0.06)', display: 'flex', alignItems: 'center', gap: 20, position: 'relative', overflow: 'hidden', border: '1px solid #f1f5f9' }}>
-            <div style={{ position: 'absolute', top: 0, left: 0, width: 6, height: '100%', background: color }} />
-            <div style={{ width: 56, height: 56, borderRadius: 16, background: `${color}10`, display: 'flex', alignItems: 'center', justifyContent: 'center', color, flexShrink: 0 }}>
-              {icon}
-            </div>
-            <div>
-              <div style={{ fontSize: 12, fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: 1 }}>{label}</div>
-              <div style={{ fontSize: small ? 20 : 32, fontWeight: 900, color: '#0f172a', marginTop: 4, letterSpacing: '-0.02em', wordBreak: 'break-all' }}>{value}</div>
-            </div>
-          </div>
-        ))}
+      {/* KPI Stats */}
+      <div className="stats-grid">
+        <div className="stat-card accent animate-hub" style={{ animationDelay: '0.1s' }}>
+          <div className="sc-label">Deployed Coupons</div>
+          <div className="sc-value">{stats.total}</div>
+          <Ticket size={80} style={{ position: 'absolute', right: -10, bottom: -10, opacity: 0.1, transform: 'rotate(-20deg)' }} />
+        </div>
+        <div className="stat-card animate-hub" style={{ animationDelay: '0.2s' }}>
+          <div className="sc-label">Redemption Node</div>
+          <div className="sc-value">{stats.redemptionRate}%</div>
+          <Activity size={80} style={{ position: 'absolute', right: -10, bottom: -10, opacity: 0.05, color: 'var(--primary)' }} />
+        </div>
+        <div className="stat-card animate-hub" style={{ animationDelay: '0.3s' }}>
+          <div className="sc-label">Active Vectors</div>
+          <div className="sc-value">{stats.active}</div>
+          <Zap size={80} style={{ position: 'absolute', right: -10, bottom: -10, opacity: 0.05, color: '#10B981' }} />
+        </div>
+        <div className="stat-card animate-hub" style={{ animationDelay: '0.4s' }}>
+          <div className="sc-label">Hero Module</div>
+          <div className="sc-value" style={{ fontSize: 24, padding: '10px 0' }}>{stats.topCode}</div>
+          <Sparkles size={80} style={{ position: 'absolute', right: -10, bottom: -10, opacity: 0.05, color: '#f59e0b' }} />
+        </div>
       </div>
 
-      {/* Filter Tabs */}
-      <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', background: '#f1f5f9', padding: 6, borderRadius: 16, width: 'fit-content' }}>
-          {[
-              { id: 'all', label: 'All Coupons' },
-              { id: 'active', label: 'Active Only' },
-              { id: 'expired', label: 'Expired' },
-              { id: 'exhausted', label: 'Exhausted' }
-          ].map(tab => (
-              <button key={tab.id} onClick={() => setFilterStatus(tab.id)} style={{
-                  padding: '10px 20px', borderRadius: 12, border: 'none',
-                  background: filterStatus === tab.id ? '#fff' : 'transparent',
-                  color: filterStatus === tab.id ? '#4f46e5' : '#64748b',
-                  boxShadow: filterStatus === tab.id ? '0 4px 12px rgba(0,0,0,0.08)' : 'none',
-                  fontSize: 13, fontWeight: 800, cursor: 'pointer', transition: 'all 0.2s'
-              }}>
-                  {tab.label}
+      {/* Filter Chips */}
+      <div className="filter-hub animate-hub" style={{ animationDelay: '0.5s' }}>
+          {['all', 'active', 'expired', 'exhausted'].map(tab => (
+              <button key={tab} className={`filter-chip ${filterStatus === tab ? 'active' : ''}`} onClick={() => setFilterStatus(tab)}>
+                  {tab.toUpperCase()}
               </button>
           ))}
       </div>
 
-      {/* Demo Hint */}
-      <div style={{ 
-        background: '#fff9eb', 
-        border: '1px solid #fde68a', 
-        borderRadius: 20, 
-        padding: '20px 28px', 
-        display: 'flex', 
-        alignItems: 'center', 
-        gap: 16,
-        boxShadow: '0 4px 12px rgba(245, 158, 11, 0.05)'
-      }}>
-        <Zap size={20} color="#f59e0b" strokeWidth={2.5} />
-        <span style={{ fontSize: 14, color: '#92400e', fontWeight: 700 }}>
-          Test codes at POS checkout:&nbsp;&nbsp;
-          {['FANDAY10', 'WELCOME20', 'FREESHIP'].map(code => (
-            <code key={code} style={{ background: '#fef3c7', color: '#b45309', padding: '4px 10px', borderRadius: 8, fontWeight: 900, fontSize: 13, marginRight: 10, letterSpacing: 1, border: '1px solid #fcd34d' }}>{code}</code>
-          ))}
-        </span>
+      {/* Ticket Grid */}
+      <div className="ticket-grid">
+        {filtered.map((c, idx) => {
+          const usagePercent = getUsagePercent(c)
+          const isFull = usagePercent >= 100
+          return (
+            <div key={c.id} className={`voucher-ticket animate-hub ${!c.active ? 'disabled' : ''}`} style={{ animationDelay: `${0.6 + idx * 0.1}s` }}>
+              <div className="ticket-cutout cutout-left" />
+              <div className="ticket-cutout cutout-right" />
+              
+              <div className="ticket-header">
+                <div>
+                   <div className="code-box">
+                      <span className="code-text">{c.code}</span>
+                      <button className="icon-btn" onClick={() => handleCopy(c.code, c.id)} style={{ width: 32, height: 32, borderRadius: 8 }}>
+                         {copiedId === c.id ? <Check size={14} color="#10B981" /> : <Copy size={14} />}
+                      </button>
+                   </div>
+                   <div style={{ fontSize: 13, color: 'var(--text-muted)', fontWeight: 600, marginTop: 4 }}>{c.description}</div>
+                </div>
+                <div className="discount-badge">{getTypeLabel(c)}</div>
+              </div>
+
+              <div className="usage-analytics">
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, fontWeight: 900, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                   <span style={{ color: 'var(--text-muted)' }}>Velocity Metrics</span>
+                   <span>{c.uses} / {c.maxUses} Deployed</span>
+                </div>
+                <div className="usage-bar-bg">
+                   <div className="usage-bar-fill" style={{ width: `${usagePercent}%`, background: isFull ? '#EF4444' : 'var(--primary)' }} />
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 8 }}>
+                   <div style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 800, display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <Calendar size={12} /> EXPIRES: {c.expiry}
+                   </div>
+                   <div style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 800, display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <Tag size={12} /> FLOOR: {fmt(c.minOrder, settings?.sym)}
+                   </div>
+                </div>
+              </div>
+
+              <div className="ticket-actions">
+                <button className="icon-btn primary" onClick={() => handleToggle(c.id, c.code, c.active)}>
+                   {c.active ? <><X size={16} /> PAUSE CAMPAIGN</> : <><Check size={16} /> REACTIVATE</>}
+                </button>
+                <button className="icon-btn critical" onClick={() => handleDelete(c.id, c.code)}>
+                   <Trash2 size={18} />
+                </button>
+              </div>
+            </div>
+          )
+        })}
       </div>
 
-      {filtered.length === 0 ? (
-        <div style={{ background: '#fff', padding: 80, textAlign: 'center', borderRadius: 32, boxShadow: '0 12px 40px rgba(0,0,0,0.06)' }}>
-          <div style={{ fontSize: 64, marginBottom: 20 }}>🎟️</div>
-          <div style={{ fontSize: 20, fontWeight: 900, color: '#0f172a' }}>{filterStatus === 'all' ? 'No Coupons Yet' : 'No Results Found'}</div>
-          <div style={{ fontSize: 15, color: '#64748b', marginTop: 8, fontWeight: 600 }}>
-            {filterStatus === 'all' 
-              ? 'Create your first coupon to drive sales and reward customers.' 
-              : 'Try adjusting your filters to see more coupons.'}
-          </div>
-          {filterStatus === 'all' && (
-            <Btn t={t} onClick={() => setShowAdd(true)} style={{ 
-              marginTop: 32, 
-              background: '#4f46e5', 
-              color: '#fff', 
-              borderRadius: 16, 
-              padding: '16px 32px', 
-              fontWeight: 900,
-              fontSize: 15,
-              boxShadow: '0 10px 20px rgba(79, 70, 229, 0.2)',
-              border: 'none'
-            }}>+ Create First Coupon</Btn>
-          )}
-        </div>
-      ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(380px, 90vw), 1fr))', gap: 24 }}>
-          {filtered.map(c => {
-            const usagePct = getUsagePercent(c)
-            const isNearlyFull = usagePct > 80
-            return (
-              <div key={c.id} style={{
-                background: '#fff',
-                borderRadius: 28, 
-                padding: 32, 
-                boxShadow: '0 12px 40px rgba(0,0,0,0.06)',
-                border: '1px solid #f1f5f9',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 20,
-                opacity: c.active ? 1 : 0.6,
-                transition: 'all 0.3s ease',
-                position: 'relative',
-                overflow: 'hidden'
-              }}>
-                <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: 6, background: c.active ? '#4f46e5' : '#e2e8f0' }} />
-                
-                {/* Coupon Header */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                      <span style={{ fontSize: 24, fontWeight: 900, color: '#0f172a', fontFamily: 'monospace', letterSpacing: 1 }}>{c.code}</span>
-                      <button onClick={() => handleCopy(c.code, c.id)} style={{ background: '#f1f5f9', border: 'none', cursor: 'pointer', color: copiedId === c.id ? '#22c55e' : '#94a3b8', padding: 8, borderRadius: 10, display: 'flex', transition: 'all 0.2s' }}>
-                        {copiedId === c.id ? <Check size={16} /> : <Copy size={16} />}
-                      </button>
-                    </div>
-                    <div style={{ fontSize: 14, color: '#64748b', marginTop: 4, fontWeight: 600 }}>{c.description}</div>
-                  </div>
-                  <Badge t={t} text={c.active ? 'ACTIVE' : 'DISABLED'} color={c.active ? 'green' : 'red'} style={{ fontWeight: 900, padding: '6px 12px', borderRadius: 10, fontSize: 10 }} />
-                </div>
-
-                {/* Coupon Body */}
-                <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-                    <div style={{ fontWeight: 900, color: '#4f46e5', fontSize: 20, letterSpacing: '-0.02em' }}>{getTypeLabel(c)}</div>
-                    <div style={{ fontSize: 13, color: '#64748b', fontWeight: 800, background: '#f8fafc', padding: '6px 12px', borderRadius: 10 }}>Min: {fmt(c.minOrder, settings?.sym)}</div>
-                  </div>
-
-                  {/* Usage Bar */}
-                  <div style={{ marginBottom: 16 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#64748b', marginBottom: 8, fontWeight: 700 }}>
-                      <span>Usage Analytics</span>
-                      <span style={{ color: isNearlyFull ? '#ef4444' : '#0f172a', fontWeight: 900 }}>{c.uses || 0} / {c.maxUses} used</span>
-                    </div>
-                    <div style={{ height: 10, background: '#f1f5f9', borderRadius: 5, overflow: 'hidden' }}>
-                      <div style={{ height: '100%', width: `${usagePct}%`, background: isNearlyFull ? '#ef4444' : '#4f46e5', borderRadius: 5, transition: 'width 0.8s cubic-bezier(0.34, 1.56, 0.64, 1)' }} />
-                    </div>
-                  </div>
-
-                  <div style={{ fontSize: 12, color: '#94a3b8', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6 }}>
-                    Expires: <span style={{ color: '#0f172a', fontWeight: 900 }}>{c.expiry}</span>
-                  </div>
-                </div>
-
-                {/* Actions */}
-                <div style={{ display: 'flex', gap: 12, marginTop: 4 }}>
-                  <Btn t={t} variant="ghost" style={{ 
-                    flex: 1, 
-                    fontSize: 13, 
-                    fontWeight: 800, 
-                    color: c.active ? '#ef4444' : '#22c55e',
-                    background: c.active ? '#fef2f2' : '#f0fdf4',
-                    borderRadius: 14,
-                    padding: '12px'
-                  }}
-                    onClick={() => handleToggle(c.id, c.code, c.active)}>
-                    {c.active ? <><X size={16} /> Disable Code</> : <><Check size={16} /> Enable Code</>}
-                  </Btn>
-                  <Btn t={t} variant="ghost" style={{ 
-                    color: '#ef4444', 
-                    background: '#fef2f2', 
-                    borderRadius: 14, 
-                    width: 48, 
-                    height: 48, 
-                    padding: 0,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center' 
-                  }}
-                    onClick={() => handleDelete(c.id, c.code)}>
-                    <Trash2 size={20} />
-                  </Btn>
-                </div>
-              </div>
-            )
-          })}
-        </div>
-      )}
-
-      {/* Add Coupon Modal */}
+      {/* Creation Modal */}
       {showAdd && (
-        <div style={{ 
-          position: 'fixed', 
-          inset: 0, 
-          zIndex: 9999, 
-          background: 'rgba(15, 23, 42, 0.6)', 
-          backdropFilter: 'blur(12px)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: 24
+        <div className="modal-overlay" style={{ 
+          position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(15, 23, 42, 0.4)', backdropFilter: 'blur(16px)',
+          display: 'flex', alignItems: 'center', justifySelf: 'center', justifyContent: 'center', padding: 24
         }} onClick={() => setShowAdd(false)}>
           <div style={{ 
-            maxWidth: 550, 
-            width: '100%', 
-            borderRadius: 40, 
-            padding: 48, 
-            background: '#fff',
-            boxShadow: '0 40px 100px rgba(0,0,0,0.25)',
-            position: 'relative',
-            animation: 'modalSlideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1)'
+            maxWidth: 600, width: '100%', borderRadius: 40, padding: 48, background: '#fff',
+            boxShadow: '0 40px 100px rgba(0,0,0,0.2)', position: 'relative'
           }} onClick={e => e.stopPropagation()}>
-            <div style={{ textAlign: 'center', marginBottom: 32 }}>
-              <h2 style={{ fontSize: 28, fontWeight: 900, color: '#0f172a', margin: '0 0 8px 0', letterSpacing: '-0.03em' }}>Create New Coupon</h2>
-              <p style={{ fontSize: 15, color: '#64748b', fontWeight: 600 }}>Configure a new discount code for your system.</p>
+            <div style={{ textAlign: 'center', marginBottom: 40 }}>
+               <div style={{ 
+                  width: 72, height: 72, borderRadius: 24, background: '#EEF2FF', color: 'var(--primary)',
+                  display: 'flex', alignItems: 'center', justifySelf: 'center', justifyContent: 'center', margin: '0 auto 24px'
+               }}>
+                  <Ticket size={36} />
+               </div>
+               <h2 style={{ fontSize: 32, fontWeight: 950, letterSpacing: '-0.04em', margin: '0 0 8px 0' }}>Initialize Voucher</h2>
+               <p style={{ color: 'var(--text-muted)', fontWeight: 600 }}>Configure a new revenue-generation logic component.</p>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
-                <div>
-                  <label style={{ display: 'block', fontSize: 11, fontWeight: 900, color: '#64748b', marginBottom: 10, textTransform: 'uppercase', letterSpacing: 1 }}>Coupon Code *</label>
-                  <input 
-                    type="text" 
-                    value={form.code}
-                    onChange={e => setForm(f => ({ ...f, code: e.target.value.toUpperCase().replace(/\s/g, '') }))}
-                    placeholder="SAVE20"
-                    style={{ width: '100%', padding: '14px 18px', borderRadius: 16, border: '1px solid #e2e8f0', background: '#f8fafc', color: '#0f172a', fontSize: 14, fontWeight: 700, outline: 'none' }}
-                  />
-                </div>
-                <div>
-                  <label style={{ display: 'block', fontSize: 11, fontWeight: 900, color: '#64748b', marginBottom: 10, textTransform: 'uppercase', letterSpacing: 1 }}>Discount Type</label>
-                  <Select t={t} label="" value={form.type}
-                    onChange={v => setForm(f => ({ ...f, type: v }))}
-                    options={[{ value: 'percent', label: '% Percentage Off' }, { value: 'fixed', label: 'Fixed Amount Off' }, { value: 'delivery', label: 'Free Delivery' }]} />
-                </div>
-                <div>
-                  <label style={{ display: 'block', fontSize: 11, fontWeight: 900, color: '#64748b', marginBottom: 10, textTransform: 'uppercase', letterSpacing: 1 }}>{form.type === 'percent' ? 'Discount %' : form.type === 'fixed' ? 'Amount' : 'N/A'}</label>
-                  <input 
-                    type="number" 
-                    value={form.value}
-                    onChange={e => setForm(f => ({ ...f, value: +e.target.value }))}
-                    disabled={form.type === 'delivery'}
-                    style={{ width: '100%', padding: '14px 18px', borderRadius: 16, border: '1px solid #e2e8f0', background: '#f8fafc', color: '#0f172a', fontSize: 14, fontWeight: 700, outline: 'none' }}
-                  />
-                </div>
-                <div>
-                  <label style={{ display: 'block', fontSize: 11, fontWeight: 900, color: '#64748b', marginBottom: 10, textTransform: 'uppercase', letterSpacing: 1 }}>Min Order</label>
-                  <input 
-                    type="number" 
-                    value={form.minOrder}
-                    onChange={e => setForm(f => ({ ...f, minOrder: +e.target.value }))}
-                    style={{ width: '100%', padding: '14px 18px', borderRadius: 16, border: '1px solid #e2e8f0', background: '#f8fafc', color: '#0f172a', fontSize: 14, fontWeight: 700, outline: 'none' }}
-                  />
-                </div>
-                <div>
-                  <label style={{ display: 'block', fontSize: 11, fontWeight: 900, color: '#64748b', marginBottom: 10, textTransform: 'uppercase', letterSpacing: 1 }}>Max Uses</label>
-                  <input 
-                    type="number" 
-                    value={form.maxUses}
-                    onChange={e => setForm(f => ({ ...f, maxUses: +e.target.value }))}
-                    style={{ width: '100%', padding: '14px 18px', borderRadius: 16, border: '1px solid #e2e8f0', background: '#f8fafc', color: '#0f172a', fontSize: 14, fontWeight: 700, outline: 'none' }}
-                  />
-                </div>
-                <div>
-                  <label style={{ display: 'block', fontSize: 11, fontWeight: 900, color: '#64748b', marginBottom: 10, textTransform: 'uppercase', letterSpacing: 1 }}>Expiry Date</label>
-                  <input 
-                    type="date" 
-                    value={form.expiry}
-                    onChange={e => setForm(f => ({ ...f, expiry: e.target.value }))}
-                    style={{ width: '100%', padding: '14px 18px', borderRadius: 16, border: '1px solid #e2e8f0', background: '#f8fafc', color: '#0f172a', fontSize: 14, fontWeight: 700, outline: 'none' }}
-                  />
-                </div>
-              </div>
-              <div>
-                <label style={{ display: 'block', fontSize: 11, fontWeight: 900, color: '#64748b', marginBottom: 10, textTransform: 'uppercase', letterSpacing: 1 }}>Description</label>
-                <input 
-                  type="text" 
-                  value={form.description}
-                  onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
-                  placeholder="e.g. Welcome offer for new members"
-                  style={{ width: '100%', padding: '14px 18px', borderRadius: 16, border: '1px solid #e2e8f0', background: '#f8fafc', color: '#0f172a', fontSize: 14, fontWeight: 700, outline: 'none' }}
-                />
-              </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, marginBottom: 32 }}>
+               <Input t={t} label="Voucher Code" value={form.code} onChange={v => setForm(f => ({ ...f, code: v.toUpperCase() }))} placeholder="SAVE20" />
+               <Select t={t} label="Reward Logic" value={form.type} onChange={v => setForm(f => ({ ...f, type: v }))} 
+                  options={[{ value: 'percent', label: 'Percent Yield' }, { value: 'fixed', label: 'Fixed Value' }, { value: 'delivery', label: 'Logistic Comp' }]} />
+               <Input t={t} label="Value Yield" value={form.value} onChange={v => setForm(f => ({ ...f, value: +v }))} type="number" />
+               <Input t={t} label="Floor Threshold" value={form.minOrder} onChange={v => setForm(f => ({ ...f, minOrder: +v }))} type="number" />
+               <Input t={t} label="Capacity Limit" value={form.maxUses} onChange={v => setForm(f => ({ ...f, maxUses: +v }))} type="number" />
+               <Input t={t} label="End-of-Life" value={form.expiry} onChange={v => setForm(f => ({ ...f, expiry: v }))} type="date" />
+            </div>
 
-              {/* Live Preview */}
-              {form.code && (
-                <div style={{ 
-                  padding: '24px', 
-                  borderRadius: 24, 
-                  background: 'linear-gradient(135deg, rgba(79, 70, 229, 0.05), rgba(124, 58, 237, 0.05))', 
-                  border: '2px dashed #4f46e5',
-                  textAlign: 'center'
-                }}>
-                  <div style={{ fontSize: 12, color: '#4f46e5', fontWeight: 800, marginBottom: 8, textTransform: 'uppercase', letterSpacing: 1.5 }}>LIVE PREVIEW</div>
-                  <div style={{ fontSize: 28, fontWeight: 900, color: '#0f172a', fontFamily: 'monospace', letterSpacing: 4 }}>{form.code}</div>
-                  <div style={{ fontSize: 15, color: '#64748b', marginTop: 8, fontWeight: 700 }}>
-                    {form.type === 'percent' ? `${form.value}% off orders over ${fmt(form.minOrder, settings?.sym)}` :
-                    form.type === 'fixed' ? `${fmt(form.value, settings?.sym)} off orders over ${fmt(form.minOrder, settings?.sym)}` :
-                    'Free delivery on qualifying orders'}
-                  </div>
-                </div>
-              )}
+            <div style={{ marginBottom: 40 }}>
+               <Input t={t} label="Internal Description" value={form.description} onChange={v => setForm(f => ({ ...f, description: v }))} placeholder="Wait till you see these..." />
+            </div>
 
-              <Btn t={t} onClick={handleAdd} disabled={!form.code}
-                style={{ 
-                  marginTop: 8,
-                  padding: 20, 
-                  background: 'linear-gradient(135deg, #4f46e5, #4338ca)', 
-                  color: '#fff', 
-                  borderRadius: 20, 
-                  fontWeight: 900,
-                  fontSize: 16,
-                  boxShadow: '0 10px 25px rgba(79, 70, 229, 0.3)',
-                  border: 'none'
-                }}>
-                <Ticket size={22} style={{ marginRight: 10 }} /> Create Coupon Code
-              </Btn>
+            <div style={{ display: 'flex', gap: 16 }}>
+              <button className="premium-btn outline" style={{ flex: 1, height: 56, borderRadius: 20 }} onClick={() => setShowAdd(false)}>Abort</button>
+              <button className="premium-btn primary" style={{ flex: 2, height: 56, borderRadius: 20 }} onClick={handleAdd} disabled={!form.code}>Commit Component</button>
             </div>
           </div>
         </div>

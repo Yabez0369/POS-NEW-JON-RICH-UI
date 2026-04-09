@@ -100,15 +100,15 @@ export function Sidebar() {
   const nav = navByRole[role] || []
   const isAdmin = role === 'admin'
 
-  // Styles dynamically adjusted for Admin Dark Theme
-  const sbBg = isAdmin ? '#1F2937' : theme.sidebar
-  const sbTextActive = isAdmin ? '#EF4444' : (theme.accent || theme.primary)
-  const sbText = isAdmin ? '#D1D5DB' : theme.text3
-  const sbTextHover = isAdmin ? '#FFFFFF' : theme.text
-  const sbBorder = isAdmin ? '#374151' : theme.border
-  const sbGroupText = isAdmin ? '#9CA3AF' : theme.text4
-  const sbActiveBg = isAdmin ? '#EF44441A' : `${sbTextActive}15`
-  const sbHoverBg = isAdmin ? '#374151' : `${sbTextActive}08`
+  // Premium Light Theme for all Dashboards
+  const sbBg = '#FFFFFF'
+  const sbTextActive = '#4F46E5' 
+  const sbText = '#64748B'
+  const sbTextHover = '#1E293B'
+  const sbBorder = '#F1F5F9'
+  const sbGroupText = '#94A3B8'
+  const sbActiveBg = '#EEF2FF'
+  const sbHoverBg = '#F8FAFC'
 
   const handleNav = (item) => {
     if (item.sub) {
@@ -136,7 +136,7 @@ export function Sidebar() {
         borderRight: `1px solid ${sbBorder}`,
         display: 'flex',
         flexDirection: 'column',
-        boxShadow: isAdmin ? '2px 0 10px rgba(0,0,0,0.15)' : theme.shadowMd,
+        boxShadow: '2px 0 20px rgba(0,0,0,0.02)',
       }}
     >
       <style>{`
@@ -154,7 +154,7 @@ export function Sidebar() {
             style={{
               width: 42,
               height: 42,
-              background: isAdmin ? '#EF4444' : `linear-gradient(135deg,${theme.accent},${theme.accent2})`,
+              background: 'linear-gradient(135deg, #6366F1, #3B82F6)',
               borderRadius: 12,
               display: 'flex',
               alignItems: 'center',
@@ -163,13 +163,13 @@ export function Sidebar() {
               fontWeight: 900,
               color: '#fff',
               flexShrink: 0,
-              boxShadow: isAdmin ? '0 4px 12px rgba(239, 68, 68, 0.4)' : 'none'
+              boxShadow: '0 4px 12px rgba(99, 102, 241, 0.3)'
             }}
           >
             S
           </div>
           <div className="sidebar-label">
-            <div style={{ fontSize: 16, fontWeight: 900, color: isAdmin ? '#FFFFFF' : theme.text, letterSpacing: -0.3 }}>SCSTIX</div>
+            <div style={{ fontSize: 16, fontWeight: 900, color: '#0F172A', letterSpacing: -0.3 }}>SCSTIX</div>
             <div style={{ fontSize: 11, color: sbGroupText, fontWeight: 600, marginTop: 2 }}>EPOS v1.0</div>
           </div>
         </div>
@@ -284,7 +284,7 @@ export function Sidebar() {
             borderRadius: 8,
             border: 'none',
             background: 'transparent',
-            color: isAdmin ? '#EF4444' : theme.red,
+            color: '#EF4444',
             cursor: 'pointer',
             fontSize: 13,
             fontWeight: 700,
