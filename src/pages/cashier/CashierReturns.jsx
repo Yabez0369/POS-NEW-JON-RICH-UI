@@ -632,9 +632,7 @@ export const CashierReturns = ({
                 processing ||
                 (currentStep === 2 && selectedItems.length === 0) ||
                 (currentStep === 3 && !reasonCode) ||
-                (currentStep === 4 && (!processMode || (processMode === 'exchange' && replacementItems.length === 0))) ||
-                hasNonReturnable ||
-                !withinWindow
+                (currentStep === 4 && (!processMode || (processMode === 'exchange' && replacementItems.length === 0)))
               }
               onClick={() => {
                 if (currentStep === 5) handleProcessReturn()
